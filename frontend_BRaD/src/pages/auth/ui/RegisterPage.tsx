@@ -11,7 +11,7 @@ const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['candidate', 'employer']),
+  role: z.enum(['user', 'hr']),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -28,7 +28,7 @@ export const RegisterPage = () => {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: 'candidate',
+      role: 'user',
     },
   });
 
@@ -145,8 +145,8 @@ export const RegisterPage = () => {
                   color: '#333A2F'
                 }}
               >
-                <option value="candidate">Job Seeker</option>
-                <option value="employer">Employer</option>
+                <option value="user">User</option>
+                <option value="hr">HR</option>
               </select>
             </div>
 

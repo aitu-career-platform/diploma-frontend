@@ -37,7 +37,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Unauthorized - clear auth and redirect to login
       localStorage.removeItem('authUser');
-      window.location.href = '/login';
+      window.location.href = '/app/login';
     }
     return Promise.reject(error);
   }

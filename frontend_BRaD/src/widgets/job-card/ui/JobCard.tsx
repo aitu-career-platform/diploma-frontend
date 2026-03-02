@@ -1,7 +1,7 @@
 import { MapPin, Clock, DollarSign, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Job } from '@entities/job';
-import { useUserStore } from '@entities/user';
+import { isCandidateRole, useUserStore } from '@entities/user';
 import { useState } from 'react';
 import { ChatWindow } from '@features/chat';
 import { useMessageStore } from '@entities/message';
@@ -72,7 +72,7 @@ export const JobCard = ({ job }: JobCardProps) => {
                 </div>
               </div>
             </div>
-            {isAuthenticated && currentUser?.role === 'candidate' && (
+            {isAuthenticated && isCandidateRole(currentUser?.role) && (
               <button
                 onClick={handleContact}
                 className="p-2 rounded-lg transition-colors"
@@ -132,4 +132,3 @@ export const JobCard = ({ job }: JobCardProps) => {
     </>
   );
 };
-

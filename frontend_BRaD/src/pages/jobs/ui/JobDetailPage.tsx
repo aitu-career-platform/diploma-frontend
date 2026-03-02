@@ -3,20 +3,39 @@ import { ArrowLeft, MapPin, Clock, DollarSign, MessageSquare } from 'lucide-reac
 import { AppHeader } from '@widgets/app-header';
 import { Button } from '@shared/ui';
 import { useJobStore } from '@entities/job';
-import { useUserStore } from '@entities/user';
-import { useState } from 'react';
+import { isCandidateRole, useUserStore } from '@entities/user';
+import { useEffect, useState } from 'react';
 import { ChatWindow } from '@features/chat';
 import { useMessageStore } from '@entities/message';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { jobs } = useJobStore();
+  const { jobs, isLoading, loadJobs } = useJobStore();
   const { currentUser, isAuthenticated } = useUserStore();
   const { getOrCreateConversation } = useMessageStore();
   const [showChat, setShowChat] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (jobs.length === 0) {
+      void loadJobs();
+    }
+  }, [jobs.length, loadJobs]);
+
   const job = jobs.find((j) => j.id === id);
+
+  if (!job && isLoading) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+        <AppHeader />
+        <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
+          <div className="text-center">
+            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>Loading job...</h1>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -120,7 +139,7 @@ export const JobDetailPage = () => {
                     <p>{job.applicationsCount} applications</p>
                   </div>
 
-                  {isAuthenticated && currentUser?.role === 'candidate' ? (
+                  {isAuthenticated && isCandidateRole(currentUser?.role) ? (
                     <>
                       <Button 
                         variant="hero" 
@@ -199,4 +218,3 @@ export const JobDetailPage = () => {
     </>
   );
 };
-

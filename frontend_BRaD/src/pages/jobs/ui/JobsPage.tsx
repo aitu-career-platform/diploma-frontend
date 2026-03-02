@@ -3,8 +3,16 @@ import { ArrowLeft } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { JobFilters } from '@features/job-filters';
 import { JobsList } from '@widgets/jobs-list';
+import { useEffect } from 'react';
+import { useJobStore } from '@entities/job';
 
 export const JobsPage = () => {
+  const { loadJobs } = useJobStore();
+
+  useEffect(() => {
+    void loadJobs();
+  }, [loadJobs]);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
       <AppHeader />
@@ -33,4 +41,3 @@ export const JobsPage = () => {
     </div>
   );
 };
-

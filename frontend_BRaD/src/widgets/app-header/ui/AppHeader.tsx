@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
-import { useUserStore } from '@entities/user';
+import { isEmployerRole, useUserStore } from '@entities/user';
 import { useState } from 'react';
 import '../../../pages/landing/ui/landing.css';
 
@@ -30,7 +30,7 @@ export const AppHeader = () => {
               <Link to="/app/profile" className="nav-link">
                 Profile
               </Link>
-              {currentUser?.role === 'employer' && (
+              {isEmployerRole(currentUser?.role) && (
                 <Link to="/app/employer" className="nav-link">
                   Employer Dashboard
                 </Link>
@@ -123,7 +123,7 @@ export const AppHeader = () => {
                 >
                   Messages
                 </Link>
-                {currentUser?.role === 'employer' && (
+                {isEmployerRole(currentUser?.role) && (
                   <Link
                     to="/app/employer"
                     onClick={() => setMobileMenuOpen(false)}
@@ -168,4 +168,3 @@ export const AppHeader = () => {
     </nav>
   );
 };
-
