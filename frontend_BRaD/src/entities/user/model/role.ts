@@ -112,8 +112,16 @@ export function isCandidateRole(role?: UserRole | null): boolean {
   return role === 'user' || role === 'candidate';
 }
 
+export function isAdminRole(role?: UserRole | null): boolean {
+  return role === 'admin';
+}
+
+export function isHrRole(role?: UserRole | null): boolean {
+  return role === 'hr' || role === 'employer';
+}
+
 export function isEmployerRole(role?: UserRole | null): boolean {
-  return role === 'hr' || role === 'employer' || role === 'admin';
+  return isHrRole(role);
 }
 
 export function mapRoleToRegisterPayload(role: UserRole): 'CANDIDATE' | 'EMPLOYER' {

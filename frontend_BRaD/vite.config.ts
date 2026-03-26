@@ -4,6 +4,11 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       '@app': path.resolve(__dirname, './src/app'),
@@ -18,4 +23,3 @@ export default defineConfig({
     outDir: 'dist',
   },
 })
-

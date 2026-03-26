@@ -1,20 +1,25 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, DollarSign, MessageSquare } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
-import { Button } from '@shared/ui';
+import { Button, Textarea } from '@shared/ui';
 import { useJobStore } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
 import { useEffect, useState } from 'react';
 import { ChatWindow } from '@features/chat';
 import { useMessageStore } from '@entities/message';
+import { useApplicationStore } from '@entities/application';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { jobs, isLoading, loadJobs } = useJobStore();
   const { currentUser, isAuthenticated } = useUserStore();
   const { getOrCreateConversation } = useMessageStore();
+  const { applyToVacancy, isMutating } = useApplicationStore();
   const [showChat, setShowChat] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (jobs.length === 0) {
@@ -23,6 +28,23 @@ export const JobDetailPage = () => {
   }, [jobs.length, loadJobs]);
 
   const job = jobs.find((j) => j.id === id);
+
+  const handleApply = async () => {
+    if (!job) {
+      return;
+    }
+
+    setApplyError(null);
+    setApplySuccess(null);
+
+    try {
+      await applyToVacancy(job.id, coverLetter);
+      setApplySuccess('Application submitted. You can track it on the Applications page.');
+      setCoverLetter('');
+    } catch (error) {
+      setApplyError(error instanceof Error ? error.message : 'Failed to submit application');
+    }
+  };
 
   if (!job && isLoading) {
     return (
@@ -141,14 +163,39 @@ export const JobDetailPage = () => {
 
                   {isAuthenticated && isCandidateRole(currentUser?.role) ? (
                     <>
-                      <Button 
-                        variant="hero" 
-                        size="lg" 
-                        className="w-full"
-                        style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                      >
-                        Apply Now
-                      </Button>
+                      <div className="space-y-3">
+                        <Textarea
+                          value={coverLetter}
+                          onChange={(event) => setCoverLetter(event.target.value)}
+                          placeholder="Optional cover letter"
+                          maxLength={4000}
+                          className="min-h-[120px] rounded-2xl"
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.14)' }}
+                        />
+                        <Button 
+                          variant="hero" 
+                          size="lg" 
+                          className="w-full"
+                          onClick={() => void handleApply()}
+                          disabled={isMutating}
+                          style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                        >
+                          {isMutating ? 'Submitting...' : 'Apply Now'}
+                        </Button>
+                        {applyError && (
+                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c' }}>
+                            {applyError}
+                          </div>
+                        )}
+                        {applySuccess && (
+                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(34, 197, 94, 0.08)', color: '#166534' }}>
+                            {applySuccess}{' '}
+                            <Link to="/app/applications" className="underline">
+                              Open applications
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                       <button
                         className="w-full px-8 py-3 rounded-xl text-base font-semibold border-2 transition-all duration-200 flex items-center justify-center gap-2"
                         onClick={() => {

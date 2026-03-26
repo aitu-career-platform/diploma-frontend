@@ -5,6 +5,8 @@ import { JobsPage, JobDetailPage } from '@pages/jobs';
 import { ProfilePage } from '@pages/profile';
 import { EmployerPage } from '@pages/employer';
 import { ChatPage } from '@pages/chat';
+import { ApplicationsPage } from '@pages/applications';
+import { AdminPanelPage } from '@pages/admin';
 import { LoginPage, RegisterPage, VerifyEmailPage, RequestPasswordResetPage, ResetPasswordPage } from '@pages/auth';
 
 export const AppRouter = () => {
@@ -20,8 +22,10 @@ export const AppRouter = () => {
         <Route path="/app/reset-password" element={<ResetPasswordPage />} />
         <Route path="/app/jobs" element={<JobsPage />} />
         <Route path="/app/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/app/applications" element={<ApplicationsPage />} />
         <Route path="/app/profile" element={<ProfilePage />} />
         <Route path="/app/employer" element={<EmployerPage />} />
+        <Route path="/app/admin" element={<AdminPanelPage />} />
         <Route path="/app/chat" element={<ChatPage />} />
       </Routes>
     </BrowserRouter>

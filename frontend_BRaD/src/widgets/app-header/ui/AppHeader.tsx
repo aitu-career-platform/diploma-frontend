@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
-import { isEmployerRole, useUserStore } from '@entities/user';
+import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
 import { useState } from 'react';
 import '../../../pages/landing/ui/landing.css';
 
@@ -8,6 +8,8 @@ export const AppHeader = () => {
   const { currentUser, isAuthenticated, logout } = useUserStore();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isHr = isHrRole(currentUser?.role);
+  const isAdmin = isAdminRole(currentUser?.role);
 
   const handleLogout = async () => {
     await logout();
@@ -27,12 +29,20 @@ export const AppHeader = () => {
           </Link>
           {isAuthenticated && (
             <>
+              <Link to="/app/applications" className="nav-link">
+                Applications
+              </Link>
               <Link to="/app/profile" className="nav-link">
                 Profile
               </Link>
-              {isEmployerRole(currentUser?.role) && (
+              {isHr && (
                 <Link to="/app/employer" className="nav-link">
                   Employer Dashboard
+                </Link>
+              )}
+              {(isHr || isAdmin) && (
+                <Link to="/app/admin" className="nav-link">
+                  Operations
                 </Link>
               )}
             </>
@@ -110,6 +120,13 @@ export const AppHeader = () => {
             {isAuthenticated && (
               <>
                 <Link
+                  to="/app/applications"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="nav-link"
+                >
+                  Applications
+                </Link>
+                <Link
                   to="/app/profile"
                   onClick={() => setMobileMenuOpen(false)}
                   className="nav-link"
@@ -123,13 +140,22 @@ export const AppHeader = () => {
                 >
                   Messages
                 </Link>
-                {isEmployerRole(currentUser?.role) && (
+                {isHr && (
                   <Link
                     to="/app/employer"
                     onClick={() => setMobileMenuOpen(false)}
                     className="nav-link"
                   >
                     Employer Dashboard
+                  </Link>
+                )}
+                {(isHr || isAdmin) && (
+                  <Link
+                    to="/app/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="nav-link"
+                  >
+                    Operations
                   </Link>
                 )}
                 <button

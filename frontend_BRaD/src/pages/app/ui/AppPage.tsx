@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AppHeader } from '@widgets/app-header';
 import { Button } from '@shared/ui';
-import { ArrowRight, Briefcase, Search, Users } from 'lucide-react';
+import { ArrowRight, ClipboardList, Search, Users } from 'lucide-react';
 
 export const AppPage = () => {
   return (
@@ -29,6 +29,18 @@ export const AppPage = () => {
               </div>
             </Link>
 
+            <Link to="/app/applications">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all group" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-colors" style={{ backgroundColor: '#EBEDDF' }}>
+                  <ClipboardList className="w-8 h-8" style={{ color: '#333A2F' }} />
+                </div>
+                <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>Applications</h3>
+                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                  Track statuses, timelines, and hiring flow
+                </p>
+              </div>
+            </Link>
+
             <Link to="/app/profile">
               <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all group" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-colors" style={{ backgroundColor: '#EBEDDF' }}>
@@ -36,20 +48,10 @@ export const AppPage = () => {
                 </div>
                 <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>Your Profile</h3>
                 <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                  Manage your profile and applications
+                  Keep your candidate or employer profile up to date
                 </p>
               </div>
             </Link>
-
-            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all group" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-colors" style={{ backgroundColor: '#EBEDDF' }}>
-                <Briefcase className="w-8 h-8" style={{ color: '#333A2F' }} />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>For Employers</h3>
-              <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                Post jobs and find the best talent
-              </p>
-            </div>
           </div>
 
           <Link to="/app/jobs">

@@ -1,8 +1,14 @@
 import { create } from 'zustand';
 import type { User, AuthUser } from './types';
-import api from '@shared/lib/api';
+import api, { getApiErrorMessage } from '@shared/lib/api';
 import { decodeJWT } from '@shared/lib/jwt';
-import { extractRoleClaim, mapRoleToRegisterPayload, normalizeRole } from './role';
+import {
+  extractRoleClaim,
+  isCandidateRole,
+  isHrRole,
+  mapRoleToRegisterPayload,
+  normalizeRole,
+} from './role';
 
 interface UserStore {
   currentUser: AuthUser | null;
@@ -203,19 +209,85 @@ const getStoredAuthUser = (): AuthUser | null => {
   }
 };
 
-const extractErrorMessage = (error: unknown, fallback: string): string => {
-  if (typeof error === 'object' && error && 'response' in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (response?.data?.message) {
-      return response.data.message;
-    }
+const splitName = (value: string): { firstName?: string; lastName?: string } => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return {};
   }
 
-  if (error instanceof Error && error.message) {
-    return error.message;
+  const parts = trimmed.split(/\s+/);
+  const [firstName, ...rest] = parts;
+
+  return {
+    firstName,
+    lastName: rest.length ? rest.join(' ') : undefined,
+  };
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const getString = (value: unknown): string => {
+  return typeof value === 'string' ? value : '';
+};
+
+const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | null => {
+  if (!isRecord(payload)) {
+    return null;
   }
 
-  return fallback;
+  const user = isRecord(payload.user) ? payload.user : {};
+  const candidateProfile = isRecord(payload.candidateProfile) ? payload.candidateProfile : {};
+  const employerProfile = isRecord(payload.employerProfile) ? payload.employerProfile : {};
+
+  return {
+    role: payload.role,
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    city: candidateProfile.city || employerProfile.companyCity,
+    country: candidateProfile.country || employerProfile.companyCountry,
+    bio: candidateProfile.about || employerProfile.companyDescription,
+    desiredRole: candidateProfile.desiredRole,
+    desiredSalary: candidateProfile.desiredSalary,
+    graduationYear: candidateProfile.graduationYear,
+    companyName: employerProfile.companyName,
+    position: employerProfile.jobTitle,
+    companyWebsite: employerProfile.companyWebsite,
+    aboutCompany: employerProfile.companyDescription,
+    companyContactEmail: employerProfile.companyContactEmail,
+    companyContactPhone: employerProfile.companyContactPhone,
+    hrEmail: employerProfile.hrEmail,
+    hrPhone: employerProfile.hrPhone,
+    user,
+    candidateProfile,
+    employerProfile,
+  };
+};
+
+const syncCurrentUserName = (
+  currentUser: AuthUser | null,
+  profile: Record<string, unknown> | null,
+): AuthUser | null => {
+  if (!currentUser || !profile) {
+    return currentUser;
+  }
+
+  const firstName = getString(profile.firstName);
+  const lastName = getString(profile.lastName);
+  const name = `${firstName} ${lastName}`.trim();
+
+  if (!name) {
+    return currentUser;
+  }
+
+  return {
+    ...currentUser,
+    name,
+  };
 };
 
 const storedAuthUser = getStoredAuthUser();
@@ -237,32 +309,55 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
       try {
         const profileResponse = await api.get('/profile/me');
-        set({ currentProfile: profileResponse.data });
+        const normalizedProfile = normalizeProfilePayload(profileResponse.data);
+        const nextAuthUser = syncCurrentUserName(authUser, normalizedProfile);
+
+        set({
+          currentUser: nextAuthUser,
+          currentProfile: normalizedProfile,
+        });
+
+        if (nextAuthUser) {
+          localStorage.setItem('authUser', JSON.stringify(nextAuthUser));
+        }
       } catch {
         set({ currentProfile: null });
       }
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Login failed'));
+      throw new Error(getApiErrorMessage(error, 'Login failed'));
     }
   },
 
   register: async (email: string, password: string, name: string, role: 'user' | 'candidate' | 'hr' | 'employer') => {
     const normalizedRole = normalizeRole(role);
+    const { firstName, lastName } = splitName(name);
 
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         email,
         password,
-        name,
         role: mapRoleToRegisterPayload(normalizedRole),
+        firstName,
+        lastName,
       };
+
+      if (isCandidateRole(normalizedRole)) {
+        payload.candidateProfile = {};
+      }
+
+      if (isHrRole(normalizedRole)) {
+        payload.employerProfile = {
+          companyName: name.trim() || 'New Company',
+          hrEmail: email,
+        };
+      }
 
       const response = await api.post('/auth/register', payload);
       if (response.data?.ok === false) {
         throw new Error('Registration failed');
       }
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Registration failed'));
+      throw new Error(getApiErrorMessage(error, 'Registration failed'));
     }
   },
 
@@ -277,12 +372,22 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
       try {
         const profileResponse = await api.get('/profile/me');
-        set({ currentProfile: profileResponse.data });
+        const normalizedProfile = normalizeProfilePayload(profileResponse.data);
+        const nextAuthUser = syncCurrentUserName(authUser, normalizedProfile);
+
+        set({
+          currentUser: nextAuthUser,
+          currentProfile: normalizedProfile,
+        });
+
+        if (nextAuthUser) {
+          localStorage.setItem('authUser', JSON.stringify(nextAuthUser));
+        }
       } catch {
         set({ currentProfile: null });
       }
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Email verification failed'));
+      throw new Error(getApiErrorMessage(error, 'Email verification failed'));
     }
   },
 
@@ -293,7 +398,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         throw new Error('Failed to request password reset');
       }
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Failed to request password reset'));
+      throw new Error(getApiErrorMessage(error, 'Failed to request password reset'));
     }
   },
 
@@ -304,7 +409,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         throw new Error('Password reset failed');
       }
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Password reset failed'));
+      throw new Error(getApiErrorMessage(error, 'Password reset failed'));
     }
   },
 
@@ -331,7 +436,17 @@ export const useUserStore = create<UserStore>((set, get) => ({
   loadProfile: async () => {
     try {
       const response = await api.get('/profile/me');
-      set({ currentProfile: response.data });
+      const normalizedProfile = normalizeProfilePayload(response.data);
+      const nextAuthUser = syncCurrentUserName(get().currentUser, normalizedProfile);
+
+      set({
+        currentUser: nextAuthUser,
+        currentProfile: normalizedProfile,
+      });
+
+      if (nextAuthUser) {
+        localStorage.setItem('authUser', JSON.stringify(nextAuthUser));
+      }
     } catch {
       set({ currentProfile: null });
     }
@@ -339,37 +454,39 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   updateProfile: async (_userId: string, data: Partial<User>) => {
     try {
-      const profileData: Record<string, unknown> = {};
-
-      const fields = [
-        'firstName',
-        'lastName',
-        'bio',
-        'city',
-        'country',
-        'university',
-        'faculty',
-        'major',
-        'graduationYear',
-        'githubUrl',
-        'linkedinUrl',
-        'portfolioUrl',
-        'companyName',
-        'position',
-        'companyWebsite',
-        'aboutCompany',
-      ] as const;
-
-      for (const field of fields) {
-        if (field in data) {
-          profileData[field] = (data as Record<string, unknown>)[field];
-        }
+      const currentUser = get().currentUser;
+      if (!currentUser) {
+        throw new Error('Please sign in again');
       }
 
-      const response = await api.patch('/profile/me', profileData);
-      set({ currentProfile: response.data });
+      if (isCandidateRole(currentUser.role)) {
+        const candidatePayload: Record<string, unknown> = {
+          city: (data as Record<string, unknown>).city,
+          country: (data as Record<string, unknown>).country,
+          about: (data as Record<string, unknown>).bio,
+          desiredRole: (data as Record<string, unknown>).major,
+          graduationYear: (data as Record<string, unknown>).graduationYear,
+        };
+
+        await api.patch('/profile/candidate/me', candidatePayload);
+      } else if (isHrRole(currentUser.role)) {
+        const employerPayload: Record<string, unknown> = {
+          companyName: (data as Record<string, unknown>).companyName,
+          companyWebsite: (data as Record<string, unknown>).companyWebsite,
+          companyCity: (data as Record<string, unknown>).city,
+          companyCountry: (data as Record<string, unknown>).country,
+          companyDescription: (data as Record<string, unknown>).aboutCompany,
+          jobTitle: (data as Record<string, unknown>).position,
+          hrEmail: currentUser.email,
+          companyContactEmail: currentUser.email,
+        };
+
+        await api.patch('/profile/employer/me', employerPayload);
+      }
+
+      await get().loadProfile();
     } catch (error) {
-      throw new Error(extractErrorMessage(error, 'Failed to update profile'));
+      throw new Error(getApiErrorMessage(error, 'Failed to update profile'));
     }
   },
 }));
