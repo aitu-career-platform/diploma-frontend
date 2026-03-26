@@ -5,13 +5,25 @@ import { JobFilters } from '@features/job-filters';
 import { JobsList } from '@widgets/jobs-list';
 import { useEffect } from 'react';
 import { useJobStore } from '@entities/job';
+import { useFavoritesStore } from '@entities/favorite';
+import { isCandidateRole, useUserStore } from '@entities/user';
 
 export const JobsPage = () => {
   const { loadJobs } = useJobStore();
+  const { isAuthenticated, currentUser } = useUserStore();
+  const { loadMyFavorites } = useFavoritesStore();
 
   useEffect(() => {
     void loadJobs();
   }, [loadJobs]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isCandidateRole(currentUser?.role)) {
+      return;
+    }
+
+    void loadMyFavorites({ limit: 100 });
+  }, [currentUser?.role, isAuthenticated, loadMyFavorites]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>

@@ -553,6 +553,7 @@ const normalizeVacancy = (payload: unknown): Vacancy => {
     description: asString(pickFirst(raw, ['description'])),
     skills: toStringArray(pickFirst(raw, ['skillTexts', 'skills'])),
     languageIds: toIdArray(pickFirst(raw, ['languages']), ['languageId', 'id', 'value']),
+    favoritesCount: asNumber(pickFirst(raw, ['favoritesCount'])),
     createdAt: asString(pickFirst(raw, ['createdAt', 'created_at'])),
     updatedAt: asString(pickFirst(raw, ['updatedAt', 'updated_at'])),
     publishedAt: asString(pickFirst(raw, ['publishedAt', 'published_at'])),

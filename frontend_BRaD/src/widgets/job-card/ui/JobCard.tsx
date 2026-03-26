@@ -1,10 +1,11 @@
-import { MapPin, Clock, DollarSign, MessageSquare } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Heart, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Job } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
 import { useState } from 'react';
 import { ChatWindow } from '@features/chat';
 import { useMessageStore } from '@entities/message';
+import { useFavoritesStore } from '@entities/favorite';
 
 interface JobCardProps {
   job: Job;
@@ -13,8 +14,12 @@ interface JobCardProps {
 export const JobCard = ({ job }: JobCardProps) => {
   const { currentUser, isAuthenticated } = useUserStore();
   const { getOrCreateConversation } = useMessageStore();
+  const { favoriteIds, countsByVacancyId, toggleFavorite, isMutating } = useFavoritesStore();
   const [showChat, setShowChat] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const isCandidate = isAuthenticated && isCandidateRole(currentUser?.role);
+  const isFavorite = favoriteIds.has(job.id);
+  const favoritesCount = countsByVacancyId[job.id] ?? job.favoritesCount ?? 0;
 
   const handleContact = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -22,6 +27,21 @@ export const JobCard = ({ job }: JobCardProps) => {
       const convId = getOrCreateConversation(currentUser.id, job.employerId);
       setConversationId(convId);
       setShowChat(true);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isCandidate) {
+      return;
+    }
+
+    try {
+      await toggleFavorite(job.id);
+    } catch {
+      // Page-level surfaces already render readable API errors where needed.
     }
   };
 
@@ -72,23 +92,40 @@ export const JobCard = ({ job }: JobCardProps) => {
                 </div>
               </div>
             </div>
-            {isAuthenticated && isCandidateRole(currentUser?.role) && (
-              <button
-                onClick={handleContact}
-                className="p-2 rounded-lg transition-colors"
-                style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#333A2F';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#EBEDDF';
-                  e.currentTarget.style.color = '#333A2F';
-                }}
-                title="Contact employer"
-              >
-                <MessageSquare className="w-5 h-5" />
-              </button>
+            {isCandidate && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isMutating}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: isFavorite ? '#333A2F' : '#EBEDDF',
+                    color: isFavorite ? 'white' : '#333A2F',
+                  }}
+                  title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+                >
+                  <Heart
+                    className="w-5 h-5"
+                    style={{ fill: isFavorite ? 'currentColor' : 'transparent' }}
+                  />
+                </button>
+                <button
+                  onClick={handleContact}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#333A2F';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#EBEDDF';
+                    e.currentTarget.style.color = '#333A2F';
+                  }}
+                  title="Contact employer"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -113,7 +150,10 @@ export const JobCard = ({ job }: JobCardProps) => {
 
           <div className="flex items-center justify-between text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
             <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
-            <span>{job.applicationsCount} applications</span>
+            <div className="flex items-center gap-3">
+              <span>{job.applicationsCount} applications</span>
+              <span>{favoritesCount} saved</span>
+            </div>
           </div>
         </div>
       </Link>

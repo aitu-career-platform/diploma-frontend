@@ -232,6 +232,37 @@ const getString = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
 };
 
+const getBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  return undefined;
+};
+
+const pickFirstDefined = (
+  sources: Array<Record<string, unknown>>,
+  keys: string[],
+): unknown => {
+  for (const source of sources) {
+    for (const key of keys) {
+      if (source[key] !== undefined) {
+        return source[key];
+      }
+    }
+  }
+
+  return undefined;
+};
+
 const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | null => {
   if (!isRecord(payload)) {
     return null;
@@ -240,6 +271,12 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
   const user = isRecord(payload.user) ? payload.user : {};
   const candidateProfile = isRecord(payload.candidateProfile) ? payload.candidateProfile : {};
   const employerProfile = isRecord(payload.employerProfile) ? payload.employerProfile : {};
+  const notificationSettings = isRecord(payload.notificationSettings)
+    ? payload.notificationSettings
+    : isRecord(payload.notifications)
+      ? payload.notifications
+      : {};
+  const telegramSources = [payload, user, candidateProfile, employerProfile, notificationSettings];
 
   return {
     role: payload.role,
@@ -262,9 +299,35 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     companyContactPhone: employerProfile.companyContactPhone,
     hrEmail: employerProfile.hrEmail,
     hrPhone: employerProfile.hrPhone,
+    telegramChatId:
+      getString(
+        pickFirstDefined(telegramSources, ['telegramChatId', 'telegram_chat_id', 'chatId']),
+      ) || null,
+    telegramNotificationsEnabled:
+      getBoolean(
+        pickFirstDefined(telegramSources, [
+          'telegramNotificationsEnabled',
+          'telegram_notifications_enabled',
+        ]),
+      ) ?? false,
+    telegramNotifyInvites:
+      getBoolean(
+        pickFirstDefined(telegramSources, [
+          'telegramNotifyInvites',
+          'telegram_notify_invites',
+        ]),
+      ) ?? true,
+    telegramNotifyApplications:
+      getBoolean(
+        pickFirstDefined(telegramSources, [
+          'telegramNotifyApplications',
+          'telegram_notify_applications',
+        ]),
+      ) ?? true,
     user,
     candidateProfile,
     employerProfile,
+    notificationSettings,
   };
 };
 

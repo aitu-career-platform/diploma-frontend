@@ -187,6 +187,7 @@ const toJob = (value: unknown): Job | null => {
   const specializations = fromArray(value.specializations);
   const applications = fromArray(value.applications);
   const appCountFromCount = isRecord(value._count) ? asNumber(value._count.applications) : null;
+  const favoritesCountFromCount = isRecord(value._count) ? asNumber(value._count.favorites) : null;
 
   const skills = unique(
     skillTexts
@@ -223,6 +224,7 @@ const toJob = (value: unknown): Job | null => {
     status,
     postedAt: asString(value.publishedAt) || asString(value.createdAt) || new Date().toISOString(),
     applicationsCount: appCountFromCount ?? applications.length,
+    favoritesCount: favoritesCountFromCount ?? asNumber(value.favoritesCount) ?? undefined,
     employerId: asString(value.authorId) || asString(value.companyId) || 'employer',
   };
 };

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Edit, Plus, Send, Trash2 } from 'lucide-react';
+import { Briefcase, Edit, Heart, Plus, Send, Trash2, Users } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import { isEmployerRole, useUserStore } from '@entities/user';
 import { useVacancyStore, type Vacancy, type VacancyWorkflowStep } from '@entities/vacancy';
+import { useFavoritesStore } from '@entities/favorite';
+import { useInviteStore } from '@entities/invite';
 
 type VacancyWizardData = {
   basic: {
@@ -280,8 +282,31 @@ const statusTitle = (status: string): string => {
   return 'Draft';
 };
 
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '—';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  return date.toLocaleString();
+};
+
+const getCandidateName = (candidate: {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+} | null | undefined): string => {
+  const fullName = `${candidate?.firstName || ''} ${candidate?.lastName || ''}`.trim();
+  return fullName || candidate?.email || 'Candidate';
+};
+
 export const EmployerPage = () => {
   const { currentUser } = useUserStore();
+  const { countsByVacancyId, loadFavoritesCount } = useFavoritesStore();
   const {
     vacancies,
     currentVacancy,
@@ -300,12 +325,27 @@ export const EmployerPage = () => {
     archiveVacancy,
     clearCurrent,
   } = useVacancyStore();
+  const {
+    suggestedCandidates,
+    hrInvites,
+    suggestionVacancy,
+    isLoading: invitesLoading,
+    isMutating: invitesMutating,
+    loadSuggestedCandidates,
+    sendInvite,
+    loadHrInvites,
+  } = useInviteStore();
 
   const [showWizard, setShowWizard] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [wizardError, setWizardError] = useState<string | null>(null);
   const [wizardSuccess, setWizardSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<VacancyWizardData>(() => cloneEmptyWizardData());
+  const [selectedVacancyId, setSelectedVacancyId] = useState('');
+  const [inviteMessage, setInviteMessage] = useState(
+    'Ваш опыт подходит под вакансию. Будем рады обсудить детали на интервью.',
+  );
+  const [interviewAt, setInterviewAt] = useState('');
 
   const activeStep = vacancySteps[activeStepIndex];
   const isLastStep = activeStepIndex === vacancySteps.length - 1;
@@ -313,7 +353,8 @@ export const EmployerPage = () => {
   useEffect(() => {
     void loadDictionaries();
     void loadMyVacancies();
-  }, [loadDictionaries, loadMyVacancies]);
+    void loadHrInvites({ limit: 20, offset: 0 });
+  }, [loadDictionaries, loadHrInvites, loadMyVacancies]);
 
   useEffect(() => {
     if (!currentVacancy) {
@@ -330,6 +371,24 @@ export const EmployerPage = () => {
       return bDate - aDate;
     });
   }, [vacancies]);
+
+  useEffect(() => {
+    if (!sortedVacancies.length) {
+      return;
+    }
+
+    setSelectedVacancyId((current) => current || sortedVacancies[0].id);
+  }, [sortedVacancies]);
+
+  useEffect(() => {
+    if (!sortedVacancies.length) {
+      return;
+    }
+
+    void Promise.allSettled(
+      sortedVacancies.map((vacancy) => loadFavoritesCount(vacancy.id)),
+    );
+  }, [loadFavoritesCount, sortedVacancies]);
 
   const cityLabelById = useMemo(() => {
     const map = new Map<string, string>();
@@ -481,6 +540,55 @@ export const EmployerPage = () => {
         archiveError instanceof Error
           ? archiveError.message
           : 'Failed to archive vacancy',
+      );
+    }
+  };
+
+  const handleRefreshMatching = async (vacancyId = selectedVacancyId) => {
+    if (!vacancyId) {
+      setWizardError('Choose a vacancy first');
+      return;
+    }
+
+    setWizardError(null);
+    setWizardSuccess(null);
+
+    try {
+      await Promise.all([
+        loadSuggestedCandidates(vacancyId, 20, 0),
+        loadHrInvites({ vacancyId, limit: 20, offset: 0 }),
+      ]);
+      setWizardSuccess('Candidate suggestions refreshed');
+    } catch (loadingError) {
+      setWizardError(
+        loadingError instanceof Error
+          ? loadingError.message
+          : 'Failed to load candidate suggestions',
+      );
+    }
+  };
+
+  const handleSendInvite = async (candidateId: string) => {
+    if (!selectedVacancyId) {
+      setWizardError('Choose a vacancy first');
+      return;
+    }
+
+    setWizardError(null);
+    setWizardSuccess(null);
+
+    try {
+      await sendInvite({
+        vacancyId: selectedVacancyId,
+        candidateId,
+        message: inviteMessage,
+        interviewAt: interviewAt || undefined,
+      });
+      await loadHrInvites({ vacancyId: selectedVacancyId, limit: 20, offset: 0 });
+      setWizardSuccess('Invite sent successfully');
+    } catch (inviteError) {
+      setWizardError(
+        inviteError instanceof Error ? inviteError.message : 'Failed to send invite',
       );
     }
   };
@@ -1244,12 +1352,26 @@ export const EmployerPage = () => {
                       <p className="text-sm mb-1" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                         Experience: {vacancy.experienceLevel ? formatEnumLabel(vacancy.experienceLevel) : '—'}
                       </p>
-                      <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                        Updated: {formatDate(vacancy.updatedAt || vacancy.createdAt)}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                        <span>Updated: {formatDate(vacancy.updatedAt || vacancy.createdAt)}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Heart className="w-3.5 h-3.5" />
+                          {countsByVacancyId[vacancy.id] ?? vacancy.favoritesCount ?? 0} saved
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
+                      <button
+                        className="px-3 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium"
+                        onClick={() => {
+                          setSelectedVacancyId(vacancy.id);
+                          void handleRefreshMatching(vacancy.id);
+                        }}
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'transparent' }}
+                      >
+                        Find candidates
+                      </button>
                       <button
                         className="p-2 rounded-lg border-2 transition-all duration-200"
                         onClick={() => void handleEdit(vacancy.id)}
@@ -1271,6 +1393,210 @@ export const EmployerPage = () => {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr] mt-8">
+          <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                  Candidate Matching
+                </h2>
+                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                  Suggestions from `/invites/suggest-candidates` with score and existing invite state.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => void handleRefreshMatching()}
+                disabled={invitesLoading || !selectedVacancyId}
+                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+              >
+                Refresh matches
+              </Button>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[0.9fr,1.1fr] mb-6">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  Vacancy
+                </label>
+                <select
+                  value={selectedVacancyId}
+                  onChange={(event) => setSelectedVacancyId(event.target.value)}
+                  className="w-full rounded-xl border px-4 py-3 text-sm"
+                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                >
+                  <option value="">Choose vacancy</option>
+                  {sortedVacancies.map((vacancy) => (
+                    <option key={vacancy.id} value={vacancy.id}>
+                      {vacancy.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  Interview date and time
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={interviewAt}
+                  onChange={(event) => setInterviewAt(event.target.value)}
+                  className="h-12"
+                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                Invite message
+              </label>
+              <Textarea
+                value={inviteMessage}
+                onChange={(event) => setInviteMessage(event.target.value)}
+                rows={4}
+                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+              />
+            </div>
+
+            {suggestionVacancy?.title && (
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
+                <Users className="w-3.5 h-3.5" />
+                Matching against: {suggestionVacancy.title}
+              </div>
+            )}
+
+            {invitesLoading && suggestedCandidates.length === 0 ? (
+              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading suggested candidates...</p>
+            ) : suggestedCandidates.length === 0 ? (
+              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                Choose a vacancy and click refresh to see candidate suggestions.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {suggestedCandidates.map((item) => (
+                  <div key={item.candidate.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          <h3 className="font-semibold" style={{ color: '#333A2F' }}>
+                            {getCandidateName(item.candidate)}
+                          </h3>
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                            Score {item.matching.score}
+                          </span>
+                          {item.existingInvite?.status && (
+                            <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#333A2F', color: 'white' }}>
+                              Existing invite: {item.existingInvite.status}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm mb-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          {item.candidate.profile?.desiredRole || item.candidate.email || 'Candidate profile'}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {(item.candidate.profile?.skills || []).slice(0, 6).map((skill) => (
+                            <span key={`${item.candidate.id}-${skill}`} className="rounded-lg px-3 py-1 text-xs font-medium" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                          <span>City: {item.candidate.profile?.city || '—'}</span>
+                          <span>Experience: {item.candidate.profile?.totalExperienceMonths || 0} months</span>
+                          <span>Skill matches: {item.matching.skillMatchCount}</span>
+                        </div>
+                        <ul className="space-y-1">
+                          {item.matching.reasons.map((reason) => (
+                            <li key={`${item.candidate.id}-${reason}`} className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                              • {reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="lg:w-[180px]">
+                        <Button
+                          variant="hero"
+                          className="w-full"
+                          onClick={() => void handleSendInvite(item.candidate.id)}
+                          disabled={invitesMutating || !selectedVacancyId}
+                          style={{ backgroundColor: '#333A2F', color: 'white' }}
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          Send invite
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                  Invite History
+                </h2>
+                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                  Latest HR invites from `/invites/hr`.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void loadHrInvites({ vacancyId: selectedVacancyId || undefined, limit: 20, offset: 0 })}
+                disabled={invitesLoading}
+                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+              >
+                Refresh
+              </Button>
+            </div>
+
+            {invitesLoading && hrInvites.length === 0 ? (
+              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading invite history...</p>
+            ) : hrInvites.length === 0 ? (
+              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                No invites sent yet for the selected scope.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {hrInvites.map((invite) => (
+                  <div key={invite.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold" style={{ color: '#333A2F' }}>
+                          {invite.vacancy?.title || 'Vacancy'}
+                        </p>
+                        <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          {getCandidateName(invite.candidate)}
+                        </p>
+                      </div>
+                      <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                        {invite.status}
+                      </span>
+                    </div>
+
+                    {invite.message && (
+                      <p className="mt-3 text-sm leading-relaxed" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                        {invite.message}
+                      </p>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                      <span>Created: {formatDateTime(invite.createdAt)}</span>
+                      <span>Interview: {formatDateTime(invite.interviewAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
     </div>

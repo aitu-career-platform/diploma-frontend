@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, DollarSign, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, DollarSign, Heart, MessageSquare } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Textarea } from '@shared/ui';
 import { useJobStore } from '@entities/job';
@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { ChatWindow } from '@features/chat';
 import { useMessageStore } from '@entities/message';
 import { useApplicationStore } from '@entities/application';
+import { useFavoritesStore } from '@entities/favorite';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,11 +16,19 @@ export const JobDetailPage = () => {
   const { currentUser, isAuthenticated } = useUserStore();
   const { getOrCreateConversation } = useMessageStore();
   const { applyToVacancy, isMutating } = useApplicationStore();
+  const {
+    favoriteIds,
+    countsByVacancyId,
+    loadMyFavorites,
+    toggleFavorite,
+    isMutating: isFavoriteMutating,
+  } = useFavoritesStore();
   const [showChat, setShowChat] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState('');
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (jobs.length === 0) {
@@ -27,7 +36,18 @@ export const JobDetailPage = () => {
     }
   }, [jobs.length, loadJobs]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !isCandidateRole(currentUser?.role)) {
+      return;
+    }
+
+    void loadMyFavorites({ limit: 100 });
+  }, [currentUser?.role, isAuthenticated, loadMyFavorites]);
+
   const job = jobs.find((j) => j.id === id);
+  const isCandidate = isAuthenticated && isCandidateRole(currentUser?.role);
+  const isFavorite = job ? favoriteIds.has(job.id) : false;
+  const favoritesCount = job ? countsByVacancyId[job.id] ?? job.favoritesCount ?? 0 : 0;
 
   const handleApply = async () => {
     if (!job) {
@@ -43,6 +63,20 @@ export const JobDetailPage = () => {
       setCoverLetter('');
     } catch (error) {
       setApplyError(error instanceof Error ? error.message : 'Failed to submit application');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!job || !isCandidate) {
+      return;
+    }
+
+    setFavoriteError(null);
+
+    try {
+      await toggleFavorite(job.id);
+    } catch (error) {
+      setFavoriteError(error instanceof Error ? error.message : 'Failed to update favorites');
     }
   };
 
@@ -159,11 +193,30 @@ export const JobDetailPage = () => {
                   <div className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                     <p>Posted {new Date(job.postedAt).toLocaleDateString()}</p>
                     <p>{job.applicationsCount} applications</p>
+                    <p>{favoritesCount} saved by candidates</p>
                   </div>
 
-                  {isAuthenticated && isCandidateRole(currentUser?.role) ? (
+                  {isCandidate ? (
                     <>
                       <div className="space-y-3">
+                        <Button
+                          variant={isFavorite ? 'default' : 'outline'}
+                          size="lg"
+                          className="w-full"
+                          onClick={() => void handleToggleFavorite()}
+                          disabled={isFavoriteMutating}
+                          style={
+                            isFavorite
+                              ? { backgroundColor: '#333A2F', color: 'white' }
+                              : { borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }
+                          }
+                        >
+                          <Heart
+                            className="w-4 h-4"
+                            style={{ fill: isFavorite ? 'currentColor' : 'transparent' }}
+                          />
+                          {isFavorite ? 'Saved in favorites' : 'Save to favorites'}
+                        </Button>
                         <Textarea
                           value={coverLetter}
                           onChange={(event) => setCoverLetter(event.target.value)}
@@ -193,6 +246,11 @@ export const JobDetailPage = () => {
                             <Link to="/app/applications" className="underline">
                               Open applications
                             </Link>
+                          </div>
+                        )}
+                        {favoriteError && (
+                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c' }}>
+                            {favoriteError}
                           </div>
                         )}
                       </div>

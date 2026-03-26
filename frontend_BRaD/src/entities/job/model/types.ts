@@ -15,6 +15,7 @@ export interface Job {
   status: JobStatus;
   postedAt: string;
   applicationsCount: number;
+  favoritesCount?: number;
   employerId: string;
 }
 
@@ -26,4 +27,3 @@ export interface JobFilters {
   salaryMin?: number;
   salaryMax?: number;
 }
-

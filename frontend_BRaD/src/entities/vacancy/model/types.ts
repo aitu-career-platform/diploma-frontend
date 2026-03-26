@@ -65,6 +65,7 @@ export interface Vacancy {
   description?: string;
   skills: string[];
   languageIds: string[];
+  favoritesCount?: number;
   createdAt?: string;
   updatedAt?: string;
   publishedAt?: string;

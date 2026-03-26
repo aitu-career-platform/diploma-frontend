@@ -1,15 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
+import { Bell, User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
 import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNotificationsStore } from '@entities/notification';
 import '../../../pages/landing/ui/landing.css';
 
 export const AppHeader = () => {
   const { currentUser, isAuthenticated, logout } = useUserStore();
+  const { meta, loadNotifications } = useNotificationsStore();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
+  const unreadCount = meta.unread;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    void loadNotifications({ limit: 10, offset: 0 });
+  }, [isAuthenticated, loadNotifications]);
 
   const handleLogout = async () => {
     await logout();
@@ -52,6 +63,17 @@ export const AppHeader = () => {
         <div className="navbar-actions">
           {isAuthenticated ? (
             <>
+              <Link to="/app/profile#notifications" className="nav-btn nav-btn-ghost hidden sm:inline-flex relative">
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold flex items-center justify-center"
+                    style={{ backgroundColor: '#dc2626', color: 'white' }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               <Link to="/app/chat" className="nav-btn nav-btn-ghost hidden sm:inline-block">
                 <MessageSquare className="w-4 h-4" />
               </Link>
@@ -132,6 +154,14 @@ export const AppHeader = () => {
                   className="nav-link"
                 >
                   Profile
+                </Link>
+                <Link
+                  to="/app/profile#notifications"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="nav-link"
+                >
+                  Notifications
+                  {unreadCount > 0 ? ` (${unreadCount})` : ''}
                 </Link>
                 <Link
                   to="/app/chat"
