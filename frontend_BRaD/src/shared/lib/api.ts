@@ -1,7 +1,11 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'https://diploma-backend-0l08.onrender.com/api/v1';
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' &&
+  !['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? '/api'
+    : 'https://diploma-backend-0l08.onrender.com/api/v1');
 
 type StoredAuthUser = {
   id?: string;

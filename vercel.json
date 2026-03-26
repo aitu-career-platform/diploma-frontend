@@ -1,0 +1,15 @@
+{
+  "buildCommand": "cd frontend_BRaD && npm install && npm run build",
+  "outputDirectory": "frontend_BRaD/dist",
+  "installCommand": "cd frontend_BRaD && npm install",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://diploma-backend-0l08.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
