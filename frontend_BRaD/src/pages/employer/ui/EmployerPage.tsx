@@ -740,11 +740,19 @@ export const EmployerPage = () => {
                       Specializations
                     </label>
                     {dictionaries.specializations.length === 0 ? (
-                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                        {isDictionariesLoading
-                          ? 'Loading specializations...'
-                          : 'Specializations are unavailable. Reload page or check backend dictionaries API.'}
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          {isDictionariesLoading
+                            ? 'Loading specializations...'
+                            : 'No specializations are available from backend dictionaries.'}
+                        </p>
+                        {!isDictionariesLoading && (
+                          <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                            HR cannot create the first vacancy until an admin adds at least one specialization in backend.
+                            {error ? ` Backend says: ${error}` : ''}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {dictionaries.specializations.map((option) => {

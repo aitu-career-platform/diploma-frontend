@@ -21,21 +21,19 @@ import { useInviteStore } from '@entities/invite';
 import { useNotificationsStore, type AppNotification } from '@entities/notification';
 
 interface ProfileFormValues {
-  firstName: string;
-  lastName: string;
   bio: string;
   city: string;
   country: string;
-  university: string;
-  major: string;
+  dateOfBirth: string;
+  desiredRole: string;
+  desiredSalary: string;
   graduationYear: string;
-  githubUrl: string;
-  linkedinUrl: string;
-  portfolioUrl: string;
   companyName: string;
   position: string;
   companyWebsite: string;
   aboutCompany: string;
+  companyContactPhone: string;
+  hrPhone: string;
 }
 
 const cardStyle = {
@@ -65,21 +63,22 @@ const getBoolean = (value: unknown, fallback = false): boolean => {
 
 const buildInitialValues = (profile: Record<string, unknown> | null): ProfileFormValues => {
   return {
-    firstName: getString(profile?.firstName),
-    lastName: getString(profile?.lastName),
     bio: getString(profile?.bio),
     city: getString(profile?.city),
     country: getString(profile?.country),
-    university: getString(profile?.university),
-    major: getString(profile?.major),
+    dateOfBirth: getString(profile?.dateOfBirth),
+    desiredRole: getString(profile?.desiredRole),
+    desiredSalary:
+      profile?.desiredSalary === null || profile?.desiredSalary === undefined
+        ? ''
+        : String(profile.desiredSalary),
     graduationYear: profile?.graduationYear ? String(profile.graduationYear) : '',
-    githubUrl: getString(profile?.githubUrl),
-    linkedinUrl: getString(profile?.linkedinUrl),
-    portfolioUrl: getString(profile?.portfolioUrl),
     companyName: getString(profile?.companyName),
     position: getString(profile?.position),
     companyWebsite: getString(profile?.companyWebsite),
     aboutCompany: getString(profile?.aboutCompany),
+    companyContactPhone: getString(profile?.companyContactPhone),
+    hrPhone: getString(profile?.hrPhone),
   };
 };
 
@@ -154,6 +153,9 @@ export const ProfilePage = () => {
   const [activitySuccess, setActivitySuccess] = useState<string | null>(null);
 
   const profile = (currentProfile as Record<string, unknown> | null) || null;
+  const currentUserId = currentUser?.id || null;
+  const currentUserRole = currentUser?.role || null;
+  const isMockUser = currentUser?.isMock === true;
 
   const {
     register,
@@ -165,7 +167,7 @@ export const ProfilePage = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!currentUser) {
+      if (!currentUserId) {
         setIsLoading(false);
         return;
       }
@@ -178,7 +180,7 @@ export const ProfilePage = () => {
     };
 
     void load();
-  }, [currentUser, loadProfile]);
+  }, [currentUserId, loadProfile]);
 
   useEffect(() => {
     reset(buildInitialValues(profile));
@@ -201,14 +203,14 @@ export const ProfilePage = () => {
   ]);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUserId || !currentUserRole || isMockUser) {
       return;
     }
 
     const loadSections = async () => {
       const tasks: Array<Promise<unknown>> = [loadNotifications({ limit: 20, offset: 0 })];
 
-      if (isCandidateRole(currentUser.role)) {
+      if (isCandidateRole(currentUserRole)) {
         tasks.push(loadMyFavorites({ limit: 100 }));
         tasks.push(loadMyInvites({ limit: 20, offset: 0 }));
       }
@@ -218,9 +220,9 @@ export const ProfilePage = () => {
 
     void loadSections();
   }, [
-    currentUser,
-    currentUser?.id,
-    currentUser?.role,
+    currentUserId,
+    currentUserRole,
+    isMockUser,
     loadMyFavorites,
     loadMyInvites,
     loadNotifications,
@@ -254,12 +256,9 @@ export const ProfilePage = () => {
     }
 
     const payload: Record<string, unknown> = {
-      firstName: data.firstName,
-      lastName: data.lastName,
       bio: data.bio,
       city: data.city,
       country: data.country,
-      linkedinUrl: data.linkedinUrl,
     };
 
     if (isHr) {
@@ -267,12 +266,13 @@ export const ProfilePage = () => {
       payload.position = data.position;
       payload.companyWebsite = data.companyWebsite;
       payload.aboutCompany = data.aboutCompany;
+      payload.companyContactPhone = data.companyContactPhone;
+      payload.hrPhone = data.hrPhone;
     } else {
-      payload.university = data.university;
-      payload.major = data.major;
+      payload.dateOfBirth = data.dateOfBirth || undefined;
+      payload.desiredRole = data.desiredRole;
+      payload.desiredSalary = data.desiredSalary ? Number(data.desiredSalary) : undefined;
       payload.graduationYear = data.graduationYear ? Number(data.graduationYear) : undefined;
-      payload.githubUrl = data.githubUrl;
-      payload.portfolioUrl = data.portfolioUrl;
     }
 
     setError(null);
@@ -280,7 +280,6 @@ export const ProfilePage = () => {
 
     try {
       await updateProfile(currentUser.id, payload as never);
-      await loadProfile();
       setIsEditing(false);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to update profile');
@@ -444,21 +443,6 @@ export const ProfilePage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      First Name
-                    </label>
-                    <Input {...register('firstName')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Last Name
-                    </label>
-                    <Input {...register('lastName')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
                       City
                     </label>
                     <Input {...register('city')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
@@ -476,13 +460,6 @@ export const ProfilePage = () => {
                     Bio
                   </label>
                   <Textarea {...register('bio')} rows={4} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                    LinkedIn URL
-                  </label>
-                  <Input {...register('linkedinUrl')} type="url" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
                 </div>
 
                 {isHr ? (
@@ -515,43 +492,52 @@ export const ProfilePage = () => {
                       </label>
                       <Textarea {...register('aboutCompany')} rows={4} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                          Company contact phone
+                        </label>
+                        <Input {...register('companyContactPhone')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                          HR phone
+                        </label>
+                        <Input {...register('hrPhone')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                          University
+                          Desired role
                         </label>
-                        <Input {...register('university')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('desiredRole')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                          Major
+                          Desired salary
                         </label>
-                        <Input {...register('major')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('desiredSalary')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Graduation Year
-                      </label>
-                      <Input {...register('graduationYear')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        GitHub URL
-                      </label>
-                      <Input {...register('githubUrl')} type="url" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Portfolio URL
-                      </label>
-                      <Input {...register('portfolioUrl')} type="url" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                          Graduation Year
+                        </label>
+                        <Input {...register('graduationYear')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                          Date of birth
+                        </label>
+                        <Input {...register('dateOfBirth')} type="date" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      </div>
                     </div>
                   </>
                 )}
@@ -591,23 +577,29 @@ export const ProfilePage = () => {
                       </div>
                     )}
 
-                    {(getString(profile?.companyWebsite) || getString(profile?.linkedinUrl)) && (
+                    {(getString(profile?.companyWebsite) || getString(profile?.companyContactPhone) || getString(profile?.hrPhone)) && (
                       <div>
                         <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
-                          Links
+                          Contacts
                         </h2>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                           {getString(profile?.companyWebsite) && (
                             <a href={getString(profile?.companyWebsite)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
                               <Globe className="w-4 h-4" />
                               <span>Company website</span>
                             </a>
                           )}
-                          {getString(profile?.linkedinUrl) && (
-                            <a href={getString(profile?.linkedinUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
-                              <Globe className="w-4 h-4" />
-                              <span>LinkedIn</span>
-                            </a>
+                          {getString(profile?.companyContactPhone) && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              <span>Company phone: {getString(profile?.companyContactPhone)}</span>
+                            </div>
+                          )}
+                          {getString(profile?.hrPhone) && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              <span>HR phone: {getString(profile?.hrPhone)}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -615,41 +607,24 @@ export const ProfilePage = () => {
                   </>
                 ) : (
                   <>
-                    {(getString(profile?.university) || getString(profile?.major)) && (
+                    {(getString(profile?.desiredRole) || profile?.desiredSalary || profile?.graduationYear || getString(profile?.dateOfBirth)) && (
                       <div>
                         <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
-                          Education
+                          Career Preferences
                         </h2>
-                        <div className="flex items-center gap-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <div className="flex items-center gap-2 mb-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                           <Briefcase className="w-4 h-4" />
-                          <span>{[getString(profile?.university), getString(profile?.major), profile?.graduationYear ? String(profile.graduationYear) : ''].filter(Boolean).join(', ')}</span>
+                          <span>{getString(profile?.desiredRole) || 'Desired role not set'}</span>
                         </div>
-                      </div>
-                    )}
-
-                    {(getString(profile?.githubUrl) || getString(profile?.linkedinUrl) || getString(profile?.portfolioUrl)) && (
-                      <div>
-                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
-                          Links
-                        </h2>
-                        <div className="flex flex-col gap-2">
-                          {getString(profile?.githubUrl) && (
-                            <a href={getString(profile?.githubUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
-                              <Globe className="w-4 h-4" />
-                              <span>GitHub</span>
-                            </a>
+                        <div className="space-y-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          {profile?.desiredSalary !== undefined && profile?.desiredSalary !== null && (
+                            <p>Desired salary: {String(profile.desiredSalary)}</p>
                           )}
-                          {getString(profile?.linkedinUrl) && (
-                            <a href={getString(profile?.linkedinUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
-                              <Globe className="w-4 h-4" />
-                              <span>LinkedIn</span>
-                            </a>
+                          {profile?.graduationYear !== undefined && profile?.graduationYear !== null && (
+                            <p>Graduation year: {String(profile.graduationYear)}</p>
                           )}
-                          {getString(profile?.portfolioUrl) && (
-                            <a href={getString(profile?.portfolioUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
-                              <Globe className="w-4 h-4" />
-                              <span>Portfolio</span>
-                            </a>
+                          {getString(profile?.dateOfBirth) && (
+                            <p>Date of birth: {getString(profile?.dateOfBirth).slice(0, 10)}</p>
                           )}
                         </div>
                       </div>

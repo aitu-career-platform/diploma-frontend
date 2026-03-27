@@ -25,4 +25,5 @@ export interface AuthUser {
   avatar?: string;
   accessToken?: string;
   refreshToken?: string;
+  isMock?: boolean;
 }

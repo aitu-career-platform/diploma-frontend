@@ -31,7 +31,8 @@ export const LoginPage = () => {
     try {
       setError(null);
       await login(data.email, data.password);
-      navigate('/app');
+      const nextUser = useUserStore.getState().currentUser;
+      navigate(nextUser?.role === 'admin' ? '/app/admin' : '/app');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials');
     }
@@ -132,6 +133,9 @@ export const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center">
+            <div className="mb-4 rounded-lg border border-black/5 px-4 py-3 text-left text-sm" style={{ backgroundColor: '#F7F8F1', color: 'rgba(51, 58, 47, 0.75)' }}>
+              Test admin: `admin@mail.ru` / `123456`
+            </div>
             <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
               Don't have an account?{' '}
               <Link to="/app/register" className="hover:underline font-medium" style={{ color: '#333A2F' }}>
@@ -144,4 +148,3 @@ export const LoginPage = () => {
     </div>
   );
 };
-

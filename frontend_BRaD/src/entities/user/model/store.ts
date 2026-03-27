@@ -27,6 +27,28 @@ interface UserStore {
   updateProfile: (_userId: string, data: Partial<User>) => Promise<void>;
 }
 
+const MOCK_ADMIN_EMAIL = 'admin@mail.ru';
+const MOCK_ADMIN_PASSWORD = '123456';
+const MOCK_ADMIN_TOKEN = 'mock-admin-token';
+
+const buildMockAdminProfile = (): Record<string, unknown> => ({
+  role: 'ADMIN',
+  id: 'mock-admin',
+  email: MOCK_ADMIN_EMAIL,
+  firstName: 'Mock',
+  lastName: 'Admin',
+  bio: 'Temporary frontend-only admin account for local testing.',
+});
+
+const buildMockAdminUser = (): AuthUser => ({
+  id: 'mock-admin',
+  email: MOCK_ADMIN_EMAIL,
+  name: 'Mock Admin',
+  role: 'admin',
+  accessToken: MOCK_ADMIN_TOKEN,
+  isMock: true,
+});
+
 const mockUsers: Record<string, User> = {
   rakhat: {
     id: 'rakhat',
@@ -196,7 +218,7 @@ const getStoredAuthUser = (): AuthUser | null => {
   try {
     const parsed = JSON.parse(raw) as AuthUser;
 
-    if (!parsed?.accessToken || !parsed?.id || !parsed?.email) {
+    if ((!parsed?.accessToken && !parsed?.isMock) || !parsed?.id || !parsed?.email) {
       return null;
     }
 
@@ -271,6 +293,7 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
   const user = isRecord(payload.user) ? payload.user : {};
   const candidateProfile = isRecord(payload.candidateProfile) ? payload.candidateProfile : {};
   const employerProfile = isRecord(payload.employerProfile) ? payload.employerProfile : {};
+  const company = isRecord(employerProfile.company) ? employerProfile.company : {};
   const notificationSettings = isRecord(payload.notificationSettings)
     ? payload.notificationSettings
     : isRecord(payload.notifications)
@@ -285,18 +308,19 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     firstName: user.firstName,
     lastName: user.lastName,
     phone: user.phone,
-    city: candidateProfile.city || employerProfile.companyCity,
-    country: candidateProfile.country || employerProfile.companyCountry,
-    bio: candidateProfile.about || employerProfile.companyDescription,
+    city: candidateProfile.city || company.city || employerProfile.companyCity,
+    country: candidateProfile.country || company.country || employerProfile.companyCountry,
+    bio: candidateProfile.about || company.description || employerProfile.companyDescription,
+    dateOfBirth: candidateProfile.dateOfBirth,
     desiredRole: candidateProfile.desiredRole,
     desiredSalary: candidateProfile.desiredSalary,
     graduationYear: candidateProfile.graduationYear,
-    companyName: employerProfile.companyName,
+    companyName: company.name || employerProfile.companyName,
     position: employerProfile.jobTitle,
-    companyWebsite: employerProfile.companyWebsite,
-    aboutCompany: employerProfile.companyDescription,
-    companyContactEmail: employerProfile.companyContactEmail,
-    companyContactPhone: employerProfile.companyContactPhone,
+    companyWebsite: company.website || employerProfile.companyWebsite,
+    aboutCompany: company.description || employerProfile.companyDescription,
+    companyContactEmail: company.contactEmail || employerProfile.companyContactEmail,
+    companyContactPhone: company.contactPhone || employerProfile.companyContactPhone,
     hrEmail: employerProfile.hrEmail,
     hrPhone: employerProfile.hrPhone,
     telegramChatId:
@@ -347,6 +371,10 @@ const syncCurrentUserName = (
     return currentUser;
   }
 
+  if (currentUser.name === name) {
+    return currentUser;
+  }
+
   return {
     ...currentUser,
     name,
@@ -362,6 +390,19 @@ export const useUserStore = create<UserStore>((set, get) => ({
   currentProfile: null,
 
   login: async (email: string, password: string) => {
+    if (email.trim().toLowerCase() === MOCK_ADMIN_EMAIL && password === MOCK_ADMIN_PASSWORD) {
+      const mockAdmin = buildMockAdminUser();
+      const mockProfile = buildMockAdminProfile();
+
+      set({
+        currentUser: mockAdmin,
+        isAuthenticated: true,
+        currentProfile: mockProfile,
+      });
+      localStorage.setItem('authUser', JSON.stringify(mockAdmin));
+      return;
+    }
+
     try {
       const response = await api.post('/auth/login', { email, password });
       const { accessToken, refreshToken } = response.data;
@@ -497,6 +538,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   loadProfile: async () => {
+    if (get().currentUser?.isMock) {
+      set({ currentProfile: buildMockAdminProfile() });
+      return;
+    }
+
     try {
       const response = await api.get('/profile/me');
       const normalizedProfile = normalizeProfilePayload(response.data);
@@ -522,16 +568,51 @@ export const useUserStore = create<UserStore>((set, get) => ({
         throw new Error('Please sign in again');
       }
 
+      if (currentUser.isMock) {
+        const nextProfile: Record<string, unknown> = {
+          ...buildMockAdminProfile(),
+          ...get().currentProfile,
+          ...data,
+        };
+        const nextName = `${getString(nextProfile.firstName)} ${getString(nextProfile.lastName)}`.trim();
+        const nextUser = {
+          ...currentUser,
+          name: nextName || currentUser.name,
+        };
+
+        set({
+          currentUser: nextUser,
+          currentProfile: nextProfile,
+        });
+        localStorage.setItem('authUser', JSON.stringify(nextUser));
+        return;
+      }
+
       if (isCandidateRole(currentUser.role)) {
         const candidatePayload: Record<string, unknown> = {
           city: (data as Record<string, unknown>).city,
           country: (data as Record<string, unknown>).country,
           about: (data as Record<string, unknown>).bio,
-          desiredRole: (data as Record<string, unknown>).major,
+          dateOfBirth: (data as Record<string, unknown>).dateOfBirth,
+          desiredRole:
+            (data as Record<string, unknown>).desiredRole ||
+            (data as Record<string, unknown>).major,
+          desiredSalary: (data as Record<string, unknown>).desiredSalary,
           graduationYear: (data as Record<string, unknown>).graduationYear,
         };
 
-        await api.patch('/profile/candidate/me', candidatePayload);
+        const response = await api.patch('/profile/candidate/me', candidatePayload);
+        const normalizedProfile = normalizeProfilePayload(response.data);
+        const nextAuthUser = syncCurrentUserName(currentUser, normalizedProfile);
+
+        set({
+          currentUser: nextAuthUser,
+          currentProfile: normalizedProfile,
+        });
+
+        if (nextAuthUser) {
+          localStorage.setItem('authUser', JSON.stringify(nextAuthUser));
+        }
       } else if (isHrRole(currentUser.role)) {
         const employerPayload: Record<string, unknown> = {
           companyName: (data as Record<string, unknown>).companyName,
@@ -539,15 +620,26 @@ export const useUserStore = create<UserStore>((set, get) => ({
           companyCity: (data as Record<string, unknown>).city,
           companyCountry: (data as Record<string, unknown>).country,
           companyDescription: (data as Record<string, unknown>).aboutCompany,
+          companyContactPhone: (data as Record<string, unknown>).companyContactPhone,
           jobTitle: (data as Record<string, unknown>).position,
           hrEmail: currentUser.email,
+          hrPhone: (data as Record<string, unknown>).hrPhone,
           companyContactEmail: currentUser.email,
         };
 
-        await api.patch('/profile/employer/me', employerPayload);
-      }
+        const response = await api.patch('/profile/employer/me', employerPayload);
+        const normalizedProfile = normalizeProfilePayload(response.data);
+        const nextAuthUser = syncCurrentUserName(currentUser, normalizedProfile);
 
-      await get().loadProfile();
+        set({
+          currentUser: nextAuthUser,
+          currentProfile: normalizedProfile,
+        });
+
+        if (nextAuthUser) {
+          localStorage.setItem('authUser', JSON.stringify(nextAuthUser));
+        }
+      }
     } catch (error) {
       throw new Error(getApiErrorMessage(error, 'Failed to update profile'));
     }

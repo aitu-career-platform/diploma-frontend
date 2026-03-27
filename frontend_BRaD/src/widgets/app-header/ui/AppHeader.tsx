@@ -12,15 +12,16 @@ export const AppHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
+  const isMockUser = currentUser?.isMock === true;
   const unreadCount = meta.unread;
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isMockUser) {
       return;
     }
 
     void loadNotifications({ limit: 10, offset: 0 });
-  }, [isAuthenticated, loadNotifications]);
+  }, [isAuthenticated, isMockUser, loadNotifications]);
 
   const handleLogout = async () => {
     await logout();
@@ -51,7 +52,7 @@ export const AppHeader = () => {
                   Employer Dashboard
                 </Link>
               )}
-              {(isHr || isAdmin) && (
+              {isAdmin && (
                 <Link to="/app/admin" className="nav-link">
                   Operations
                 </Link>
@@ -179,7 +180,7 @@ export const AppHeader = () => {
                     Employer Dashboard
                   </Link>
                 )}
-                {(isHr || isAdmin) && (
+                {isAdmin && (
                   <Link
                     to="/app/admin"
                     onClick={() => setMobileMenuOpen(false)}

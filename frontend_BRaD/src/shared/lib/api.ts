@@ -14,6 +14,7 @@ type StoredAuthUser = {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
+  isMock?: boolean;
 };
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
