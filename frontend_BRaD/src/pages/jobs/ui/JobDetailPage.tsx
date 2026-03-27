@@ -1,12 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, DollarSign, Heart, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, DollarSign, Heart } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Textarea } from '@shared/ui';
 import { useJobStore } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
 import { useEffect, useState } from 'react';
-import { ChatWindow } from '@features/chat';
-import { useMessageStore } from '@entities/message';
 import { useApplicationStore } from '@entities/application';
 import { useFavoritesStore } from '@entities/favorite';
 
@@ -14,7 +12,6 @@ export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { jobs, isLoading, loadJobs } = useJobStore();
   const { currentUser, isAuthenticated } = useUserStore();
-  const { getOrCreateConversation } = useMessageStore();
   const { applyToVacancy, isMutating } = useApplicationStore();
   const {
     favoriteIds,
@@ -23,11 +20,10 @@ export const JobDetailPage = () => {
     toggleFavorite,
     isMutating: isFavoriteMutating,
   } = useFavoritesStore();
-  const [showChat, setShowChat] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState('');
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
+  const [latestApplicationId, setLatestApplicationId] = useState<string | null>(null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +54,8 @@ export const JobDetailPage = () => {
     setApplySuccess(null);
 
     try {
-      await applyToVacancy(job.id, coverLetter);
+      const application = await applyToVacancy(job.id, coverLetter);
+      setLatestApplicationId(application.id);
       setApplySuccess('Application submitted. You can track it on the Applications page.');
       setCoverLetter('');
     } catch (error) {
@@ -246,6 +243,14 @@ export const JobDetailPage = () => {
                             <Link to="/app/applications" className="underline">
                               Open applications
                             </Link>
+                            {latestApplicationId && (
+                              <>
+                                {' · '}
+                                <Link to={`/app/chat?applicationId=${latestApplicationId}`} className="underline">
+                                  Open chat
+                                </Link>
+                              </>
+                            )}
                           </div>
                         )}
                         {favoriteError && (
@@ -254,34 +259,9 @@ export const JobDetailPage = () => {
                           </div>
                         )}
                       </div>
-                      <button
-                        className="w-full px-8 py-3 rounded-xl text-base font-semibold border-2 transition-all duration-200 flex items-center justify-center gap-2"
-                        onClick={() => {
-                          if (currentUser) {
-                            const convId = getOrCreateConversation(currentUser.id, job.employerId);
-                            setConversationId(convId);
-                            setShowChat(true);
-                          }
-                        }}
-                        style={{ 
-                          borderColor: 'rgba(51, 58, 47, 0.2)',
-                          color: '#333A2F',
-                          backgroundColor: 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#333A2F';
-                          e.currentTarget.style.color = 'white';
-                          e.currentTarget.style.borderColor = '#333A2F';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = '#333A2F';
-                          e.currentTarget.style.borderColor = 'rgba(51, 58, 47, 0.2)';
-                        }}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Contact Employer
-                      </button>
+                      <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: 'rgba(51, 58, 47, 0.75)' }}>
+                        Chat opens automatically after you submit an application. Then it becomes available on the Applications page and in Messages.
+                      </div>
                     </>
                   ) : (
                     <Button 
@@ -308,18 +288,6 @@ export const JobDetailPage = () => {
           </div>
         </main>
       </div>
-
-      {showChat && conversationId && (
-        <ChatWindow
-          conversationId={conversationId}
-          receiverId={job.employerId}
-          receiverName={job.company}
-          onClose={() => {
-            setShowChat(false);
-            setConversationId(null);
-          }}
-        />
-      )}
     </>
   );
 };

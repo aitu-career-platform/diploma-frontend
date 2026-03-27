@@ -118,92 +118,6 @@ const parseVacanciesPayload = (payload: unknown): ManagedVacancy[] => {
   return Array.isArray(data.items) ? data.items : [];
 };
 
-const MOCK_USERS: ManagedUser[] = [
-  {
-    id: 'candidate-1',
-    email: 'student1@mail.ru',
-    role: 'CANDIDATE',
-    status: 'ACTIVE',
-    firstName: 'Aruzhan',
-    lastName: 'Sarsenova',
-    candidateProfile: {
-      city: 'Almaty',
-      country: 'Kazakhstan',
-      desiredRole: 'Frontend Developer',
-    },
-  },
-  {
-    id: 'candidate-2',
-    email: 'student2@mail.ru',
-    role: 'CANDIDATE',
-    status: 'SUSPENDED',
-    firstName: 'Nursultan',
-    lastName: 'Bekov',
-    candidateProfile: {
-      city: 'Astana',
-      country: 'Kazakhstan',
-      desiredRole: 'Backend Developer',
-    },
-  },
-  {
-    id: 'hr-1',
-    email: 'hr1@mail.ru',
-    role: 'EMPLOYER',
-    status: 'ACTIVE',
-    firstName: 'Dana',
-    lastName: 'Aitova',
-    employerProfile: {
-      companyName: 'Qadam Tech',
-      jobTitle: 'HR Manager',
-      hrEmail: 'hr1@mail.ru',
-    },
-  },
-  {
-    id: 'admin-1',
-    email: 'admin-real@mail.ru',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    firstName: 'System',
-    lastName: 'Admin',
-  },
-];
-
-const MOCK_VACANCIES: ManagedVacancy[] = [
-  {
-    id: 'vacancy-1',
-    title: 'Frontend Developer',
-    status: 'PUBLISHED',
-    updatedAt: '2026-03-27T10:00:00.000Z',
-    publishedAt: '2026-03-26T09:00:00.000Z',
-    company: { name: 'Qadam Tech' },
-  },
-  {
-    id: 'vacancy-2',
-    title: 'Backend Intern',
-    status: 'ARCHIVED',
-    updatedAt: '2026-03-25T15:30:00.000Z',
-    publishedAt: '2026-03-20T12:00:00.000Z',
-    company: { name: 'Qadam Tech' },
-  },
-];
-
-const filterMockUsers = (
-  source: ManagedUser[],
-  filters: { role: string; status: string; limit: number; offset: number },
-): ManagedUser[] => {
-  return source
-    .filter((user) => (filters.role ? user.role === filters.role : true))
-    .filter((user) => (filters.status ? user.status === filters.status : true))
-    .slice(filters.offset, filters.offset + filters.limit);
-};
-
-const filterMockVacancies = (
-  source: ManagedVacancy[],
-  filters: { status: string; hrUserId: string },
-): ManagedVacancy[] => {
-  return source.filter((vacancy) => (filters.status ? vacancy.status === filters.status : true));
-};
-
 export const AdminPanelPage = () => {
   const { currentUser, isAuthenticated } = useUserStore();
 
@@ -230,32 +144,12 @@ export const AdminPanelPage = () => {
   const [statusDrafts, setStatusDrafts] = useState<Record<string, BackendUserStatus>>({});
   const [companyIdDrafts, setCompanyIdDrafts] = useState<Record<string, string>>({});
   const [restoreDrafts, setRestoreDrafts] = useState<Record<string, BackendVacancyStatus>>({});
-  const [mockUsers, setMockUsers] = useState<ManagedUser[]>(MOCK_USERS);
-  const [mockVacancies, setMockVacancies] = useState<ManagedVacancy[]>(MOCK_VACANCIES);
 
   const isAdmin = isAdminRole(currentUser?.role);
-  const isMockAdmin = isAdmin && currentUser?.isMock === true;
   const canViewPage = isAuthenticated && isAdmin;
 
   const loadUsers = async (nextFilters = userFilters) => {
     if (!canViewPage) {
-      return;
-    }
-
-    if (isMockAdmin) {
-      const filtered = filterMockUsers(mockUsers, nextFilters);
-      setUsers(filtered);
-      setUsersTotal(
-        mockUsers
-          .filter((user) => (nextFilters.role ? user.role === nextFilters.role : true))
-          .filter((user) => (nextFilters.status ? user.status === nextFilters.status : true)).length,
-      );
-      setRoleDrafts(
-        Object.fromEntries(filtered.map((user) => [user.id, user.role])) as Record<string, BackendUserRole>,
-      );
-      setStatusDrafts(
-        Object.fromEntries(filtered.map((user) => [user.id, user.status])) as Record<string, BackendUserStatus>,
-      );
       return;
     }
 
@@ -297,33 +191,12 @@ export const AdminPanelPage = () => {
       return;
     }
 
-    if (isMockAdmin) {
-      const filtered = filterMockVacancies(mockVacancies, nextFilters);
-      setVacancies(filtered);
-      setRestoreDrafts(
-        Object.fromEntries(filtered.map((vacancy) => [vacancy.id, 'DRAFT'])) as Record<
-          string,
-          BackendVacancyStatus
-        >,
-      );
-      return;
-    }
-
-    if (isAdmin && !nextFilters.hrUserId.trim()) {
-      setVacancyError('Select HR user id to load vacancy moderation list for admin mode');
-      setVacancies([]);
-      return;
-    }
-
     setIsVacanciesLoading(true);
     setVacancyError(null);
 
     try {
       const params = nextFilters.status ? { status: nextFilters.status } : undefined;
-      const endpoint = isAdmin
-        ? `/vacancies/hr/${nextFilters.hrUserId.trim()}`
-        : '/vacancies/my';
-      const response = await api.get(endpoint, { params });
+      const response = await api.get('/vacancies', { params });
       const parsed = parseVacanciesPayload(response.data);
 
       setVacancies(parsed);
@@ -355,20 +228,6 @@ export const AdminPanelPage = () => {
       return;
     }
 
-    if (isMockAdmin) {
-      const nextUsers = mockUsers.map((item) =>
-        item.id === user.id ? { ...item, role: nextRole } : item,
-      );
-      setMockUsers(nextUsers);
-      setUsers(filterMockUsers(nextUsers, userFilters));
-      setUsersTotal(
-        nextUsers
-          .filter((item) => (userFilters.role ? item.role === userFilters.role : true))
-          .filter((item) => (userFilters.status ? item.status === userFilters.status : true)).length,
-      );
-      return;
-    }
-
     setIsMutating(true);
     setUserError(null);
 
@@ -395,20 +254,6 @@ export const AdminPanelPage = () => {
       return;
     }
 
-    if (isMockAdmin) {
-      const nextUsers = mockUsers.map((item) =>
-        item.id === user.id ? { ...item, status } : item,
-      );
-      setMockUsers(nextUsers);
-      setUsers(filterMockUsers(nextUsers, userFilters));
-      setUsersTotal(
-        nextUsers
-          .filter((item) => (userFilters.role ? item.role === userFilters.role : true))
-          .filter((item) => (userFilters.status ? item.status === userFilters.status : true)).length,
-      );
-      return;
-    }
-
     setIsMutating(true);
     setUserError(null);
 
@@ -423,21 +268,6 @@ export const AdminPanelPage = () => {
   };
 
   const handleShortcutStatus = async (user: ManagedUser, action: 'ban' | 'unban') => {
-    if (isMockAdmin) {
-      const nextStatus: BackendUserStatus = action === 'ban' ? 'SUSPENDED' : 'ACTIVE';
-      const nextUsers = mockUsers.map((item) =>
-        item.id === user.id ? { ...item, status: nextStatus } : item,
-      );
-      setMockUsers(nextUsers);
-      setUsers(filterMockUsers(nextUsers, userFilters));
-      setUsersTotal(
-        nextUsers
-          .filter((item) => (userFilters.role ? item.role === userFilters.role : true))
-          .filter((item) => (userFilters.status ? item.status === userFilters.status : true)).length,
-      );
-      return;
-    }
-
     setIsMutating(true);
     setUserError(null);
 
@@ -455,34 +285,6 @@ export const AdminPanelPage = () => {
     vacancyId: string,
     action: 'archive' | 'soft-delete' | 'restore',
   ) => {
-    if (isMockAdmin) {
-      const nextVacancies = mockVacancies
-        .map((vacancy) => {
-          if (vacancy.id !== vacancyId) {
-            return vacancy;
-          }
-
-          if (action === 'archive') {
-            return { ...vacancy, status: 'ARCHIVED', updatedAt: new Date().toISOString() };
-          }
-
-          if (action === 'restore') {
-            return {
-              ...vacancy,
-              status: restoreDrafts[vacancyId] || 'DRAFT',
-              updatedAt: new Date().toISOString(),
-            };
-          }
-
-          return null;
-        })
-        .filter((vacancy): vacancy is ManagedVacancy => Boolean(vacancy));
-
-      setMockVacancies(nextVacancies);
-      setVacancies(filterMockVacancies(nextVacancies, vacancyFilters));
-      return;
-    }
-
     setIsMutating(true);
     setVacancyError(null);
 
@@ -545,14 +347,13 @@ export const AdminPanelPage = () => {
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: '#333A2F' }}>
                 <ShieldCheck className="h-3.5 w-3.5" />
-                {isMockAdmin ? 'Mock admin mode' : 'Admin mode'}
+                Admin mode
               </div>
               <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: '#333A2F' }}>
                 Operations panel
               </h1>
               <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                 Moderate users, switch roles, ban or unban accounts, and control vacancy lifecycle with archive, soft delete, and restore actions.
-                {isMockAdmin ? ' This session uses frontend-only mock data.' : ''}
               </p>
             </div>
 
@@ -713,7 +514,7 @@ export const AdminPanelPage = () => {
                             </option>
                           ))}
                         </select>
-                        {!isMockAdmin && isAdmin && roleDrafts[user.id] === 'EMPLOYER' && (
+                        {isAdmin && roleDrafts[user.id] === 'EMPLOYER' && (
                           <Input
                             value={companyIdDrafts[user.id] || ''}
                             onChange={(event) =>
@@ -812,25 +613,6 @@ export const AdminPanelPage = () => {
                 </select>
               </div>
 
-              {!isMockAdmin && isAdmin && (
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                    HR user ID
-                  </label>
-                  <Input
-                    value={vacancyFilters.hrUserId}
-                    onChange={(event) =>
-                      setVacancyFilters((prev) => ({
-                        ...prev,
-                        hrUserId: event.target.value,
-                      }))
-                    }
-                    placeholder="Paste employer UUID"
-                    className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
-                  />
-                </div>
-              )}
-
               <div className="flex items-end gap-3">
                 <Button
                   variant="hero"
@@ -926,9 +708,7 @@ export const AdminPanelPage = () => {
 
                 {!vacancies.length && (
                   <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                    {!isMockAdmin && isAdmin
-                      ? 'Choose HR user id and reload to inspect that employer vacancy list.'
-                      : 'No vacancies found with current filters.'}
+                    No vacancies found with current filters.
                   </div>
                 )}
               </div>

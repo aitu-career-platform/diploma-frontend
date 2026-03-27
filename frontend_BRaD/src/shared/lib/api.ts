@@ -1,6 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   (typeof window !== 'undefined' &&
   !['localhost', '127.0.0.1'].includes(window.location.hostname)
@@ -14,7 +14,6 @@ type StoredAuthUser = {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
-  isMock?: boolean;
 };
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
@@ -40,6 +39,12 @@ const readStoredAuthUser = (): StoredAuthUser | null => {
   } catch {
     return null;
   }
+};
+
+export const getApiBaseUrl = (): string => API_BASE_URL;
+
+export const getStoredAccessToken = (): string | null => {
+  return readStoredAuthUser()?.accessToken || null;
 };
 
 const writeStoredAuthUser = (user: StoredAuthUser): void => {

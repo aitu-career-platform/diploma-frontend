@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -6,11 +6,15 @@ import {
   Bookmark,
   Briefcase,
   Building2,
+  Download,
   ExternalLink,
   Globe,
+  ImagePlus,
   Mail,
   MapPin,
   Send,
+  Trash2,
+  UploadCloud,
   User,
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
@@ -19,6 +23,7 @@ import { isCandidateRole, isEmployerRole, useUserStore } from '@entities/user';
 import { useFavoritesStore } from '@entities/favorite';
 import { useInviteStore } from '@entities/invite';
 import { useNotificationsStore, type AppNotification } from '@entities/notification';
+import { useMediaStore } from '@entities/media';
 
 interface ProfileFormValues {
   bio: string;
@@ -59,6 +64,64 @@ const getBoolean = (value: unknown, fallback = false): boolean => {
   }
 
   return fallback;
+};
+
+const getRecord = (value: unknown): Record<string, unknown> | null => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+};
+
+const getFileArray = (value: unknown): Record<string, unknown>[] => {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    : [];
+};
+
+const getFileId = (file: Record<string, unknown> | null): string => {
+  return getString(file?.fileId) || getString(getRecord(file?.file)?.id) || getString(file?.id);
+};
+
+const getFileHref = (file: Record<string, unknown> | null): string => {
+  const nestedFile = getRecord(file?.file);
+
+  return (
+    getString(file?.fileDownloadUrl) ||
+    getString(file?.downloadUrl) ||
+    getString(nestedFile?.downloadUrl) ||
+    getString(file?.fileUrl) ||
+    getString(file?.url) ||
+    getString(nestedFile?.url)
+  );
+};
+
+const getFileName = (file: Record<string, unknown> | null): string => {
+  const nestedFile = getRecord(file?.file);
+
+  return (
+    getString(nestedFile?.filename) ||
+    getString(file?.filename) ||
+    getString(file?.title) ||
+    'Untitled file'
+  );
+};
+
+const formatFileSize = (value: unknown): string => {
+  const size = typeof value === 'number' ? value : Number(value || 0);
+  if (!Number.isFinite(size) || size <= 0) {
+    return 'Size unavailable';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let current = size;
+  let index = 0;
+
+  while (current >= 1024 && index < units.length - 1) {
+    current /= 1024;
+    index += 1;
+  }
+
+  return `${current.toFixed(current >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
 const buildInitialValues = (profile: Record<string, unknown> | null): ProfileFormValues => {
@@ -144,6 +207,8 @@ export const ProfilePage = () => {
     updateTelegramSettings,
     createTelegramLink,
   } = useNotificationsStore();
+  const { uploadAndAttach, deleteFile, isUploading: isUploadingMedia, isDeleting: isDeletingMedia } =
+    useMediaStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -151,11 +216,12 @@ export const ProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activitySuccess, setActivitySuccess] = useState<string | null>(null);
+  const [resumeTitle, setResumeTitle] = useState('');
+  const [resumePrimary, setResumePrimary] = useState(true);
 
   const profile = (currentProfile as Record<string, unknown> | null) || null;
   const currentUserId = currentUser?.id || null;
   const currentUserRole = currentUser?.role || null;
-  const isMockUser = currentUser?.isMock === true;
 
   const {
     register,
@@ -203,7 +269,7 @@ export const ProfilePage = () => {
   ]);
 
   useEffect(() => {
-    if (!currentUserId || !currentUserRole || isMockUser) {
+    if (!currentUserId || !currentUserRole) {
       return;
     }
 
@@ -222,7 +288,6 @@ export const ProfilePage = () => {
   }, [
     currentUserId,
     currentUserRole,
-    isMockUser,
     loadMyFavorites,
     loadMyInvites,
     loadNotifications,
@@ -230,6 +295,10 @@ export const ProfilePage = () => {
 
   const isHr = isEmployerRole(currentUser?.role);
   const isCandidate = isCandidateRole(currentUser?.role);
+  const avatarFile = getRecord(profile?.avatarFile);
+  const companyLogoFile = getRecord(profile?.companyLogoFile);
+  const resumes = getFileArray(profile?.resumes);
+  const portfolioFiles = getFileArray(profile?.portfolioFiles);
 
   const displayName = useMemo(() => {
     const firstName = getString(profile?.firstName);
@@ -353,6 +422,64 @@ export const ProfilePage = () => {
     }
   };
 
+  const handleProfileUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+    config: {
+      target: 'USER_AVATAR' | 'COMPANY_LOGO' | 'CANDIDATE_RESUME' | 'CANDIDATE_PORTFOLIO';
+      entityType: 'USER_AVATAR' | 'COMPANY_LOGO' | 'CANDIDATE_RESUME' | 'CANDIDATE_PORTFOLIO';
+      successMessage: string;
+      resumeTitle?: string;
+      isPrimary?: boolean;
+    },
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setActivityError(null);
+    setActivitySuccess(null);
+
+    try {
+      await uploadAndAttach({
+        file,
+        target: config.target,
+        entityType: config.entityType,
+        resumeTitle: config.resumeTitle,
+        isPrimary: config.isPrimary,
+      });
+      await loadProfile();
+      setActivitySuccess(config.successMessage);
+
+      if (config.entityType === 'CANDIDATE_RESUME') {
+        setResumeTitle('');
+        setResumePrimary(false);
+      }
+    } catch (uploadError) {
+      setActivityError(uploadError instanceof Error ? uploadError.message : 'Failed to upload file');
+    }
+  };
+
+  const handleDeleteUploadedFile = async (fileId: string, successMessage: string) => {
+    if (!fileId) {
+      setActivityError('File ID is missing');
+      return;
+    }
+
+    setActivityError(null);
+    setActivitySuccess(null);
+
+    try {
+      await deleteFile(fileId);
+      await loadProfile();
+      setActivitySuccess(successMessage);
+    } catch (deleteError) {
+      setActivityError(deleteError instanceof Error ? deleteError.message : 'Failed to delete file');
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '8rem' }}>
@@ -430,6 +557,80 @@ export const ProfilePage = () => {
               >
                 {isEditing ? 'Cancel' : 'Edit Profile'}
               </button>
+            </div>
+
+            <div className="mb-6 flex flex-wrap gap-3">
+              <label
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
+                style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+              >
+                <UploadCloud className="w-4 h-4" />
+                Upload avatar
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(event) =>
+                    void handleProfileUpload(event, {
+                      target: 'USER_AVATAR',
+                      entityType: 'USER_AVATAR',
+                      successMessage: 'Avatar updated.',
+                    })
+                  }
+                />
+              </label>
+
+              {avatarFile && (
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteUploadedFile(getFileId(avatarFile), 'Avatar removed.')}
+                  disabled={isDeletingMedia}
+                  className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
+                  style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'white', color: '#b91c1c' }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Remove avatar
+                </button>
+              )}
+
+              {isHr && (
+                <>
+                  <label
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+                  >
+                    <ImagePlus className="w-4 h-4" />
+                    Upload company logo
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(event) =>
+                        void handleProfileUpload(event, {
+                          target: 'COMPANY_LOGO',
+                          entityType: 'COMPANY_LOGO',
+                          successMessage: 'Company logo updated.',
+                        })
+                      }
+                    />
+                  </label>
+
+                  {companyLogoFile && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void handleDeleteUploadedFile(getFileId(companyLogoFile), 'Company logo removed.')
+                      }
+                      disabled={isDeletingMedia}
+                      className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
+                      style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'white', color: '#b91c1c' }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Remove logo
+                    </button>
+                  )}
+                </>
+              )}
             </div>
 
             {error && (
@@ -635,6 +836,53 @@ export const ProfilePage = () => {
             )}
           </div>
 
+          {isHr && (
+            <section className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                    Company Media
+                  </h2>
+                  <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                    Logo is uploaded via signed S3/R2 URL and attached to your company profile.
+                  </p>
+                </div>
+                {companyLogoFile && getFileHref(companyLogoFile) && (
+                  <a
+                    href={getFileHref(companyLogoFile)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                    style={{ color: '#333A2F' }}
+                  >
+                    Open logo
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+
+              {companyLogoFile && getFileHref(companyLogoFile) ? (
+                <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <img
+                    src={getFileHref(companyLogoFile)}
+                    alt={getString(profile?.companyName) || 'Company logo'}
+                    className="h-24 w-24 rounded-2xl object-cover"
+                  />
+                  <div className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                    <p className="font-semibold" style={{ color: '#333A2F' }}>
+                      {getFileName(companyLogoFile)}
+                    </p>
+                    <p className="mt-1">{formatFileSize(companyLogoFile.sizeBytes)}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  Upload a company logo to show real branding on vacancies and profile surfaces.
+                </div>
+              )}
+            </section>
+          )}
+
           {(activityError || activitySuccess) && (
             <div className="space-y-2">
               {activityError && (
@@ -648,6 +896,205 @@ export const ProfilePage = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {(isUploadingMedia || isDeletingMedia) && (
+            <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(51, 58, 47, 0.08)', color: '#333A2F' }}>
+              {isUploadingMedia ? 'Uploading file...' : 'Removing file...'}
+            </div>
+          )}
+
+          {isCandidate && (
+            <section className="grid gap-6 xl:grid-cols-2">
+              <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                      Resumes
+                    </h2>
+                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                      Upload CV files via presigned URL. HR can open them from application details.
+                    </p>
+                  </div>
+                  <label
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    Upload resume
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
+                      onChange={(event) =>
+                        void handleProfileUpload(event, {
+                          target: 'CANDIDATE_RESUME',
+                          entityType: 'CANDIDATE_RESUME',
+                          resumeTitle: resumeTitle || undefined,
+                          isPrimary: resumePrimary,
+                          successMessage: 'Resume uploaded.',
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
+                  <Input
+                    value={resumeTitle}
+                    onChange={(event) => setResumeTitle(event.target.value)}
+                    placeholder="Resume title, for example Frontend CV v2"
+                    className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                  />
+                  <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-2 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F9FAF3', color: '#333A2F' }}>
+                    <input
+                      type="checkbox"
+                      checked={resumePrimary}
+                      onChange={(event) => setResumePrimary(event.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    Mark as primary
+                  </label>
+                </div>
+
+                {resumes.length === 0 ? (
+                  <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                    No resumes yet. Upload one PDF or DOCX file to use it in applications.
+                  </div>
+                ) : (
+                  <div className="mt-6 space-y-4">
+                    {resumes.map((resume) => (
+                      <div key={getString(resume.id)} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold" style={{ color: '#333A2F' }}>
+                                {getFileName(resume)}
+                              </p>
+                              {resume.isPrimary === true && (
+                                <span className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ backgroundColor: '#333A2F', color: 'white' }}>
+                                  Primary
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                              Updated: {formatDateTime(getString(resume.updatedAt) || getString(resume.createdAt))}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {getFileHref(resume) && (
+                              <a
+                                href={getFileHref(resume)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                                style={{ color: '#333A2F' }}
+                              >
+                                <Download className="w-4 h-4" />
+                                Open
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleDeleteUploadedFile(getFileId(resume), 'Resume deleted.')
+                              }
+                              disabled={isDeletingMedia}
+                              className="inline-flex items-center gap-2 text-sm font-medium"
+                              style={{ color: '#b91c1c' }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                      Portfolio Files
+                    </h2>
+                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                      Images and supporting documents stored in the new media module.
+                    </p>
+                  </div>
+                  <label
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    Upload portfolio file
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
+                      onChange={(event) =>
+                        void handleProfileUpload(event, {
+                          target: 'CANDIDATE_PORTFOLIO',
+                          entityType: 'CANDIDATE_PORTFOLIO',
+                          successMessage: 'Portfolio file uploaded.',
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+
+                {portfolioFiles.length === 0 ? (
+                  <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                    No portfolio files yet.
+                  </div>
+                ) : (
+                  <div className="mt-6 space-y-4">
+                    {portfolioFiles.map((file) => (
+                      <div key={getFileId(file)} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="font-semibold" style={{ color: '#333A2F' }}>
+                              {getFileName(file)}
+                            </p>
+                            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                              {formatFileSize(file.sizeBytes)} • Uploaded {formatDateTime(getString(file.createdAt))}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {getFileHref(file) && (
+                              <a
+                                href={getFileHref(file)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                                style={{ color: '#333A2F' }}
+                              >
+                                <Download className="w-4 h-4" />
+                                Open
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleDeleteUploadedFile(getFileId(file), 'Portfolio file deleted.')
+                              }
+                              disabled={isDeletingMedia}
+                              className="inline-flex items-center gap-2 text-sm font-medium"
+                              style={{ color: '#b91c1c' }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           )}
 
           {isCandidate && (

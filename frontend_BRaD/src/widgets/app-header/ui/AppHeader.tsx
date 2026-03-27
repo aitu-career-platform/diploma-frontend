@@ -3,25 +3,34 @@ import { Bell, User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
 import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
 import { useEffect, useState } from 'react';
 import { useNotificationsStore } from '@entities/notification';
+import { useMessageStore } from '@entities/message';
 import '../../../pages/landing/ui/landing.css';
 
 export const AppHeader = () => {
   const { currentUser, isAuthenticated, logout } = useUserStore();
   const { meta, loadNotifications } = useNotificationsStore();
+  const { chats, listChats, connectStream, disconnectStream } = useMessageStore();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
-  const isMockUser = currentUser?.isMock === true;
   const unreadCount = meta.unread;
+  const unreadChatCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
 
   useEffect(() => {
-    if (!isAuthenticated || isMockUser) {
+    if (!isAuthenticated) {
+      disconnectStream();
       return;
     }
 
     void loadNotifications({ limit: 10, offset: 0 });
-  }, [isAuthenticated, isMockUser, loadNotifications]);
+    void listChats({ limit: 50, offset: 0 });
+    connectStream();
+
+    return () => {
+      disconnectStream();
+    };
+  }, [connectStream, disconnectStream, isAuthenticated, listChats, loadNotifications]);
 
   const handleLogout = async () => {
     await logout();
@@ -75,8 +84,16 @@ export const AppHeader = () => {
                   </span>
                 )}
               </Link>
-              <Link to="/app/chat" className="nav-btn nav-btn-ghost hidden sm:inline-block">
+              <Link to="/app/chat" className="nav-btn nav-btn-ghost hidden sm:inline-flex relative">
                 <MessageSquare className="w-4 h-4" />
+                {unreadChatCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold flex items-center justify-center"
+                    style={{ backgroundColor: '#333A2F', color: 'white' }}
+                  >
+                    {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                  </span>
+                )}
               </Link>
               <div className="flex items-center gap-2">
                 <Link 
@@ -170,6 +187,7 @@ export const AppHeader = () => {
                   className="nav-link"
                 >
                   Messages
+                  {unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
                 </Link>
                 {isHr && (
                   <Link

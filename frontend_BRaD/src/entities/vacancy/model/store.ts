@@ -712,7 +712,7 @@ export const useVacancyStore = create<VacancyStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await requestWithFallback('get', ['/vacancies']);
+      const response = await requestWithFallback('get', ['/vacancies/my']);
       const vacancies = extractList(response.data);
       set({ vacancies, isLoading: false });
     } catch {

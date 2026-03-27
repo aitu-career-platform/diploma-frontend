@@ -31,6 +31,27 @@ export interface ApplicationCandidateProfile {
   city?: string;
   country?: string;
   desiredRole?: string;
+  resumes?: ApplicationResume[];
+}
+
+export interface ApplicationResumeFile {
+  id: string;
+  status?: string;
+  url?: string | null;
+  filename?: string;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+}
+
+export interface ApplicationResume {
+  id: string;
+  title?: string | null;
+  fileId?: string | null;
+  fileUrl?: string | null;
+  isPrimary?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  file?: ApplicationResumeFile | null;
 }
 
 export interface ApplicationCandidate {
@@ -48,6 +69,7 @@ export interface Application {
   userId: string;
   status: ApplicationStatus;
   coverLetter?: string | null;
+  chatId?: string | null;
   createdAt: string;
   updatedAt: string;
   vacancy?: ApplicationVacancy | null;
@@ -93,4 +115,3 @@ export interface ApplicationFilters {
   limit?: number;
   offset?: number;
 }
-

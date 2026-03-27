@@ -419,7 +419,7 @@ export const EmployerPage = () => {
     setActiveStepIndex(0);
     setWizardError(null);
     setWizardSuccess('Fill step 1 and click Save to create draft');
-    if (!isDictionariesLoading && dictionaries.specializations.length === 0) {
+    if (!isDictionariesLoading && dictionaries.cities.length === 0) {
       void loadDictionaries();
     }
   };
@@ -462,24 +462,12 @@ export const EmployerPage = () => {
       }
 
       if (activeStep.id === 'basic' && !currentVacancyId) {
-        if (dictionaries.specializations.length === 0 && !isDictionariesLoading) {
+        if (dictionaries.cities.length === 0 && !isDictionariesLoading) {
           await loadDictionaries();
-        }
-
-        const { dictionaries: latestDictionaries, error: dictionariesError } = useVacancyStore.getState();
-
-        if (latestDictionaries.specializations.length === 0) {
-          throw new Error(
-            dictionariesError || 'Specializations are unavailable in vacancy dictionaries',
-          );
         }
 
         if (formData.basic.title.trim().length < 2) {
           throw new Error('Title must be at least 2 characters');
-        }
-
-        if (formData.basic.specializationIds.length === 0) {
-          throw new Error('Choose at least one specialization');
         }
 
         await createDraft({
@@ -744,12 +732,12 @@ export const EmployerPage = () => {
                         <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                           {isDictionariesLoading
                             ? 'Loading specializations...'
-                            : 'No specializations are available from backend dictionaries.'}
+                            : 'Specializations are optional. You can create a vacancy without them.'}
                         </p>
                         {!isDictionariesLoading && (
                           <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                            HR cannot create the first vacancy until an admin adds at least one specialization in backend.
-                            {error ? ` Backend says: ${error}` : ''}
+                            If backend later returns specialization dictionaries, they will appear here for optional tagging.
+                            {error ? ` Backend note: ${error}` : ''}
                           </p>
                         )}
                       </div>

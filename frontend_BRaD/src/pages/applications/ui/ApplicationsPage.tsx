@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Clock3, FileText, RefreshCcw, Shield, UserRound } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock3, Download, FileText, MessageSquare, RefreshCcw, Shield, UserRound } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import {
@@ -10,6 +10,7 @@ import {
   type ApplicationStatus,
 } from '@entities/application';
 import { isAdminRole, isCandidateRole, isHrRole, useUserStore } from '@entities/user';
+import { useMediaStore } from '@entities/media';
 
 const applicationStatuses: ApplicationStatus[] = [
   'SUBMITTED',
@@ -72,6 +73,12 @@ const getTimelineActor = (event: {
   return fullName || event.actor?.email || 'System';
 };
 
+const getPrimaryResume = (application: Application) => {
+  const resumes = application.candidate?.profile?.resumes || [];
+
+  return resumes.find((resume) => resume.isPrimary) || resumes[0] || null;
+};
+
 export const ApplicationsPage = () => {
   const { currentUser, isAuthenticated } = useUserStore();
   const {
@@ -89,6 +96,7 @@ export const ApplicationsPage = () => {
     updateStatus,
     clearSelection,
   } = useApplicationStore();
+  const { getDownloadUrl } = useMediaStore();
 
   const [statusNote, setStatusNote] = useState('');
   const [nextStatus, setNextStatus] = useState<ApplicationStatus>('REVIEWED');
@@ -98,6 +106,7 @@ export const ApplicationsPage = () => {
     offset: 0,
   });
   const [pageError, setPageError] = useState<string | null>(null);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const isCandidate = isCandidateRole(currentUser?.role);
   const isHr = isHrRole(currentUser?.role);
@@ -194,6 +203,20 @@ export const ApplicationsPage = () => {
           ? mutationError.message
           : 'Failed to update application status',
       );
+    }
+  };
+
+  const handleOpenResume = async (fileId: string) => {
+    setPageError(null);
+    setDownloadingFileId(fileId);
+
+    try {
+      const downloadUrl = await getDownloadUrl(fileId);
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+    } catch (downloadError) {
+      setPageError(downloadError instanceof Error ? downloadError.message : 'Failed to open resume');
+    } finally {
+      setDownloadingFileId(null);
     }
   };
 
@@ -502,8 +525,20 @@ export const ApplicationsPage = () => {
                         </p>
                       )}
 
-                      {isCandidate && application.status !== 'WITHDRAWN' && (
-                        <div className="mt-4">
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        {application.chatId && (
+                          <Link to={`/app/chat?chatId=${application.chatId}`}>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              Open chat
+                            </Button>
+                          </Link>
+                        )}
+                        {isCandidate && application.status !== 'WITHDRAWN' && (
                           <Button
                             type="button"
                             variant="outline"
@@ -515,8 +550,8 @@ export const ApplicationsPage = () => {
                           >
                             Withdraw
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -574,6 +609,23 @@ export const ApplicationsPage = () => {
                           : ''}
                       </div>
                     </div>
+                    {getPrimaryResume(selectedApplication)?.fileId && (
+                      <div className="mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={downloadingFileId === getPrimaryResume(selectedApplication)?.fileId}
+                          onClick={() =>
+                            void handleOpenResume(getPrimaryResume(selectedApplication)?.fileId || '')
+                          }
+                        >
+                          <Download className="h-4 w-4" />
+                          {downloadingFileId === getPrimaryResume(selectedApplication)?.fileId
+                            ? 'Opening resume...'
+                            : `Open ${getPrimaryResume(selectedApplication)?.isPrimary ? 'primary ' : ''}resume`}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -585,6 +637,23 @@ export const ApplicationsPage = () => {
                     <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.78)' }}>
                       {selectedApplication.coverLetter}
                     </div>
+                  </div>
+                )}
+
+                {selectedApplication.chatId && (
+                  <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4">
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                      Chat
+                    </div>
+                    <p className="mb-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                      Open the application chat to continue the conversation in realtime.
+                    </p>
+                    <Link to={`/app/chat?chatId=${selectedApplication.chatId}`}>
+                      <Button variant="hero" className="w-full">
+                        <MessageSquare className="h-4 w-4" />
+                        Open chat
+                      </Button>
+                    </Link>
                   </div>
                 )}
 
@@ -677,4 +746,3 @@ export const ApplicationsPage = () => {
     </div>
   );
 };
-

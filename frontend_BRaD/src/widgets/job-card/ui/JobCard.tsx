@@ -1,10 +1,7 @@
-import { MapPin, Clock, DollarSign, Heart, MessageSquare } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Job } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
-import { useState } from 'react';
-import { ChatWindow } from '@features/chat';
-import { useMessageStore } from '@entities/message';
 import { useFavoritesStore } from '@entities/favorite';
 
 interface JobCardProps {
@@ -13,22 +10,10 @@ interface JobCardProps {
 
 export const JobCard = ({ job }: JobCardProps) => {
   const { currentUser, isAuthenticated } = useUserStore();
-  const { getOrCreateConversation } = useMessageStore();
   const { favoriteIds, countsByVacancyId, toggleFavorite, isMutating } = useFavoritesStore();
-  const [showChat, setShowChat] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const isCandidate = isAuthenticated && isCandidateRole(currentUser?.role);
   const isFavorite = favoriteIds.has(job.id);
   const favoritesCount = countsByVacancyId[job.id] ?? job.favoritesCount ?? 0;
-
-  const handleContact = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (isAuthenticated && currentUser) {
-      const convId = getOrCreateConversation(currentUser.id, job.employerId);
-      setConversationId(convId);
-      setShowChat(true);
-    }
-  };
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -109,22 +94,6 @@ export const JobCard = ({ job }: JobCardProps) => {
                     style={{ fill: isFavorite ? 'currentColor' : 'transparent' }}
                   />
                 </button>
-                <button
-                  onClick={handleContact}
-                  className="p-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#333A2F';
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#EBEDDF';
-                    e.currentTarget.style.color = '#333A2F';
-                  }}
-                  title="Contact employer"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                </button>
               </div>
             )}
           </div>
@@ -158,17 +127,6 @@ export const JobCard = ({ job }: JobCardProps) => {
         </div>
       </Link>
 
-      {showChat && conversationId && (
-        <ChatWindow
-          conversationId={conversationId}
-          receiverId={job.employerId}
-          receiverName={job.company}
-          onClose={() => {
-            setShowChat(false);
-            setConversationId(null);
-          }}
-        />
-      )}
     </>
   );
 };

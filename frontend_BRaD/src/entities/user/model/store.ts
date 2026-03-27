@@ -27,28 +27,6 @@ interface UserStore {
   updateProfile: (_userId: string, data: Partial<User>) => Promise<void>;
 }
 
-const MOCK_ADMIN_EMAIL = 'admin@mail.ru';
-const MOCK_ADMIN_PASSWORD = '123456';
-const MOCK_ADMIN_TOKEN = 'mock-admin-token';
-
-const buildMockAdminProfile = (): Record<string, unknown> => ({
-  role: 'ADMIN',
-  id: 'mock-admin',
-  email: MOCK_ADMIN_EMAIL,
-  firstName: 'Mock',
-  lastName: 'Admin',
-  bio: 'Temporary frontend-only admin account for local testing.',
-});
-
-const buildMockAdminUser = (): AuthUser => ({
-  id: 'mock-admin',
-  email: MOCK_ADMIN_EMAIL,
-  name: 'Mock Admin',
-  role: 'admin',
-  accessToken: MOCK_ADMIN_TOKEN,
-  isMock: true,
-});
-
 const mockUsers: Record<string, User> = {
   rakhat: {
     id: 'rakhat',
@@ -218,7 +196,7 @@ const getStoredAuthUser = (): AuthUser | null => {
   try {
     const parsed = JSON.parse(raw) as AuthUser;
 
-    if ((!parsed?.accessToken && !parsed?.isMock) || !parsed?.id || !parsed?.email) {
+    if (!parsed?.accessToken || !parsed?.id || !parsed?.email) {
       return null;
     }
 
@@ -294,6 +272,8 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
   const candidateProfile = isRecord(payload.candidateProfile) ? payload.candidateProfile : {};
   const employerProfile = isRecord(payload.employerProfile) ? payload.employerProfile : {};
   const company = isRecord(employerProfile.company) ? employerProfile.company : {};
+  const avatarFile = isRecord(user.avatarFile) ? user.avatarFile : {};
+  const logoFile = isRecord(company.logoFile) ? company.logoFile : {};
   const notificationSettings = isRecord(payload.notificationSettings)
     ? payload.notificationSettings
     : isRecord(payload.notifications)
@@ -323,6 +303,14 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     companyContactPhone: company.contactPhone || employerProfile.companyContactPhone,
     hrEmail: employerProfile.hrEmail,
     hrPhone: employerProfile.hrPhone,
+    avatarUrl: getString(avatarFile.downloadUrl) || getString(avatarFile.url) || undefined,
+    avatarFile: Object.keys(avatarFile).length ? avatarFile : null,
+    companyLogoUrl: getString(logoFile.downloadUrl) || getString(logoFile.url) || undefined,
+    companyLogoFile: Object.keys(logoFile).length ? logoFile : null,
+    resumes: Array.isArray(candidateProfile.resumes) ? candidateProfile.resumes : [],
+    portfolioFiles: Array.isArray(candidateProfile.portfolioFiles)
+      ? candidateProfile.portfolioFiles
+      : [],
     telegramChatId:
       getString(
         pickFirstDefined(telegramSources, ['telegramChatId', 'telegram_chat_id', 'chatId']),
@@ -355,7 +343,7 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
   };
 };
 
-const syncCurrentUserName = (
+const syncCurrentUserProfile = (
   currentUser: AuthUser | null,
   profile: Record<string, unknown> | null,
 ): AuthUser | null => {
@@ -366,18 +354,16 @@ const syncCurrentUserName = (
   const firstName = getString(profile.firstName);
   const lastName = getString(profile.lastName);
   const name = `${firstName} ${lastName}`.trim();
+  const avatar = getString(profile.avatarUrl);
 
-  if (!name) {
-    return currentUser;
-  }
-
-  if (currentUser.name === name) {
+  if ((!name || currentUser.name === name) && (!avatar || currentUser.avatar === avatar)) {
     return currentUser;
   }
 
   return {
     ...currentUser,
-    name,
+    name: name || currentUser.name,
+    avatar: avatar || currentUser.avatar,
   };
 };
 
@@ -390,19 +376,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
   currentProfile: null,
 
   login: async (email: string, password: string) => {
-    if (email.trim().toLowerCase() === MOCK_ADMIN_EMAIL && password === MOCK_ADMIN_PASSWORD) {
-      const mockAdmin = buildMockAdminUser();
-      const mockProfile = buildMockAdminProfile();
-
-      set({
-        currentUser: mockAdmin,
-        isAuthenticated: true,
-        currentProfile: mockProfile,
-      });
-      localStorage.setItem('authUser', JSON.stringify(mockAdmin));
-      return;
-    }
-
     try {
       const response = await api.post('/auth/login', { email, password });
       const { accessToken, refreshToken } = response.data;
@@ -414,7 +387,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       try {
         const profileResponse = await api.get('/profile/me');
         const normalizedProfile = normalizeProfilePayload(profileResponse.data);
-        const nextAuthUser = syncCurrentUserName(authUser, normalizedProfile);
+        const nextAuthUser = syncCurrentUserProfile(authUser, normalizedProfile);
 
         set({
           currentUser: nextAuthUser,
@@ -477,7 +450,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       try {
         const profileResponse = await api.get('/profile/me');
         const normalizedProfile = normalizeProfilePayload(profileResponse.data);
-        const nextAuthUser = syncCurrentUserName(authUser, normalizedProfile);
+        const nextAuthUser = syncCurrentUserProfile(authUser, normalizedProfile);
 
         set({
           currentUser: nextAuthUser,
@@ -538,15 +511,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   loadProfile: async () => {
-    if (get().currentUser?.isMock) {
-      set({ currentProfile: buildMockAdminProfile() });
-      return;
-    }
-
     try {
       const response = await api.get('/profile/me');
       const normalizedProfile = normalizeProfilePayload(response.data);
-      const nextAuthUser = syncCurrentUserName(get().currentUser, normalizedProfile);
+      const nextAuthUser = syncCurrentUserProfile(get().currentUser, normalizedProfile);
 
       set({
         currentUser: nextAuthUser,
@@ -568,26 +536,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
         throw new Error('Please sign in again');
       }
 
-      if (currentUser.isMock) {
-        const nextProfile: Record<string, unknown> = {
-          ...buildMockAdminProfile(),
-          ...get().currentProfile,
-          ...data,
-        };
-        const nextName = `${getString(nextProfile.firstName)} ${getString(nextProfile.lastName)}`.trim();
-        const nextUser = {
-          ...currentUser,
-          name: nextName || currentUser.name,
-        };
-
-        set({
-          currentUser: nextUser,
-          currentProfile: nextProfile,
-        });
-        localStorage.setItem('authUser', JSON.stringify(nextUser));
-        return;
-      }
-
       if (isCandidateRole(currentUser.role)) {
         const candidatePayload: Record<string, unknown> = {
           city: (data as Record<string, unknown>).city,
@@ -603,7 +551,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
         const response = await api.patch('/profile/candidate/me', candidatePayload);
         const normalizedProfile = normalizeProfilePayload(response.data);
-        const nextAuthUser = syncCurrentUserName(currentUser, normalizedProfile);
+        const nextAuthUser = syncCurrentUserProfile(currentUser, normalizedProfile);
 
         set({
           currentUser: nextAuthUser,
@@ -629,7 +577,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
         const response = await api.patch('/profile/employer/me', employerPayload);
         const normalizedProfile = normalizeProfilePayload(response.data);
-        const nextAuthUser = syncCurrentUserName(currentUser, normalizedProfile);
+        const nextAuthUser = syncCurrentUserProfile(currentUser, normalizedProfile);
 
         set({
           currentUser: nextAuthUser,
