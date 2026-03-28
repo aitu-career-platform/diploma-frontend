@@ -261,7 +261,16 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     set({ isMutating: true, error: null });
 
     try {
-      const response = await api.patch('/notifications/telegram', settings);
+      const payload = Object.fromEntries(
+        Object.entries({
+          telegramChatId: settings.telegramChatId,
+          telegramNotificationsEnabled: settings.telegramNotificationsEnabled,
+          telegramNotifyInvites: settings.telegramNotifyInvites,
+          telegramNotifyApplications: settings.telegramNotifyApplications,
+        }).filter(([, value]) => value !== undefined),
+      );
+
+      const response = await api.patch('/notifications/telegram', payload);
       const responsePayload = isRecord(response.data) ? response.data : {};
 
       set((state) => ({

@@ -367,9 +367,18 @@ export const ProfilePage = () => {
     setActivityError(null);
     setActivitySuccess(null);
 
+    if (
+      telegramSettings.telegramNotificationsEnabled &&
+      !telegramSettings.telegramChatId
+    ) {
+      setActivityError(
+        'Link Telegram first: generate the deep-link, press Start in the bot, then refresh Telegram status.',
+      );
+      return;
+    }
+
     try {
       await updateTelegramSettings({
-        telegramChatId: telegramSettings.telegramChatId,
         telegramNotificationsEnabled: telegramSettings.telegramNotificationsEnabled,
         telegramNotifyInvites: telegramSettings.telegramNotifyInvites,
         telegramNotifyApplications: telegramSettings.telegramNotifyApplications,
@@ -398,6 +407,35 @@ export const ProfilePage = () => {
     } catch (linkError) {
       setActivityError(
         linkError instanceof Error ? linkError.message : 'Failed to create Telegram link',
+      );
+    }
+  };
+
+  const handleTelegramStatusRefresh = async () => {
+    setActivityError(null);
+    setActivitySuccess(null);
+
+    try {
+      await loadProfile();
+
+      const nextProfile = (useUserStore.getState().currentProfile as Record<string, unknown> | null) || null;
+      const nextChatId =
+        nextProfile && typeof nextProfile.telegramChatId === 'string'
+          ? nextProfile.telegramChatId
+          : null;
+
+      if (nextChatId) {
+        setActivitySuccess('Telegram linked successfully. You can save notification flags now.');
+      } else {
+        setActivityError(
+          'Telegram is not linked yet. Open the deep-link, press Start in the bot, then try refresh again.',
+        );
+      }
+    } catch (refreshError) {
+      setActivityError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : 'Failed to refresh Telegram status',
       );
     }
   };
@@ -1333,7 +1371,7 @@ export const ProfilePage = () => {
                   Telegram Notifications
                 </h2>
                 <p className="text-sm mt-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  Deep-link flow based on `/notifications/telegram/link`.
+                  Generate the deep-link, press Start in the bot, refresh status, then save flags.
                 </p>
               </div>
 
@@ -1418,6 +1456,14 @@ export const ProfilePage = () => {
                   >
                     Generate Telegram Link
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleTelegramStatusRefresh()}
+                    disabled={notificationsMutating}
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                  >
+                    Refresh Telegram Status
+                  </Button>
                 </div>
 
                 {telegramLinkSession?.deepLink && (
@@ -1446,6 +1492,9 @@ export const ProfilePage = () => {
                         {telegramLinkSession.instructions}
                       </p>
                     )}
+                    <p className="mt-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                      After pressing Start in the bot, come back here and click `Refresh Telegram Status`.
+                    </p>
                   </div>
                 )}
               </div>

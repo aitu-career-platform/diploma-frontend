@@ -372,6 +372,10 @@ const loadFreshProfile = async () => {
     params: {
       _ts: Date.now(),
     },
+    headers: {
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
   });
 };
 
