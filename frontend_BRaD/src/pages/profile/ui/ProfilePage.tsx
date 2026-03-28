@@ -227,7 +227,14 @@ export const ProfilePage = () => {
   const profile = (currentProfile as Record<string, unknown> | null) || null;
   const currentUserId = currentUser?.id || null;
   const currentUserRole = currentUser?.role || null;
-  const avatarSrc = getString(profile?.avatarUrl) || currentUser?.avatar || '';
+  const rawUser = getRecord(profile?.user);
+  const rawAvatarFile = getRecord(rawUser?.avatarFile) || getRecord(profile?.avatarFile);
+  const avatarSrc =
+    getString(profile?.avatarUrl) ||
+    getString(rawAvatarFile?.downloadUrl) ||
+    getString(rawAvatarFile?.url) ||
+    currentUser?.avatar ||
+    '';
 
   const {
     register,

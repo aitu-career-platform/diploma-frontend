@@ -272,6 +272,7 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
   const candidateProfile = isRecord(payload.candidateProfile) ? payload.candidateProfile : {};
   const employerProfile = isRecord(payload.employerProfile) ? payload.employerProfile : {};
   const company = isRecord(employerProfile.company) ? employerProfile.company : {};
+  const rootAvatarFile = isRecord(payload.avatarFile) ? payload.avatarFile : {};
   const avatarFile = isRecord(user.avatarFile) ? user.avatarFile : {};
   const logoFile = isRecord(company.logoFile) ? company.logoFile : {};
   const notificationSettings = isRecord(payload.notificationSettings)
@@ -303,8 +304,18 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     companyContactPhone: company.contactPhone || employerProfile.companyContactPhone,
     hrEmail: employerProfile.hrEmail,
     hrPhone: employerProfile.hrPhone,
-    avatarUrl: getString(avatarFile.downloadUrl) || getString(avatarFile.url) || undefined,
-    avatarFile: Object.keys(avatarFile).length ? avatarFile : null,
+    avatarUrl:
+      getString(avatarFile.downloadUrl) ||
+      getString(avatarFile.url) ||
+      getString(rootAvatarFile.downloadUrl) ||
+      getString(rootAvatarFile.url) ||
+      undefined,
+    avatarFile:
+      Object.keys(avatarFile).length
+        ? avatarFile
+        : Object.keys(rootAvatarFile).length
+          ? rootAvatarFile
+          : null,
     companyLogoUrl: getString(logoFile.downloadUrl) || getString(logoFile.url) || undefined,
     companyLogoFile: Object.keys(logoFile).length ? logoFile : null,
     resumes: Array.isArray(candidateProfile.resumes) ? candidateProfile.resumes : [],
@@ -371,10 +382,6 @@ const loadFreshProfile = async () => {
   return api.get('/profile/me', {
     params: {
       _ts: Date.now(),
-    },
-    headers: {
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
     },
   });
 };
