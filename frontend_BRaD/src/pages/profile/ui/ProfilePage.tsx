@@ -207,8 +207,13 @@ export const ProfilePage = () => {
     updateTelegramSettings,
     createTelegramLink,
   } = useNotificationsStore();
-  const { uploadAndAttach, deleteFile, isUploading: isUploadingMedia, isDeleting: isDeletingMedia } =
-    useMediaStore();
+  const {
+    uploadAndAttach,
+    deleteFile,
+    getDownloadUrl,
+    isUploading: isUploadingMedia,
+    isDeleting: isDeletingMedia,
+  } = useMediaStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -222,6 +227,7 @@ export const ProfilePage = () => {
   const profile = (currentProfile as Record<string, unknown> | null) || null;
   const currentUserId = currentUser?.id || null;
   const currentUserRole = currentUser?.role || null;
+  const avatarSrc = getString(profile?.avatarUrl) || currentUser?.avatar || '';
 
   const {
     register,
@@ -480,6 +486,23 @@ export const ProfilePage = () => {
     }
   };
 
+  const handleOpenFile = async (file: Record<string, unknown> | null) => {
+    const fileId = getFileId(file);
+    const fallbackHref = getFileHref(file);
+
+    try {
+      const nextHref = fileId ? await getDownloadUrl(fileId) : fallbackHref;
+
+      if (!nextHref) {
+        throw new Error('Download URL is unavailable');
+      }
+
+      window.open(nextHref, '_blank', 'noopener,noreferrer');
+    } catch (openError) {
+      setActivityError(openError instanceof Error ? openError.message : 'Failed to open file');
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '8rem' }}>
@@ -518,8 +541,8 @@ export const ProfilePage = () => {
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={cardStyle}>
             <div className="flex items-start justify-between mb-6 gap-4">
               <div className="flex items-center gap-6">
-                {currentUser.avatar ? (
-                  <img src={currentUser.avatar} alt={displayName} className="w-24 h-24 rounded-full" />
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt={displayName} className="w-24 h-24 rounded-full object-cover" />
                 ) : (
                   <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: '#EBEDDF' }}>
                     <User className="w-12 h-12" style={{ color: '#333A2F' }} />
@@ -847,17 +870,16 @@ export const ProfilePage = () => {
                     Logo is uploaded via signed S3/R2 URL and attached to your company profile.
                   </p>
                 </div>
-                {companyLogoFile && getFileHref(companyLogoFile) && (
-                  <a
-                    href={getFileHref(companyLogoFile)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {companyLogoFile && (
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenFile(companyLogoFile)}
                     className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                     style={{ color: '#333A2F' }}
                   >
                     Open logo
                     <ExternalLink className="w-4 h-4" />
-                  </a>
+                  </button>
                 )}
               </div>
 
@@ -982,17 +1004,16 @@ export const ProfilePage = () => {
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-3">
-                            {getFileHref(resume) && (
-                              <a
-                                href={getFileHref(resume)}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            {getFileId(resume) && (
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenFile(resume)}
                                 className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                                 style={{ color: '#333A2F' }}
                               >
                                 <Download className="w-4 h-4" />
                                 Open
-                              </a>
+                              </button>
                             )}
                             <button
                               type="button"
@@ -1063,17 +1084,16 @@ export const ProfilePage = () => {
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-3">
-                            {getFileHref(file) && (
-                              <a
-                                href={getFileHref(file)}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            {getFileId(file) && (
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenFile(file)}
                                 className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                                 style={{ color: '#333A2F' }}
                               >
                                 <Download className="w-4 h-4" />
                                 Open
-                              </a>
+                              </button>
                             )}
                             <button
                               type="button"

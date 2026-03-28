@@ -42,40 +42,30 @@ export const useMediaStore = create<MediaStore>((set) => ({
     set({ isUploading: true, error: null });
 
     try {
-      const mimeType = input.file.type || 'application/octet-stream';
-      const presignResponse = await api.post('/uploads/presign', {
-        target: input.target,
-        fileName: input.file.name,
-        mimeType,
-        sizeBytes: input.file.size,
-      });
+      const formData = new FormData();
+      formData.append('target', input.target);
+      formData.append('file', input.file);
+      formData.append('entityType', input.entityType);
 
-      const upload = isRecord(presignResponse.data?.upload) ? presignResponse.data.upload : {};
-      const fileData = normalizeUploadedFile(presignResponse.data?.file);
-
-      const putResponse = await fetch(String(upload.url || ''), {
-        method: String(upload.method || 'PUT'),
-        headers: isRecord(upload.headers)
-          ? Object.fromEntries(
-              Object.entries(upload.headers).filter((entry): entry is [string, string] => {
-                return typeof entry[1] === 'string';
-              }),
-            )
-          : { 'Content-Type': mimeType },
-        body: input.file,
-      });
-
-      if (!putResponse.ok) {
-        throw new Error(`Upload failed with status ${putResponse.status}`);
+      if (input.resumeTitle) {
+        formData.append('resumeTitle', input.resumeTitle);
       }
 
-      await api.post('/files/attach', {
-        fileId: fileData.id,
-        entityType: input.entityType,
-        resumeTitle: input.resumeTitle || undefined,
-        isPrimary: input.isPrimary,
-        replaceResumeId: input.replaceResumeId,
+      if (input.replaceResumeId) {
+        formData.append('replaceResumeId', input.replaceResumeId);
+      }
+
+      if (input.isPrimary !== undefined) {
+        formData.append('isPrimary', String(input.isPrimary));
+      }
+
+      const response = await api.post('/uploads/proxy', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
+
+      const fileData = normalizeUploadedFile(response.data?.file ?? response.data);
 
       set({ isUploading: false });
       return fileData;

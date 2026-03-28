@@ -7,7 +7,7 @@ import { useMessageStore } from '@entities/message';
 import '../../../pages/landing/ui/landing.css';
 
 export const AppHeader = () => {
-  const { currentUser, isAuthenticated, logout } = useUserStore();
+  const { currentUser, currentProfile, isAuthenticated, logout } = useUserStore();
   const { meta, loadNotifications } = useNotificationsStore();
   const { chats, listChats, connectStream, disconnectStream } = useMessageStore();
   const navigate = useNavigate();
@@ -16,6 +16,13 @@ export const AppHeader = () => {
   const isAdmin = isAdminRole(currentUser?.role);
   const unreadCount = meta.unread;
   const unreadChatCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
+  const avatarSrc =
+    (currentProfile &&
+    typeof currentProfile === 'object' &&
+    'avatarUrl' in currentProfile &&
+    typeof currentProfile.avatarUrl === 'string'
+      ? currentProfile.avatarUrl
+      : '') || currentUser?.avatar || '';
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -101,10 +108,10 @@ export const AppHeader = () => {
                   className="hidden sm:block w-8 h-8 flex-shrink-0"
                   style={{ lineHeight: 0 }}
                 >
-                  {currentUser?.avatar ? (
+                  {avatarSrc ? (
                     <img
-                      src={currentUser.avatar}
-                      alt={currentUser.name}
+                      src={avatarSrc}
+                      alt={currentUser?.name || 'User'}
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (

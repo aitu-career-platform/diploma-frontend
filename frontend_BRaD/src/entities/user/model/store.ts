@@ -367,6 +367,14 @@ const syncCurrentUserProfile = (
   };
 };
 
+const loadFreshProfile = async () => {
+  return api.get('/profile/me', {
+    params: {
+      _ts: Date.now(),
+    },
+  });
+};
+
 const storedAuthUser = getStoredAuthUser();
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -385,7 +393,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       localStorage.setItem('authUser', JSON.stringify(authUser));
 
       try {
-        const profileResponse = await api.get('/profile/me');
+        const profileResponse = await loadFreshProfile();
         const normalizedProfile = normalizeProfilePayload(profileResponse.data);
         const nextAuthUser = syncCurrentUserProfile(authUser, normalizedProfile);
 
@@ -448,7 +456,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       localStorage.setItem('authUser', JSON.stringify(authUser));
 
       try {
-        const profileResponse = await api.get('/profile/me');
+        const profileResponse = await loadFreshProfile();
         const normalizedProfile = normalizeProfilePayload(profileResponse.data);
         const nextAuthUser = syncCurrentUserProfile(authUser, normalizedProfile);
 
@@ -512,7 +520,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   loadProfile: async () => {
     try {
-      const response = await api.get('/profile/me');
+      const response = await loadFreshProfile();
       const normalizedProfile = normalizeProfilePayload(response.data);
       const nextAuthUser = syncCurrentUserProfile(get().currentUser, normalizedProfile);
 
