@@ -1,21 +1,43 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Bell, User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  Briefcase,
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Shield,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
 import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
-import { useEffect, useState } from 'react';
 import { useNotificationsStore } from '@entities/notification';
 import { useMessageStore } from '@entities/message';
-import '../../../pages/landing/ui/landing.css';
+
+const navLinkBase =
+  'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all duration-200';
+
+const navLinkState = ({ isActive }: { isActive: boolean }) =>
+  isActive
+    ? `${navLinkBase} bg-primary text-white shadow-md`
+    : `${navLinkBase} text-[#2B3B23] hover:bg-[#E7EED6]`;
 
 export const AppHeader = () => {
   const { currentUser, currentProfile, isAuthenticated, logout } = useUserStore();
   const { meta, loadNotifications } = useNotificationsStore();
   const { chats, listChats, connectStream, disconnectStream } = useMessageStore();
   const navigate = useNavigate();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
   const unreadCount = meta.unread;
   const unreadChatCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
+
   const avatarSrc =
     (currentProfile &&
     typeof currentProfile === 'object' &&
@@ -44,209 +66,197 @@ export const AppHeader = () => {
     navigate('/app');
   };
 
+  const navItems = useMemo(() => {
+    const items = [
+      { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/app/jobs', label: 'Jobs', icon: Briefcase },
+    ];
+
+    if (isAuthenticated) {
+      items.push({ to: '/app/applications', label: 'Applications', icon: ClipboardList });
+      items.push({ to: '/app/profile', label: 'Profile', icon: Users });
+    }
+
+    if (isHr) {
+      items.push({ to: '/app/employer', label: 'Employer', icon: Briefcase });
+    }
+
+    if (isAdmin) {
+      items.push({ to: '/app/admin', label: 'Operations', icon: Shield });
+    }
+
+    return items;
+  }, [isAdmin, isAuthenticated, isHr]);
+
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        <Link to="/app" className="navbar-logo">
-          <img src="/images/logo/logo.png" alt="BRaD Logo" className="logo-img" />
+    <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4">
+      <div className="mx-auto flex w-full max-w-[1320px] items-center gap-2 rounded-2xl border border-[#2B3B23]/15 bg-[#F9FCEE]/85 px-3 py-2 shadow-[0_14px_34px_rgba(26,39,18,0.14)] backdrop-blur-xl sm:gap-3 sm:px-4">
+        <Link to="/app" className="shrink-0">
+          <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-12 w-auto sm:h-14" />
         </Link>
-        
-        <div className="navbar-menu">
-          <Link to="/app/jobs" className="nav-link">
-            Jobs
-          </Link>
-          {isAuthenticated && (
-            <>
-              <Link to="/app/applications" className="nav-link">
-                Applications
-              </Link>
-              <Link to="/app/profile" className="nav-link">
-                Profile
-              </Link>
-              {isHr && (
-                <Link to="/app/employer" className="nav-link">
-                  Employer Dashboard
-                </Link>
-              )}
-              {isAdmin && (
-                <Link to="/app/admin" className="nav-link">
-                  Operations
-                </Link>
-              )}
-            </>
-          )}
-        </div>
-        
-        <div className="navbar-actions">
+
+        <nav className="hidden flex-1 items-center gap-2 overflow-x-auto lg:flex">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <NavLink key={item.to} to={item.to} className={navLinkState} end={item.to === '/app'}>
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Link to="/app/profile#notifications" className="nav-btn nav-btn-ghost hidden sm:inline-flex relative">
-                <Bell className="w-4 h-4" />
+              <Link
+                to="/app/profile#notifications"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/15 bg-white/80 text-[#2B3B23] transition-colors hover:bg-[#ECF2DB]"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold flex items-center justify-center"
-                    style={{ backgroundColor: '#dc2626', color: 'white' }}
-                  >
+                  <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[#D6462E] px-1 text-center text-[10px] font-bold text-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Link>
-              <Link to="/app/chat" className="nav-btn nav-btn-ghost hidden sm:inline-flex relative">
-                <MessageSquare className="w-4 h-4" />
+
+              <Link
+                to="/app/chat"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/15 bg-white/80 text-[#2B3B23] transition-colors hover:bg-[#ECF2DB]"
+                title="Messages"
+              >
+                <MessageSquare className="h-4 w-4" />
                 {unreadChatCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold flex items-center justify-center"
-                    style={{ backgroundColor: '#333A2F', color: 'white' }}
-                  >
+                  <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[#1E6648] px-1 text-center text-[10px] font-bold text-white">
                     {unreadChatCount > 9 ? '9+' : unreadChatCount}
                   </span>
                 )}
               </Link>
-              <div className="flex items-center gap-2">
-                <Link 
-                  to="/app/profile" 
-                  className="hidden sm:block w-8 h-8 flex-shrink-0"
-                  style={{ lineHeight: 0 }}
-                >
-                  {avatarSrc ? (
-                    <img
-                      src={avatarSrc}
-                      alt={currentUser?.name || 'User'}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-4 h-4 text-primary" />
-                    </div>
-                  )}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="nav-btn nav-btn-ghost hidden sm:inline-flex items-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden md:inline">Logout</span>
-                </button>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden nav-btn nav-btn-ghost"
+
+              <Link
+                to="/app/profile"
+                className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#2B3B23]/15 bg-white/80 sm:block"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt={currentUser?.name || 'User'} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[#2B3B23]">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+              </Link>
+
+              <button
+                onClick={() => void handleLogout()}
+                className="hidden items-center gap-2 rounded-xl border border-[#2B3B23]/15 bg-white/90 px-3 py-2 text-sm font-semibold text-[#2B3B23] transition-colors hover:bg-[#ECF2DB] md:inline-flex"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/app/login" className="nav-btn nav-btn-ghost hidden sm:inline-block">
+              <Link
+                to="/app/login"
+                className="hidden rounded-xl border border-[#2B3B23]/20 bg-white/90 px-3 py-2 text-sm font-semibold text-[#2B3B23] transition-colors hover:bg-[#ECF2DB] sm:inline-flex"
+              >
                 Sign In
               </Link>
-              <Link to="/app/register" className="nav-btn nav-btn-primary">
-                Get Started
-              </Link>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden nav-btn nav-btn-ghost"
+              <Link
+                to="/app/register"
+                className="hidden rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 sm:inline-flex"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
+                Create Account
+              </Link>
             </>
           )}
+
+          <button
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/20 bg-white/80 text-[#2B3B23] lg:hidden"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 
       {mobileMenuOpen && (
-        <div className="lg:hidden mt-4 p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-          <nav className="flex flex-col gap-4">
-            <Link
-              to="/app/jobs"
-              onClick={() => setMobileMenuOpen(false)}
-              className="nav-link"
-            >
-              Jobs
-            </Link>
-            {isAuthenticated && (
+        <div className="mx-auto mt-3 w-full max-w-[1320px] rounded-2xl border border-[#2B3B23]/15 bg-[#FAFDEE] p-4 shadow-[0_18px_34px_rgba(26,39,18,0.14)] lg:hidden">
+          <nav className="flex flex-col gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={navLinkState}
+                  onClick={() => setMobileMenuOpen(false)}
+                  end={item.to === '/app'}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+
+            {isAuthenticated ? (
               <>
-                <Link
-                  to="/app/applications"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="nav-link"
-                >
-                  Applications
-                </Link>
-                <Link
-                  to="/app/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="nav-link"
-                >
-                  Profile
-                </Link>
-                <Link
+                <NavLink
                   to="/app/profile#notifications"
+                  className={navLinkState}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="nav-link"
                 >
-                  Notifications
-                  {unreadCount > 0 ? ` (${unreadCount})` : ''}
-                </Link>
-                <Link
+                  <Bell className="h-4 w-4" />
+                  Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
+                </NavLink>
+
+                <NavLink
                   to="/app/chat"
+                  className={navLinkState}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="nav-link"
                 >
-                  Messages
-                  {unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
-                </Link>
-                {isHr && (
-                  <Link
-                    to="/app/employer"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="nav-link"
-                  >
-                    Employer Dashboard
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link
-                    to="/app/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="nav-link"
-                  >
-                    Operations
-                  </Link>
-                )}
+                  <MessageSquare className="h-4 w-4" />
+                  Messages {unreadChatCount > 0 ? `(${unreadChatCount})` : ''}
+                </NavLink>
+
                 <button
                   onClick={() => {
-                    handleLogout();
+                    void handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="nav-btn nav-btn-ghost text-left"
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#2B3B23] hover:bg-[#E7EED6]"
                 >
-                  <LogOut className="w-4 h-4 inline mr-2" />
+                  <LogOut className="h-4 w-4" />
                   Logout
                 </button>
               </>
-            )}
-            {!isAuthenticated && (
+            ) : (
               <>
                 <Link
                   to="/app/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="nav-link"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#2B3B23]/20 bg-white px-3 py-2 text-sm font-semibold text-[#2B3B23]"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/app/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="nav-btn nav-btn-primary"
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white"
                 >
-                  Get Started
+                  Create Account
                 </Link>
               </>
             )}
           </nav>
         </div>
       )}
-    </nav>
+    </header>
   );
 };

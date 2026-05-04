@@ -35,6 +35,7 @@ export const ChatPage = () => {
     loadChatByApplication,
     getOtherParticipant,
   } = useMessageStore();
+
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,9 +65,7 @@ export const ChatPage = () => {
           const chat = await loadChat(chatId);
           setSelectedChatId(chat.id);
           setActiveChat(chat.id);
-          return;
         }
-
       } catch (loadError) {
         setPageError(loadError instanceof Error ? loadError.message : 'Failed to load chats');
       }
@@ -106,17 +105,15 @@ export const ChatPage = () => {
 
   if (!isAuthenticated || !currentUser) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
-        <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
-          <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={{ backgroundColor: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-            <h1 className="font-heading text-3xl font-bold mb-3" style={{ color: '#333A2F' }}>
-              Sign in to open chats
-            </h1>
-            <p className="mb-6 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Chats appear after a candidate applies to a vacancy.
+        <main className="app-page-main">
+          <div className="app-section-card mx-auto max-w-2xl p-8 text-center">
+            <h1 className="app-title text-3xl">Sign in to open chats</h1>
+            <p className="app-text-muted mt-3 text-sm sm:text-base">
+              Chats appear automatically after a candidate submits an application.
             </p>
-            <Link to="/app/login">
+            <Link to="/app/login" className="mt-6 inline-flex">
               <Button variant="hero">Sign In</Button>
             </Link>
           </div>
@@ -126,126 +123,108 @@ export const ChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+    <div className="min-h-screen app-shell app-page">
       <AppHeader />
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="font-heading text-3xl sm:text-4xl font-bold" style={{ color: '#333A2F' }}>
-              Messages
-            </h1>
-            <p className="mt-2 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Realtime application chats between candidate and HR.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#FFFFFF', color: '#333A2F' }}>
-              Stream: {streamStatus}
+      <main className="app-page-main">
+        <section className="app-section-card app-grid-backdrop relative overflow-hidden p-6 sm:p-7">
+          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="app-title text-3xl sm:text-4xl">Messages</h1>
+              <p className="app-text-muted mt-2 text-sm sm:text-base">
+                Realtime candidate and HR conversations linked to applications.
+              </p>
             </div>
-            <div className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#FFFFFF', color: '#333A2F' }}>
-              {meta.total} chat(s)
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="app-chip">Stream: {streamStatus}</span>
+              <span className="app-chip">Chats: {meta.total}</span>
+              <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
-              <RefreshCcw className="w-4 h-4" />
-              Refresh
-            </Button>
           </div>
-        </div>
+        </section>
 
         {(pageError || error) && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {pageError || error}
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[360px_minmax(0,1fr)] gap-4 sm:gap-6">
-          <div>
-            <div className="bg-white rounded-2xl shadow-lg p-4" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              <h2 className="font-heading text-xl font-bold mb-4" style={{ color: '#333A2F' }}>
-                Conversations
-              </h2>
+        <section className="mt-5 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6">
+          <div className="app-section-card p-4">
+            <h2 className="app-title mb-3 text-lg">Conversations</h2>
 
-              {isLoadingList ? (
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  Loading conversations...
-                </p>
-              ) : chats.length === 0 ? (
-                <div className="text-center py-8" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No chats yet</p>
-                  <p className="mt-2 text-xs">
-                    A chat is created automatically after an application is submitted.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {chats.map((chat) => {
-                    const other = getOtherParticipant(chat);
-                    const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
-                    const displayName = fullName || other?.email || 'Unknown user';
+            {isLoadingList ? (
+              <p className="app-text-muted text-sm">Loading conversations...</p>
+            ) : chats.length === 0 ? (
+              <div className="py-8 text-center">
+                <MessageSquare className="mx-auto h-12 w-12 text-[#6D7E62]" />
+                <p className="app-text-muted mt-2 text-sm">No chats yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {chats.map((chat) => {
+                  const other = getOtherParticipant(chat);
+                  const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
+                  const displayName = fullName || other?.email || 'Unknown user';
+                  const selected = selectedChatId === chat.id;
 
-                    return (
-                      <button
-                        key={chat.id}
-                        onClick={() => void handleSelectChat(chat.id)}
-                        className="w-full text-left p-4 rounded-xl transition-colors border"
-                        style={
-                          selectedChatId === chat.id
-                            ? { backgroundColor: '#F7F8EF', borderColor: '#333A2F' }
-                            : { backgroundColor: '#FFFFFF', borderColor: 'rgba(51, 58, 47, 0.08)' }
-                        }
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#EBEDDF' }}>
-                            <User className="w-5 h-5" style={{ color: '#333A2F' }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-semibold truncate" style={{ color: '#333A2F' }}>
-                                {displayName}
-                              </p>
-                              {chat.unreadCount > 0 && (
-                                <span className="text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center" style={{ backgroundColor: '#333A2F', color: 'white' }}>
-                                  {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
-                                </span>
-                              )}
-                            </div>
-                            <p className="mt-1 text-sm truncate" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
-                              {chat.vacancy?.title || 'Application chat'}
-                            </p>
-                            {chat.lastMessage && (
-                              <p className="mt-1 text-xs truncate" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                                {chat.lastMessage.text}
-                              </p>
-                            )}
-                            <p className="mt-2 text-[11px]" style={{ color: 'rgba(51, 58, 47, 0.48)' }}>
-                              {formatTime(chat.lastMessageAt || chat.application?.createdAt)}
-                            </p>
-                          </div>
+                  return (
+                    <button
+                      key={chat.id}
+                      onClick={() => void handleSelectChat(chat.id)}
+                      className={`w-full rounded-xl border p-3 text-left transition-colors ${
+                        selected
+                          ? 'border-[#2B6A4D] bg-[#ECF5DE]'
+                          : 'border-[#2B3B23]/10 bg-white hover:bg-[#F4F8EA]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F0D8] text-[#2B3B23]">
+                          <User className="h-4 w-4" />
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-sm font-bold text-[#22301B]">{displayName}</p>
+                            {chat.unreadCount > 0 && (
+                              <span className="min-w-[20px] rounded-full bg-[#1E6648] px-1 text-center text-[10px] font-bold text-white">
+                                {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 truncate text-xs text-[#607456]">{chat.vacancy?.title || 'Application chat'}</p>
+                          {chat.lastMessage && (
+                            <p className="mt-1 truncate text-xs text-[#778A6E]">{chat.lastMessage.text}</p>
+                          )}
+                          <p className="mt-1 text-[11px] text-[#8B9D81]">
+                            {formatTime(chat.lastMessageAt || chat.application?.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
             {selectedChat ? (
-              <div className="bg-white rounded-2xl shadow-lg h-[620px] overflow-hidden" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <div className="app-section-card h-[620px] overflow-hidden">
                 <ChatWindow chat={selectedChat} embedded />
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-lg h-[620px] flex items-center justify-center" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                <div className="text-center" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Select a conversation to open the chat</p>
+              <div className="app-section-card flex h-[620px] items-center justify-center p-6 text-center">
+                <div>
+                  <MessageSquare className="mx-auto h-16 w-16 text-[#6D7E62]" />
+                  <p className="app-text-muted mt-3">Select a conversation to start chatting</p>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

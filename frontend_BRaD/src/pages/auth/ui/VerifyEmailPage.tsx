@@ -49,18 +49,14 @@ export const VerifyEmailPage = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#EBEDDF' }}>
+      <div className="min-h-screen app-shell flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-green-600" />
+          <div className="app-section-card p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <Mail className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="font-heading text-2xl font-bold mb-2" style={{ color: '#333A2F' }}>
-              Email Verified!
-            </h2>
-            <p className="mb-6" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-              Your account has been verified. Redirecting...
-            </p>
+            <h2 className="app-title text-2xl">Email verified</h2>
+            <p className="app-text-muted mt-2">Redirecting to workspace...</p>
           </div>
         </div>
       </div>
@@ -68,44 +64,32 @@ export const VerifyEmailPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#EBEDDF' }}>
+    <div className="min-h-screen app-shell flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <Link to="/app" className="inline-flex items-center gap-3 mb-0 transition-colors">
-          <img 
-            src="/images/logo/logo.png" 
-            alt="BRaD Logo" 
-            className="h-24 w-auto object-contain"
-          />
+        <Link to="/app" className="mb-1 inline-flex items-center gap-3">
+          <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-24 w-auto object-contain" />
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 relative" style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-          <Link
-            to="/app"
-            className="absolute top-4 right-4 transition-colors"
-            style={{ color: 'rgba(51, 58, 47, 0.6)' }}
-          >
-            <X className="w-5 h-5" />
+        <div className="app-section-card relative p-7 sm:p-8">
+          <Link to="/app" className="absolute right-4 top-4 text-[#607456] transition-colors hover:text-[#2B3B23]">
+            <X className="h-5 w-5" />
           </Link>
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-8 h-8" style={{ color: '#333A2F' }} />
+
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E8F0D8]">
+            <Mail className="h-7 w-7 text-[#2B6A4D]" />
           </div>
-          <h2 className="font-heading text-3xl font-bold mb-2 text-center" style={{ color: '#333A2F' }}>
-            Verify Your Email
-          </h2>
-          <p className="mb-6 text-center" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-            We've sent a verification code to <strong>{email}</strong>
+
+          <h2 className="app-title text-center text-3xl">Verify email</h2>
+          <p className="app-text-muted mb-6 mt-2 text-center text-sm sm:text-base">
+            Enter the code sent to <strong>{email}</strong>
           </p>
 
-          {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label htmlFor="code" className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                Verification Code
+              <label htmlFor="code" className="mb-2 block text-sm font-semibold text-[#22301B]">
+                Verification code
               </label>
               <Input
                 id="code"
@@ -113,40 +97,21 @@ export const VerifyEmailPage = () => {
                 maxLength={6}
                 {...register('code')}
                 placeholder="000000"
-                className="h-12 text-center text-2xl tracking-widest"
-                style={{ 
-                  borderColor: 'rgba(51, 58, 47, 0.2)',
-                  borderRadius: '0.75rem'
-                }}
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white text-center text-xl tracking-[0.3em]"
               />
-              {errors.code && (
-                <p className="text-sm mt-1" style={{ color: '#dc2626' }}>{errors.code.message}</p>
-              )}
+              {errors.code && <p className="mt-1 text-sm text-red-700">{errors.code.message}</p>}
             </div>
 
-            <Button 
-              type="submit" 
-              variant="hero" 
-              size="lg" 
-              className="w-full" 
-              disabled={isSubmitting}
-              style={{ 
-                backgroundColor: '#333A2F', 
-                color: 'white',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              {isSubmitting ? 'Verifying...' : 'Verify Email'}
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Verifying...' : 'Verify email'}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-              Didn't receive the code?{' '}
-              <Link to="/app/login" className="hover:underline font-medium" style={{ color: '#333A2F' }}>
-                Back to Login
-              </Link>
-            </p>
+          <div className="mt-6 text-center text-sm text-[#5E7253]">
+            Didn't receive the code?{' '}
+            <Link to="/app/login" className="font-semibold text-[#2B6A4D] hover:underline">
+              Back to login
+            </Link>
           </div>
         </div>
       </div>

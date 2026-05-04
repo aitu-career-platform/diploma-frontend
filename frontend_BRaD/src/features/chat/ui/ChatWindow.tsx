@@ -48,6 +48,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
   const [message, setMessage] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const { currentUser } = useUserStore();
   const {
     messagesByChatId,
@@ -102,14 +103,14 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
   };
 
   const containerStyle = embedded
-    ? { backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }
+    ? { backgroundColor: 'transparent' }
     : {
         position: 'fixed' as const,
         bottom: '1rem',
         right: '1rem',
         width: '24rem',
         height: '600px',
-        backgroundColor: 'white',
+        backgroundColor: '#FCFFF5',
         borderRadius: '1rem',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
         zIndex: 50,
@@ -117,33 +118,27 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
 
   return (
     <div
-      className={`w-full h-full flex flex-col ${embedded ? '' : 'fixed bottom-4 right-4 w-96 h-[600px] z-50'}`}
+      className={`flex h-full w-full flex-col ${embedded ? '' : 'fixed bottom-4 right-4 z-50 h-[600px] w-96'}`}
       style={containerStyle}
     >
-      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(51, 58, 47, 0.1)' }}>
+      <div className="flex items-center justify-between border-b border-[#2B3B23]/10 px-4 py-3">
         <div className="min-w-0">
-          <p className="font-semibold truncate" style={{ color: '#333A2F' }}>
-            {participantName}
-          </p>
-          <p className="text-xs truncate" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-            {chat.vacancy?.title || 'Application chat'}
-          </p>
+          <p className="truncate text-sm font-bold text-[#1F2B18]">{participantName}</p>
+          <p className="truncate text-xs text-[#5F7354]">{chat.vacancy?.title || 'Application chat'}</p>
         </div>
         {onClose && (
-          <button onClick={onClose} className="transition-colors" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-[#607456] transition-colors hover:text-[#2B3B23]">
+            <X className="h-5 w-5" />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 space-y-4 overflow-y-auto bg-[#F8FCEC] p-4">
         {isLoadingMessages ? (
-          <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-            Loading messages...
-          </p>
+          <p className="text-sm text-[#607456]">Loading messages...</p>
         ) : messages.length === 0 ? (
-          <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-            No messages yet. The application event will appear here after the chat is initialized.
+          <p className="text-sm text-[#607456]">
+            No messages yet. The application event appears here after chat initialization.
           </p>
         ) : (
           messages.map((item) => {
@@ -153,42 +148,36 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
 
             if (isSystem) {
               return (
-                <div key={item.id} className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: '#F7F8F1', color: 'rgba(51, 58, 47, 0.75)' }}>
-                  <div className="font-medium">System update</div>
+                <div key={item.id} className="rounded-xl border border-[#2B3B23]/10 bg-[#EEF4DE] px-3 py-2 text-sm text-[#4D6042]">
+                  <div className="font-semibold">System update</div>
                   <div className="mt-1">{item.text}</div>
-                  <div className="mt-1 text-xs">{formatMessageDate(item.createdAt)}</div>
+                  <div className="mt-1 text-xs text-[#718567]">{formatMessageDate(item.createdAt)}</div>
                 </div>
               );
             }
 
             return (
               <div key={item.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
-                  {!isOwn && (
-                    <div className="mb-1 text-xs font-medium" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                      {getSenderName(item)}
-                    </div>
-                  )}
+                <div className={`flex max-w-[85%] flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                  {!isOwn && <div className="mb-1 text-xs font-semibold text-[#5E7253]">{getSenderName(item)}</div>}
+
                   <div
                     className="rounded-2xl px-4 py-3"
                     style={
                       isOwn
-                        ? { backgroundColor: '#333A2F', color: 'white' }
+                        ? { backgroundColor: '#1F2B18', color: 'white' }
                         : isApplication
-                          ? { backgroundColor: '#E4E9D3', color: '#333A2F' }
-                          : { backgroundColor: '#EBEDDF', color: '#333A2F' }
+                          ? { backgroundColor: '#DDECCD', color: '#1F2B18' }
+                          : { backgroundColor: '#E8F0D8', color: '#1F2B18' }
                     }
                   >
                     {isApplication && (
-                      <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em]">
+                      <div className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#275E44]">
                         Application started
                       </div>
                     )}
-                    <p className="text-sm whitespace-pre-wrap break-words">{item.text}</p>
-                    <p
-                      className="text-xs mt-2"
-                      style={{ color: isOwn ? 'rgba(255, 255, 255, 0.72)' : 'rgba(51, 58, 47, 0.6)' }}
-                    >
+                    <p className="whitespace-pre-wrap break-words text-sm">{item.text}</p>
+                    <p className="mt-2 text-xs" style={{ color: isOwn ? 'rgba(255,255,255,0.72)' : '#5D7151' }}>
                       {formatTime(item.createdAt)}
                     </p>
                   </div>
@@ -197,15 +186,12 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
             );
           })
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4" style={{ borderTop: '1px solid rgba(51, 58, 47, 0.1)' }}>
-        {submitError && (
-          <div className="mb-3 rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c' }}>
-            {submitError}
-          </div>
-        )}
+      <div className="border-t border-[#2B3B23]/10 bg-white px-4 py-3">
+        {submitError && <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
         <div className="flex gap-2">
           <Input
             value={message}
@@ -216,18 +202,11 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
                 void handleSend();
               }
             }}
-            placeholder="Type a message..."
-            className="flex-1"
-            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+            placeholder="Write a message"
+            className="h-11 flex-1 rounded-xl border-[#9FB08A]/35 bg-white"
           />
-          <Button
-            onClick={() => void handleSend()}
-            variant="hero"
-            size="icon"
-            disabled={isSending}
-            style={{ backgroundColor: '#333A2F', color: 'white' }}
-          >
-            <Send className="w-4 h-4" />
+          <Button onClick={() => void handleSend()} variant="hero" size="icon" disabled={isSending}>
+            <Send className="h-4 w-4" />
           </Button>
         </div>
       </div>

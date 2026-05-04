@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,36 +6,38 @@
 
 @layer base {
   :root {
-    /* Landing page color scheme */
-    --background: 235 20% 92%; /* #EBEDDF */
-    --foreground: 100 10% 20%; /* #333A2F */
+    --background: 75 40% 96%;
+    --foreground: 112 20% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 100 10% 20%; /* #333A2F */
+    --card-foreground: 112 20% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 100 10% 20%;
-    --primary: 100 10% 20%; /* #333A2F */
+    --popover-foreground: 112 20% 15%;
+    --primary: 112 22% 18%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 235 20% 92%; /* #EBEDDF */
-    --secondary-foreground: 100 10% 20%;
-    --muted: 235 20% 88%;
-    --muted-foreground: 100 10% 40%;
-    --accent: 100 10% 20%;
+    --secondary: 72 33% 92%;
+    --secondary-foreground: 112 22% 18%;
+    --muted: 72 25% 90%;
+    --muted-foreground: 113 11% 36%;
+    --accent: 154 56% 27%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 235 20% 85%;
-    --input: 235 20% 85%;
-    --ring: 100 10% 20%;
+    --border: 72 20% 82%;
+    --input: 72 20% 82%;
+    --ring: 154 56% 27%;
     --radius: 1rem;
 
-    /* Custom tokens matching landing page */
-    --hero-gradient: #333A2F;
-    --hero-text-gradient: #333A2F;
-    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    --glow: 0 0 60px rgba(51, 58, 47, 0.2);
-    --font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro', 'Manrope', sans-serif;
-    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro', 'Manrope', sans-serif;
+    --hero-gradient: linear-gradient(135deg, #1f2b18 0%, #2f4f36 45%, #295f4e 100%);
+    --hero-text-gradient: linear-gradient(135deg, #1f2b18 0%, #295f4e 100%);
+    --card-shadow: 0 12px 30px rgba(29, 48, 20, 0.08);
+    --card-shadow-hover: 0 18px 42px rgba(29, 48, 20, 0.14);
+    --glow: 0 0 70px rgba(52, 120, 86, 0.2);
+    --font-heading: 'Sora', 'Segoe UI', sans-serif;
+    --font-body: 'Manrope', 'Segoe UI', sans-serif;
+    --app-bg:
+      radial-gradient(circle at 7% 5%, rgba(198, 217, 173, 0.42) 0, transparent 35%),
+      radial-gradient(circle at 92% 10%, rgba(173, 206, 203, 0.34) 0, transparent 40%),
+      linear-gradient(180deg, #f7faef 0%, #eef3df 52%, #eaf0dc 100%);
   }
 
   .dark {
@@ -81,8 +83,9 @@
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #333A2F;
-    background-color: #EBEDDF;
+    color: #25311f;
+    background: var(--app-bg);
+    background-attachment: fixed;
   }
 
   #root {
@@ -94,6 +97,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }
 
@@ -165,14 +169,100 @@
     }
   }
 
-  /* App pages padding for fixed navbar */
+  .app-shell {
+    position: relative;
+    background: var(--app-bg);
+    background-attachment: fixed;
+    color: #25311f;
+  }
+
+  .app-page-main {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .app-page-main {
+      padding: 2rem 1.5rem 3rem;
+    }
+  }
+
+  .app-section-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(37, 49, 31, 0.08);
+    border-radius: 1.25rem;
+    box-shadow: var(--card-shadow);
+  }
+
+  .app-kpi-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 248, 231, 0.95) 100%);
+    border: 1px solid rgba(37, 49, 31, 0.1);
+    border-radius: 1rem;
+  }
+
+  .app-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(37, 49, 31, 0.14);
+    background: rgba(255, 255, 255, 0.8);
+    color: rgba(37, 49, 31, 0.8);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .app-grid-backdrop {
+    position: relative;
+  }
+
+  .app-grid-backdrop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image:
+      linear-gradient(rgba(31, 43, 24, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31, 43, 24, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), transparent 80%);
+    opacity: 0.2;
+  }
+
+  .app-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+
+  .app-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: rgba(37, 49, 31, 0.18);
+  }
+
+  .app-title {
+    color: #1f2b18;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .app-text-muted {
+    color: rgba(37, 49, 31, 0.68);
+  }
+
+  /* App pages padding for fixed header */
   .app-page {
-    padding-top: 4rem;
+    padding-top: 5rem;
   }
 
   @media (min-width: 640px) {
     .app-page {
-      padding-top: 5rem;
+      padding-top: 5.5rem;
     }
   }
 }

@@ -550,7 +550,7 @@ export const ProfilePage = () => {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '8rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
@@ -565,7 +565,7 @@ export const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '8rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
@@ -579,7 +579,7 @@ export const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '6rem' }}>
+    <div className="min-h-screen app-shell app-page">
       <AppHeader />
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
         <div className="max-w-5xl mx-auto space-y-6">

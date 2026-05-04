@@ -1,3 +1,4 @@
+import { SearchX } from 'lucide-react';
 import { useJobStore } from '@entities/job';
 import { JobCard } from '@widgets/job-card';
 
@@ -6,28 +7,31 @@ export const JobsList = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading jobs...</div>
+      <div className="app-section-card flex items-center justify-center py-16">
+        <p className="app-text-muted text-sm sm:text-base">Loading vacancies...</p>
       </div>
     );
   }
 
   if (filteredJobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="text-4xl mb-4">🔍</div>
-        <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>No jobs found</h3>
-        <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Try adjusting your filters</p>
+      <div className="app-section-card flex flex-col items-center justify-center gap-3 py-16 text-center">
+        <div className="rounded-2xl bg-[#E8F0D8] p-3 text-[#24442E]">
+          <SearchX className="h-7 w-7" />
+        </div>
+        <h3 className="app-title text-xl">No vacancies match the filters</h3>
+        <p className="app-text-muted max-w-md text-sm sm:text-base">
+          Clear or adjust filters to see more options.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {filteredJobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}
     </div>
   );
 };
-

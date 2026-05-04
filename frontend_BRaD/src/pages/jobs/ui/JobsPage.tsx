@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Briefcase, Sparkles } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { JobFilters } from '@features/job-filters';
 import { JobsList } from '@widgets/jobs-list';
@@ -9,7 +9,7 @@ import { useFavoritesStore } from '@entities/favorite';
 import { isCandidateRole, useUserStore } from '@entities/user';
 
 export const JobsPage = () => {
-  const { loadJobs } = useJobStore();
+  const { loadJobs, jobs } = useJobStore();
   const { isAuthenticated, currentUser } = useUserStore();
   const { loadMyFavorites } = useFavoritesStore();
 
@@ -26,29 +26,49 @@ export const JobsPage = () => {
   }, [currentUser?.role, isAuthenticated, loadMyFavorites]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+    <div className="min-h-screen app-shell app-page">
       <AppHeader />
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
-        <Link to="/app" className="inline-flex items-center gap-2 mb-6 transition-colors" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to Home</span>
+      <main className="app-page-main">
+        <Link to="/app" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#4B5F3E] transition-colors hover:text-[#2A3A22]">
+          <ArrowLeft className="h-4 w-4" />
+          Back to workspace
         </Link>
 
-        <div className="mb-6 sm:mb-8">
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#333A2F' }}>Find Your Dream Job</h1>
-          <p className="text-base sm:text-lg" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-            Discover remote opportunities from top companies worldwide
-          </p>
-        </div>
+        <section className="app-section-card app-grid-backdrop relative overflow-hidden p-6 sm:p-8">
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <span className="app-chip mb-3">
+                <Sparkles className="h-3.5 w-3.5" />
+                Talent Marketplace
+              </span>
+              <h1 className="app-title text-3xl sm:text-4xl">Find roles that match your profile</h1>
+              <p className="app-text-muted mt-3 max-w-2xl text-sm sm:text-base">
+                Use smart filters, open details, save favorites, and apply with one clean flow.
+              </p>
+            </div>
 
-        <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
-          <div className="lg:col-span-1">
-            <JobFilters />
+            <div className="app-kpi-card flex items-center gap-3 p-4">
+              <div className="rounded-xl bg-[#E8F0D8] p-2.5 text-[#24442E]">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Available now</p>
+                <p className="text-2xl font-extrabold text-[#1F2B18]">{jobs.length}</p>
+              </div>
+            </div>
           </div>
+        </section>
+
+        <section className="mt-6 grid gap-4 lg:grid-cols-4 lg:gap-6">
+          <aside className="lg:col-span-1">
+            <div className="lg:sticky lg:top-[104px]">
+              <JobFilters />
+            </div>
+          </aside>
           <div className="lg:col-span-3">
             <JobsList />
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

@@ -307,7 +307,7 @@ export const AdminPanelPage = () => {
 
   if (!canViewPage) {
     return (
-      <div className="min-h-screen app-page" style={{ backgroundColor: '#EBEDDF' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
         <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
@@ -332,7 +332,7 @@ export const AdminPanelPage = () => {
   }
 
   return (
-    <div className="min-h-screen app-page" style={{ backgroundColor: '#EBEDDF' }}>
+    <div className="min-h-screen app-shell app-page">
       <AppHeader />
       <main className="container mx-auto px-4 sm:px-6 py-8" style={{ maxWidth: '1360px' }}>
         <section

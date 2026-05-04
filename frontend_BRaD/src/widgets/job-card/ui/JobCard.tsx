@@ -1,4 +1,4 @@
-import { MapPin, Clock, DollarSign, Heart } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Heart, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Job } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
@@ -31,102 +31,80 @@ export const JobCard = ({ job }: JobCardProps) => {
   };
 
   return (
-    <>
-      <Link to={`/app/jobs/${job.id}`}>
-        <div 
-          className="bg-white rounded-2xl transition-all duration-300 p-4 sm:p-6 group cursor-pointer"
-          style={{ 
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-            e.currentTarget.style.transform = 'translateY(-4px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-            e.currentTarget.style.transform = 'translateY(0)';
-          }}
-        >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-start gap-4 flex-1">
-              <img
-                src={job.companyLogo || '/images/companies/default_company.jpg'}
-                alt={job.company}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-              <div className="flex-1">
-                <h3 className="font-heading text-xl font-bold mb-1 transition-colors" style={{ color: '#333A2F' }}>
-                  {job.title}
-                </h3>
-                <p className="mb-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{job.company}</p>
-                <div className="flex flex-wrap items-center gap-4 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{job.location}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{job.type}</span>
-                  </div>
-                  {job.salary && (
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      <span>{job.salary}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            {isCandidate && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleToggleFavorite}
-                  disabled={isMutating}
-                  className="p-2 rounded-lg transition-colors"
-                  style={{
-                    backgroundColor: isFavorite ? '#333A2F' : '#EBEDDF',
-                    color: isFavorite ? 'white' : '#333A2F',
-                  }}
-                  title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
-                >
-                  <Heart
-                    className="w-5 h-5"
-                    style={{ fill: isFavorite ? 'currentColor' : 'transparent' }}
-                  />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <p className="mb-4 line-clamp-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{job.description}</p>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            {job.tags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 rounded-lg text-xs font-medium"
-                style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
-              >
-                {tag}
-              </span>
-            ))}
-            {job.tags.length > 4 && (
-              <span className="px-3 py-1 rounded-lg text-xs" style={{ backgroundColor: '#EBEDDF', color: 'rgba(51, 58, 47, 0.7)' }}>
-                +{job.tags.length - 4} more
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-            <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
-            <div className="flex items-center gap-3">
-              <span>{job.applicationsCount} applications</span>
-              <span>{favoritesCount} saved</span>
-            </div>
+    <Link to={`/app/jobs/${job.id}`} className="app-section-card app-lift block overflow-hidden p-4 sm:p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <img
+            src={job.companyLogo || '/images/companies/default_company.jpg'}
+            alt={job.company}
+            className="h-14 w-14 rounded-xl border border-[#2B3B23]/10 object-cover"
+          />
+          <div className="min-w-0">
+            <h3 className="app-title truncate text-lg">{job.title}</h3>
+            <p className="app-text-muted truncate text-sm">{job.company}</p>
           </div>
         </div>
-      </Link>
 
-    </>
+        {isCandidate && (
+          <button
+            onClick={handleToggleFavorite}
+            disabled={isMutating}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+              isFavorite
+                ? 'border-[#1F2B18] bg-[#1F2B18] text-white'
+                : 'border-[#2B3B23]/15 bg-[#F1F6E4] text-[#2B3B23] hover:bg-[#E5EED2]'
+            }`}
+            title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Heart className="h-4 w-4" style={{ fill: isFavorite ? 'currentColor' : 'transparent' }} />
+          </button>
+        )}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold text-[#526347]">
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-2.5 py-1">
+          <MapPin className="h-3.5 w-3.5" />
+          {job.location}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-2.5 py-1">
+          <Clock className="h-3.5 w-3.5" />
+          {job.type}
+        </span>
+        {job.salary && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-2.5 py-1">
+            <DollarSign className="h-3.5 w-3.5" />
+            {job.salary}
+          </span>
+        )}
+      </div>
+
+      <p className="app-text-muted mb-4 line-clamp-3 text-sm leading-6">{job.description}</p>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {job.tags.slice(0, 4).map((tag) => (
+          <span key={tag} className="rounded-full bg-[#E8F0D8] px-2.5 py-1 text-xs font-semibold text-[#2D3D25]">
+            {tag}
+          </span>
+        ))}
+        {job.tags.length > 4 && (
+          <span className="rounded-full bg-[#EDF3DD] px-2.5 py-1 text-xs font-semibold text-[#546746]">
+            +{job.tags.length - 4}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-[#2B3B23]/8 pt-3 text-xs text-[#637559]">
+        <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
+        <div className="flex items-center gap-3 font-semibold">
+          <span>{job.applicationsCount} applied</span>
+          <span>{favoritesCount} saved</span>
+        </div>
+      </div>
+
+      <div className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#2B6A4D]">
+        Open details
+        <ArrowUpRight className="h-4 w-4" />
+      </div>
+    </Link>
   );
 };

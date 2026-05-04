@@ -585,7 +585,7 @@ export const EmployerPage = () => {
 
   if (!currentUser || !isAllowed) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '7rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
@@ -602,7 +602,7 @@ export const EmployerPage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '7rem' }}>
+    <div className="min-h-screen app-shell app-page">
       <AppHeader />
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">

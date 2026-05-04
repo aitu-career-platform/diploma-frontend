@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, DollarSign, Heart } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, DollarSign, Heart, Sparkles } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Textarea } from '@shared/ui';
 import { useJobStore } from '@entities/job';
@@ -20,6 +20,7 @@ export const JobDetailPage = () => {
     toggleFavorite,
     isMutating: isFavoriteMutating,
   } = useFavoritesStore();
+
   const [coverLetter, setCoverLetter] = useState('');
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
@@ -79,11 +80,11 @@ export const JobDetailPage = () => {
 
   if (!job && isLoading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
-        <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
-          <div className="text-center">
-            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>Loading job...</h1>
+        <main className="app-page-main">
+          <div className="app-section-card p-8 text-center">
+            <h1 className="app-title text-3xl">Loading vacancy...</h1>
           </div>
         </main>
       </div>
@@ -92,13 +93,13 @@ export const JobDetailPage = () => {
 
   if (!job) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
+      <div className="min-h-screen app-shell app-page">
         <AppHeader />
-        <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
-          <div className="text-center">
-            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>Job not found</h1>
+        <main className="app-page-main">
+          <div className="app-section-card p-8 text-center">
+            <h1 className="app-title mb-4 text-3xl">Vacancy not found</h1>
             <Link to="/app/jobs">
-              <Button style={{ backgroundColor: '#333A2F', color: 'white' }}>Back to Jobs</Button>
+              <Button variant="hero">Back to jobs</Button>
             </Link>
           </div>
         </main>
@@ -107,187 +108,146 @@ export const JobDetailPage = () => {
   }
 
   return (
-    <>
-      <div className="min-h-screen" style={{ backgroundColor: '#EBEDDF', paddingTop: '4rem' }}>
-        <AppHeader />
-        <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
-          <Link
-            to="/app/jobs"
-            className="inline-flex items-center gap-2 mb-6 transition-colors"
-            style={{ color: 'rgba(51, 58, 47, 0.7)' }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Back to Jobs</span>
-          </Link>
+    <div className="min-h-screen app-shell app-page">
+      <AppHeader />
+      <main className="app-page-main">
+        <Link
+          to="/app/jobs"
+          className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#4B5F3E] transition-colors hover:text-[#2A3A22]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to jobs
+        </Link>
 
-          <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-6" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
-                  <img
-                    src={job.companyLogo || '/images/companies/default_company.jpg'}
-                    alt={job.company}
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#333A2F' }}>{job.title}</h1>
-                    <p className="text-lg sm:text-xl mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{job.company}</p>
-                    <div className="flex flex-wrap gap-3 sm:gap-4 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{job.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span>{job.type}</span>
-                      </div>
-                      {job.salary && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4" />
-                          <span>{job.salary}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {job.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-4 py-2 rounded-lg text-sm font-medium"
-                      style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
-                    >
-                      {tag}
+        <section className="app-section-card app-grid-backdrop relative overflow-hidden p-6 sm:p-8">
+          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 gap-4 sm:gap-5">
+              <img
+                src={job.companyLogo || '/images/companies/default_company.jpg'}
+                alt={job.company}
+                className="h-16 w-16 rounded-2xl border border-[#2B3B23]/10 object-cover sm:h-20 sm:w-20"
+              />
+              <div className="min-w-0">
+                <span className="app-chip mb-2">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Vacancy Details
+                </span>
+                <h1 className="app-title text-2xl sm:text-4xl">{job.title}</h1>
+                <p className="app-text-muted mt-1 text-base sm:text-lg">{job.company}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-[#526347] sm:text-sm">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-3 py-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {job.location}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-3 py-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {job.type}
+                  </span>
+                  {job.salary && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#9FB08A]/35 bg-[#F5F9EB] px-3 py-1">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      {job.salary}
                     </span>
-                  ))}
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="font-heading text-xl font-bold mb-3" style={{ color: '#333A2F' }}>Description</h2>
-                    <p className="leading-relaxed" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{job.description}</p>
-                  </div>
-
-                  <div>
-                    <h2 className="font-heading text-xl font-bold mb-3" style={{ color: '#333A2F' }}>Requirements</h2>
-                    <ul className="space-y-2">
-                      {job.requirements.map((req, index) => (
-                        <li key={index} className="flex items-start gap-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                          <span className="mt-1" style={{ color: '#333A2F' }}>•</span>
-                          <span>{req}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:sticky lg:top-24" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                <div className="space-y-4">
-                  <div className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                    <p>Posted {new Date(job.postedAt).toLocaleDateString()}</p>
-                    <p>{job.applicationsCount} applications</p>
-                    <p>{favoritesCount} saved by candidates</p>
-                  </div>
-
-                  {isCandidate ? (
-                    <>
-                      <div className="space-y-3">
-                        <Button
-                          variant={isFavorite ? 'default' : 'outline'}
-                          size="lg"
-                          className="w-full"
-                          onClick={() => void handleToggleFavorite()}
-                          disabled={isFavoriteMutating}
-                          style={
-                            isFavorite
-                              ? { backgroundColor: '#333A2F', color: 'white' }
-                              : { borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }
-                          }
-                        >
-                          <Heart
-                            className="w-4 h-4"
-                            style={{ fill: isFavorite ? 'currentColor' : 'transparent' }}
-                          />
-                          {isFavorite ? 'Saved in favorites' : 'Save to favorites'}
-                        </Button>
-                        <Textarea
-                          value={coverLetter}
-                          onChange={(event) => setCoverLetter(event.target.value)}
-                          placeholder="Optional cover letter"
-                          maxLength={4000}
-                          className="min-h-[120px] rounded-2xl"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.14)' }}
-                        />
-                        <Button 
-                          variant="hero" 
-                          size="lg" 
-                          className="w-full"
-                          onClick={() => void handleApply()}
-                          disabled={isMutating}
-                          style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                        >
-                          {isMutating ? 'Submitting...' : 'Apply Now'}
-                        </Button>
-                        {applyError && (
-                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c' }}>
-                            {applyError}
-                          </div>
-                        )}
-                        {applySuccess && (
-                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(34, 197, 94, 0.08)', color: '#166534' }}>
-                            {applySuccess}{' '}
-                            <Link to="/app/applications" className="underline">
-                              Open applications
-                            </Link>
-                            {latestApplicationId && (
-                              <>
-                                {' · '}
-                                <Link to={`/app/chat?applicationId=${latestApplicationId}`} className="underline">
-                                  Open chat
-                                </Link>
-                              </>
-                            )}
-                          </div>
-                        )}
-                        {favoriteError && (
-                          <div className="rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c' }}>
-                            {favoriteError}
-                          </div>
-                        )}
-                      </div>
-                      <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: 'rgba(51, 58, 47, 0.75)' }}>
-                        Chat opens automatically after you submit an application. Then it becomes available on the Applications page and in Messages.
-                      </div>
-                    </>
-                  ) : (
-                    <Button 
-                      variant="hero" 
-                      size="lg" 
-                      className="w-full" 
-                      disabled
-                      style={{ backgroundColor: '#333A2F', color: 'white', opacity: 0.5 }}
-                    >
-                      Sign in to Apply
-                    </Button>
-                  )}
-
-                  <div className="pt-4 border-t" style={{ borderColor: 'rgba(51, 58, 47, 0.1)' }}>
-                    <h3 className="font-semibold mb-2" style={{ color: '#333A2F' }}>About {job.company}</h3>
-                    <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                      We are a leading company in the tech industry, focused on innovation and
-                      excellence.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="app-kpi-card shrink-0 px-4 py-3 text-sm text-[#485D3D]">
+              <p>Posted {new Date(job.postedAt).toLocaleDateString()}</p>
+              <p>{job.applicationsCount} applications</p>
+              <p>{favoritesCount} saved</p>
             </div>
           </div>
-        </main>
-      </div>
-    </>
+        </section>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <section className="space-y-6 lg:col-span-2">
+            <div className="app-section-card p-6 sm:p-7">
+              <h2 className="app-title mb-3 text-xl">Overview</h2>
+              <p className="app-text-muted leading-7">{job.description}</p>
+            </div>
+
+            <div className="app-section-card p-6 sm:p-7">
+              <h2 className="app-title mb-3 text-xl">Requirements</h2>
+              <ul className="space-y-2.5">
+                {job.requirements.map((req, index) => (
+                  <li key={index} className="app-text-muted flex items-start gap-2 leading-6">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#2B6A4D]" />
+                    <span>{req}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          <aside className="lg:col-span-1">
+            <div className="app-section-card lg:sticky lg:top-[104px] p-5 sm:p-6">
+              <h3 className="app-title mb-3 text-lg">Apply to this role</h3>
+
+              {isCandidate ? (
+                <div className="space-y-3">
+                  <Button
+                    variant={isFavorite ? 'default' : 'outline'}
+                    size="lg"
+                    className="w-full"
+                    onClick={() => void handleToggleFavorite()}
+                    disabled={isFavoriteMutating}
+                  >
+                    <Heart className="h-4 w-4" style={{ fill: isFavorite ? 'currentColor' : 'transparent' }} />
+                    {isFavorite ? 'Saved in favorites' : 'Save to favorites'}
+                  </Button>
+
+                  <Textarea
+                    value={coverLetter}
+                    onChange={(event) => setCoverLetter(event.target.value)}
+                    placeholder="Optional cover letter"
+                    maxLength={4000}
+                    className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
+                  />
+
+                  <Button variant="hero" size="lg" className="w-full" onClick={() => void handleApply()} disabled={isMutating}>
+                    {isMutating ? 'Submitting...' : 'Apply now'}
+                  </Button>
+
+                  {applyError && (
+                    <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{applyError}</div>
+                  )}
+
+                  {applySuccess && (
+                    <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                      {applySuccess} <Link to="/app/applications" className="underline">Open applications</Link>
+                      {latestApplicationId && (
+                        <>
+                          {' · '}
+                          <Link to={`/app/chat?applicationId=${latestApplicationId}`} className="underline">
+                            Open chat
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {favoriteError && (
+                    <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{favoriteError}</div>
+                  )}
+
+                  <div className="rounded-xl border border-[#2B3B23]/10 bg-[#F4F8EA] px-3 py-2 text-xs leading-5 text-[#4A5E3D]">
+                    Chat opens automatically after you submit an application.
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Button variant="hero" size="lg" className="w-full" disabled>
+                    Sign in to apply
+                  </Button>
+                  <p className="app-text-muted text-sm">Only authorized candidates can apply and open related chats.</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
   );
 };
