@@ -64,6 +64,13 @@ export interface Vacancy {
   payoutFrequency?: string;
   description?: string;
   skills: string[];
+  requiredSkills: string[];
+  optionalSkills: string[];
+  niceToHaveSkills: string[];
+  requiredEducationLevel?: string;
+  requiredSkillLevels?: Record<string, string>;
+  minHoursPerWeek?: number;
+  maxHoursPerWeek?: number;
   languageIds: string[];
   favoritesCount?: number;
   createdAt?: string;

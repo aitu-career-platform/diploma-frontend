@@ -14,6 +14,11 @@ export const JobCard = ({ job }: JobCardProps) => {
   const isCandidate = isAuthenticated && isCandidateRole(currentUser?.role);
   const isFavorite = favoriteIds.has(job.id);
   const favoritesCount = countsByVacancyId[job.id] ?? job.favoritesCount ?? 0;
+  const postedDate = new Date(job.postedAt);
+  const postedTime = postedDate.getTime();
+  const postedLabel = Number.isNaN(postedTime) ? 'recently' : postedDate.toLocaleDateString();
+  const ageInDays = Number.isNaN(postedTime) ? Number.POSITIVE_INFINITY : (Date.now() - postedTime) / 86400000;
+  const isNew = ageInDays <= 7;
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -42,6 +47,11 @@ export const JobCard = ({ job }: JobCardProps) => {
           <div className="min-w-0">
             <h3 className="app-title truncate text-lg">{job.title}</h3>
             <p className="app-text-muted truncate text-sm">{job.company}</p>
+            {isNew && (
+              <span className="mt-2 inline-flex items-center rounded-full bg-[#E6F5DE] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#2A6949]">
+                New
+              </span>
+            )}
           </div>
         </div>
 
@@ -55,6 +65,7 @@ export const JobCard = ({ job }: JobCardProps) => {
                 : 'border-[#2B3B23]/15 bg-[#F1F6E4] text-[#2B3B23] hover:bg-[#E5EED2]'
             }`}
             title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
           >
             <Heart className="h-4 w-4" style={{ fill: isFavorite ? 'currentColor' : 'transparent' }} />
           </button>
@@ -94,15 +105,15 @@ export const JobCard = ({ job }: JobCardProps) => {
       </div>
 
       <div className="flex items-center justify-between border-t border-[#2B3B23]/8 pt-3 text-xs text-[#637559]">
-        <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
+        <span>Posted {postedLabel}</span>
         <div className="flex items-center gap-3 font-semibold">
           <span>{job.applicationsCount} applied</span>
           <span>{favoritesCount} saved</span>
         </div>
       </div>
 
-      <div className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#2B6A4D]">
-        Open details
+      <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#EDF6E2] px-3 py-2 text-sm font-bold text-[#2B6A4D]">
+        View details and apply
         <ArrowUpRight className="h-4 w-4" />
       </div>
     </Link>

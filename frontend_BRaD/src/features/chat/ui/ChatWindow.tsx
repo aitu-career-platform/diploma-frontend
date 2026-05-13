@@ -62,6 +62,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
   } = useMessageStore();
 
   const messages = messagesByChatId[chat.id] || [];
+  const canSend = Boolean(message.trim()) && !isSending;
   const otherParticipant = useMemo(() => getOtherParticipant(chat), [chat, getOtherParticipant]);
   const participantName = useMemo(() => {
     const firstName = otherParticipant?.firstName || '';
@@ -125,6 +126,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-[#1F2B18]">{participantName}</p>
           <p className="truncate text-xs text-[#5F7354]">{chat.vacancy?.title || 'Application chat'}</p>
+          <p className="mt-1 text-[11px] text-[#7A8D6E]">{messages.length} messages in this thread</p>
         </div>
         {onClose && (
           <button onClick={onClose} className="text-[#607456] transition-colors hover:text-[#2B3B23]">
@@ -192,6 +194,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
 
       <div className="border-t border-[#2B3B23]/10 bg-white px-4 py-3">
         {submitError && <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
+        <p className="mb-2 text-[11px] text-[#738667]">Press Enter to send, Shift+Enter for a new line.</p>
         <div className="flex gap-2">
           <Input
             value={message}
@@ -205,7 +208,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
             placeholder="Write a message"
             className="h-11 flex-1 rounded-xl border-[#9FB08A]/35 bg-white"
           />
-          <Button onClick={() => void handleSend()} variant="hero" size="icon" disabled={isSending}>
+          <Button onClick={() => void handleSend()} variant="hero" size="icon" disabled={!canSend}>
             <Send className="h-4 w-4" />
           </Button>
         </div>

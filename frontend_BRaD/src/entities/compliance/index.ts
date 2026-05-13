@@ -1,0 +1,23 @@
+export { complianceApi } from './model/api';
+export type {
+  CompanyVerificationStatus,
+  CompanyVerificationSubmissionInput,
+  CompanyVerificationSubmission,
+  CompanyVerificationMe,
+  CompanyVerificationQueueItem,
+  CompanyVerificationReviewInput,
+  ComplaintTargetType,
+  ComplaintStatus,
+  ModerationActionType,
+  ComplaintInput,
+  Complaint,
+  ModerateComplaintInput,
+  ConsentType,
+  PrivacyConsentInput,
+  PrivacyConsent,
+  PrivacyExport,
+  DeletionRequestStatus,
+  DeleteRequest,
+  ProcessDeleteRequestInput,
+  ComplianceApiError,
+} from './model/types';

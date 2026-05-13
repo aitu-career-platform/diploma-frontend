@@ -53,6 +53,15 @@ const asNumber = (value: unknown): number => {
   return 0;
 };
 
+const asOptionalNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = asNumber(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const normalizeMeta = (payload: unknown): InviteListMeta => {
   if (!isRecord(payload) || !isRecord(payload.meta)) {
     return defaultMeta;
@@ -102,7 +111,7 @@ const normalizeInvite = (payload: unknown): Invite | null => {
           lastName: asString(payload.sender.lastName) || undefined,
         }
       : null,
-    candidate: isRecord(payload.candidate)
+      candidate: isRecord(payload.candidate)
       ? {
           id: asString(payload.candidate.id),
           email: asString(payload.candidate.email) || undefined,
@@ -117,6 +126,8 @@ const normalizeInvite = (payload: unknown): Invite | null => {
                 skills: Array.isArray(payload.candidate.profile.skills)
                   ? payload.candidate.profile.skills.filter((entry): entry is string => typeof entry === 'string')
                   : [],
+                profileCompletenessPercent:
+                  asOptionalNumber(payload.candidate.profile.profileCompletenessPercent),
               }
             : null,
         }
@@ -170,21 +181,50 @@ const normalizeSuggestedCandidates = (payload: unknown): SuggestedCandidate[] =>
               skills: Array.isArray(entry.candidate.profile.skills)
                 ? entry.candidate.profile.skills.filter((skill): skill is string => typeof skill === 'string')
                 : [],
+              profileCompletenessPercent:
+                asOptionalNumber(entry.candidate.profile.profileCompletenessPercent),
             }
           : null,
       },
       matching: isRecord(entry.matching)
         ? {
-            score: asNumber(entry.matching.score),
+          score: asNumber(entry.matching.score),
+          normalizedScore: asOptionalNumber(entry.matching.normalizedScore),
+          skillCoveragePercent: asOptionalNumber(entry.matching.skillCoveragePercent),
+          matchedRequiredSkills: Array.isArray(entry.matching.matchedRequiredSkills)
+            ? entry.matching.matchedRequiredSkills.filter((value): value is string => typeof value === 'string')
+            : [],
+          missingRequiredSkills: Array.isArray(entry.matching.missingRequiredSkills)
+            ? entry.matching.missingRequiredSkills.filter((value): value is string => typeof value === 'string')
+            : [],
+          profileCompletenessPercent:
+            asOptionalNumber(entry.matching.profileCompletenessPercent),
+          breakdown: isRecord(entry.matching.breakdown)
+            ? {
+                skills: asOptionalNumber(entry.matching.breakdown.skills),
+                experienceRelevance: asOptionalNumber(entry.matching.breakdown.experienceRelevance),
+                compatibility: asOptionalNumber(entry.matching.breakdown.compatibility),
+                profileCompleteness: asOptionalNumber(entry.matching.breakdown.profileCompleteness),
+                activityRecency: asOptionalNumber(entry.matching.breakdown.activityRecency),
+                penalties: asOptionalNumber(entry.matching.breakdown.penalties),
+              }
+            : null,
             reasons: Array.isArray(entry.matching.reasons)
               ? entry.matching.reasons.filter((reason): reason is string => typeof reason === 'string')
               : [],
-            skillMatchCount: asNumber(entry.matching.skillMatchCount),
+            // Legacy fallback from matching v1
+            skillMatchCount: asOptionalNumber(entry.matching.skillMatchCount),
           }
         : {
             score: 0,
+            normalizedScore: undefined,
+            skillCoveragePercent: undefined,
+            matchedRequiredSkills: [],
+            missingRequiredSkills: [],
+            profileCompletenessPercent: undefined,
+            breakdown: null,
             reasons: [],
-            skillMatchCount: 0,
+            skillMatchCount: undefined,
           },
       existingInvite: isRecord(entry.existingInvite)
         ? {

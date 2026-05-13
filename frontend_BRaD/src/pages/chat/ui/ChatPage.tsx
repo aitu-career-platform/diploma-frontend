@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MessageSquare, RefreshCcw, User } from 'lucide-react';
+import { MessageSquare, RefreshCcw, Search, User, X } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
-import { Button } from '@shared/ui';
+import { Button, Input } from '@shared/ui';
 import { useMessageStore } from '@entities/message';
 import { useUserStore } from '@entities/user';
 import { ChatWindow } from '@features/chat';
@@ -38,6 +38,7 @@ export const ChatPage = () => {
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -88,6 +89,22 @@ export const ChatPage = () => {
 
     return detailsById[selectedChatId] || chats.find((chat) => chat.id === selectedChatId) || null;
   }, [chats, detailsById, selectedChatId]);
+
+  const visibleChats = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) {
+      return chats;
+    }
+
+    return chats.filter((chat) => {
+      const other = getOtherParticipant(chat);
+      const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim().toLowerCase();
+      const email = (other?.email || '').toLowerCase();
+      const vacancy = (chat.vacancy?.title || '').toLowerCase();
+
+      return fullName.includes(needle) || email.includes(needle) || vacancy.includes(needle);
+    });
+  }, [chats, getOtherParticipant, search]);
 
   const handleSelectChat = async (chatId: string) => {
     setSelectedChatId(chatId);
@@ -146,6 +163,24 @@ export const ChatPage = () => {
           </div>
         </section>
 
+        <section className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="app-kpi-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 1</p>
+            <p className="mt-1 text-sm font-semibold text-[#21301B]">Select dialog</p>
+            <p className="mt-1 text-xs text-[#5D7052]">Choose candidate or HR chat from the left list.</p>
+          </div>
+          <div className="app-kpi-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 2</p>
+            <p className="mt-1 text-sm font-semibold text-[#21301B]">Read latest context</p>
+            <p className="mt-1 text-xs text-[#5D7052]">Application events and recent messages stay in one thread.</p>
+          </div>
+          <div className="app-kpi-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 3</p>
+            <p className="mt-1 text-sm font-semibold text-[#21301B]">Reply quickly</p>
+            <p className="mt-1 text-xs text-[#5D7052]">Press Enter to send and keep the process moving.</p>
+          </div>
+        </section>
+
         {(pageError || error) && (
           <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {pageError || error}
@@ -154,7 +189,33 @@ export const ChatPage = () => {
 
         <section className="mt-5 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6">
           <div className="app-section-card p-4">
-            <h2 className="app-title mb-3 text-lg">Conversations</h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="app-title text-lg">Conversations</h2>
+              <span className="rounded-full bg-[#EBF1DE] px-2.5 py-1 text-[11px] font-semibold text-[#2B3B23]">
+                {visibleChats.length}/{chats.length}
+              </span>
+            </div>
+
+            <div className="mb-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65785A]" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by name, email, vacancy"
+                  className="h-10 rounded-xl border-[#9FB08A]/35 bg-white pl-10 pr-10"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#65785A] hover:bg-[#EEF4E0]"
+                    aria-label="Clear chat search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
 
             {isLoadingList ? (
               <p className="app-text-muted text-sm">Loading conversations...</p>
@@ -163,9 +224,14 @@ export const ChatPage = () => {
                 <MessageSquare className="mx-auto h-12 w-12 text-[#6D7E62]" />
                 <p className="app-text-muted mt-2 text-sm">No chats yet</p>
               </div>
+            ) : visibleChats.length === 0 ? (
+              <div className="py-8 text-center">
+                <Search className="mx-auto h-8 w-8 text-[#6D7E62]" />
+                <p className="app-text-muted mt-2 text-sm">No conversations match your search</p>
+              </div>
             ) : (
               <div className="space-y-2">
-                {chats.map((chat) => {
+                {visibleChats.map((chat) => {
                   const other = getOtherParticipant(chat);
                   const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
                   const displayName = fullName || other?.email || 'Unknown user';

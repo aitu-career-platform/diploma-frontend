@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Clock3, Download, FileText, MessageSquare, RefreshCcw, Shield, UserRound } from 'lucide-react';
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Download,
+  FileText,
+  Filter,
+  MessageSquare,
+  RefreshCcw,
+  Shield,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import {
@@ -45,6 +57,20 @@ const formatDateTime = (value?: string): string => {
   }
 
   return date.toLocaleString();
+};
+
+const toDateTimeLocalValue = (value?: string): string => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
 
 const formatStatus = (status?: string): string => {
@@ -126,6 +152,38 @@ export const ApplicationsPage = () => {
 
     return 'Candidate mode';
   }, [isAdmin, isHr]);
+
+  const activeFilters = useMemo(() => {
+    const entries: Array<{ key: keyof ApplicationFilters; label: string; value: string }> = [];
+
+    if (filters.status) {
+      entries.push({ key: 'status', label: 'Status', value: formatStatus(filters.status) });
+    }
+    if (filters.vacancyId) {
+      entries.push({ key: 'vacancyId', label: 'Vacancy ID', value: filters.vacancyId });
+    }
+    if (filters.candidateId) {
+      entries.push({ key: 'candidateId', label: 'Candidate ID', value: filters.candidateId });
+    }
+    if (filters.hrUserId) {
+      entries.push({ key: 'hrUserId', label: 'HR User ID', value: filters.hrUserId });
+    }
+    if (filters.dateFrom) {
+      entries.push({ key: 'dateFrom', label: 'From', value: formatDateTime(filters.dateFrom) });
+    }
+    if (filters.dateTo) {
+      entries.push({ key: 'dateTo', label: 'To', value: formatDateTime(filters.dateTo) });
+    }
+
+    return entries;
+  }, [filters]);
+
+  const removeFilter = (key: keyof ApplicationFilters) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: key === 'status' ? '' : undefined,
+    }));
+  };
 
   const refreshList = async (nextFilters: ApplicationFilters = filters) => {
     if (!currentUser) {
@@ -303,6 +361,77 @@ export const ApplicationsPage = () => {
           </div>
         </section>
 
+        <section className="mb-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-black/5 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+              Step 1
+            </p>
+            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+              Apply filters
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              Narrow by status, people, and time period.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-black/5 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+              Step 2
+            </p>
+            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+              Open application
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              Read cover letter, resume, and timeline in one pane.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-black/5 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+              Step 3
+            </p>
+            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+              Decide next action
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              Update status or continue discussion in chat.
+            </p>
+          </div>
+        </section>
+
+        {activeFilters.length > 0 && (
+          <section className="mb-6 rounded-[22px] border border-black/5 bg-white p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.58)' }}>
+                <Filter className="h-3.5 w-3.5" />
+                Active filters
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilters({ status: '', limit: 20, offset: 0 });
+                  clearSelection();
+                }}
+              >
+                Reset local filters
+              </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {activeFilters.map((entry) => (
+                <button
+                  key={entry.key}
+                  type="button"
+                  onClick={() => removeFilter(entry.key)}
+                  className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-[#F7F8F1] px-3 py-1.5 text-xs font-semibold"
+                  style={{ color: '#333A2F' }}
+                >
+                  {entry.label}: {entry.value}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="mb-6 grid gap-4 rounded-[28px] border border-black/5 p-5 sm:grid-cols-2 xl:grid-cols-6" style={cardStyle}>
           <div className="xl:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
@@ -371,7 +500,7 @@ export const ApplicationsPage = () => {
               </label>
               <Input
                 type="datetime-local"
-                value={filters.dateFrom || ''}
+                value={toDateTimeLocalValue(filters.dateFrom)}
                 onChange={(event) => {
                   const value = event.target.value;
                   handleFilterChange('dateFrom', value ? new Date(value).toISOString() : '');
@@ -388,7 +517,7 @@ export const ApplicationsPage = () => {
               </label>
               <Input
                 type="datetime-local"
-                value={filters.dateTo || ''}
+                value={toDateTimeLocalValue(filters.dateTo)}
                 onChange={(event) => {
                   const value = event.target.value;
                   handleFilterChange('dateTo', value ? new Date(value).toISOString() : '');

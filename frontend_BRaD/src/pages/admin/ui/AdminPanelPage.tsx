@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
+import { AlertTriangle, Archive, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input } from '@shared/ui';
 import api, { getApiErrorMessage } from '@shared/lib/api';
+import {
+  complianceApi,
+  type CompanyVerificationQueueItem,
+  type CompanyVerificationStatus,
+  type Complaint,
+  type ComplaintStatus,
+  type DeleteRequest,
+  type DeletionRequestStatus,
+  type ModerationActionType,
+} from '@entities/compliance';
 import { isAdminRole, useUserStore } from '@entities/user';
 
 type BackendUserRole = 'CANDIDATE' | 'EMPLOYER' | 'ADMIN';
@@ -61,6 +71,24 @@ const vacancyStatusOptions: Array<BackendVacancyStatus | ''> = [
   'CLOSED',
 ];
 const restoreStatusOptions: BackendVacancyStatus[] = ['DRAFT', 'PUBLISHED', 'ARCHIVED'];
+const kycStatusOptions: CompanyVerificationStatus[] = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'RETRY_REQUIRED',
+];
+const complaintStatusOptions: ComplaintStatus[] = [
+  'OPEN',
+  'IN_REVIEW',
+  'RESOLVED',
+  'REJECTED',
+];
+const moderationActionOptions: ModerationActionType[] = ['HIDE', 'WARN', 'BAN', 'RESTORE'];
+const deleteRequestStatusOptions: DeletionRequestStatus[] = [
+  'REQUESTED',
+  'CANCELED',
+  'PROCESSED',
+];
 
 const cardStyle = {
   backgroundColor: 'white',
@@ -121,13 +149,19 @@ const parseVacanciesPayload = (payload: unknown): ManagedVacancy[] => {
 export const AdminPanelPage = () => {
   const { currentUser, isAuthenticated } = useUserStore();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'vacancies'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'vacancies' | 'compliance'>('users');
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [vacancies, setVacancies] = useState<ManagedVacancy[]>([]);
+  const [kycQueue, setKycQueue] = useState<CompanyVerificationQueueItem[]>([]);
+  const [complaintsQueue, setComplaintsQueue] = useState<Complaint[]>([]);
+  const [deleteRequestsQueue, setDeleteRequestsQueue] = useState<DeleteRequest[]>([]);
   const [userError, setUserError] = useState<string | null>(null);
   const [vacancyError, setVacancyError] = useState<string | null>(null);
+  const [complianceError, setComplianceError] = useState<string | null>(null);
+  const [complianceSuccess, setComplianceSuccess] = useState<string | null>(null);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [isVacanciesLoading, setIsVacanciesLoading] = useState(false);
+  const [isComplianceLoading, setIsComplianceLoading] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [usersTotal, setUsersTotal] = useState(0);
   const [userFilters, setUserFilters] = useState({
@@ -140,10 +174,22 @@ export const AdminPanelPage = () => {
     status: '',
     hrUserId: '',
   });
+  const [kycStatusFilter, setKycStatusFilter] = useState<CompanyVerificationStatus>('PENDING');
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState<ComplaintStatus>('OPEN');
+  const [deleteRequestStatusFilter, setDeleteRequestStatusFilter] = useState<DeletionRequestStatus>('REQUESTED');
   const [roleDrafts, setRoleDrafts] = useState<Record<string, BackendUserRole>>({});
   const [statusDrafts, setStatusDrafts] = useState<Record<string, BackendUserStatus>>({});
   const [companyIdDrafts, setCompanyIdDrafts] = useState<Record<string, string>>({});
   const [restoreDrafts, setRestoreDrafts] = useState<Record<string, BackendVacancyStatus>>({});
+  const [kycReviewDrafts, setKycReviewDrafts] = useState<
+    Record<string, { status: CompanyVerificationStatus; comment: string }>
+  >({});
+  const [complaintModerationDrafts, setComplaintModerationDrafts] = useState<
+    Record<string, { actionType: ModerationActionType; complaintStatus: ComplaintStatus; note: string }>
+  >({});
+  const [deleteProcessDrafts, setDeleteProcessDrafts] = useState<
+    Record<string, { status: DeletionRequestStatus; note: string }>
+  >({});
 
   const isAdmin = isAdminRole(currentUser?.role);
   const canViewPage = isAuthenticated && isAdmin;
@@ -214,6 +260,75 @@ export const AdminPanelPage = () => {
     }
   };
 
+  const loadCompliance = async () => {
+    if (!canViewPage) {
+      return;
+    }
+
+    setIsComplianceLoading(true);
+    setComplianceError(null);
+    setComplianceSuccess(null);
+
+    try {
+      const [kycItems, complaintItems, deleteRequestItems] = await Promise.all([
+        complianceApi.listCompanyVerificationQueue(kycStatusFilter),
+        complianceApi.listComplaintsQueue(complaintStatusFilter),
+        complianceApi.listDeleteRequestsQueue(deleteRequestStatusFilter),
+      ]);
+
+      setKycQueue(kycItems);
+      setComplaintsQueue(complaintItems);
+      setDeleteRequestsQueue(deleteRequestItems);
+
+      setKycReviewDrafts(
+        Object.fromEntries(
+          kycItems.map((item) => [
+            item.id,
+            {
+              status: item.status,
+              comment: '',
+            },
+          ]),
+        ) as Record<string, { status: CompanyVerificationStatus; comment: string }>,
+      );
+
+      setComplaintModerationDrafts(
+        Object.fromEntries(
+          complaintItems.map((item) => [
+            item.id,
+            {
+              actionType: 'WARN',
+              complaintStatus: item.status || 'IN_REVIEW',
+              note: '',
+            },
+          ]),
+        ) as Record<
+          string,
+          { actionType: ModerationActionType; complaintStatus: ComplaintStatus; note: string }
+        >,
+      );
+
+      setDeleteProcessDrafts(
+        Object.fromEntries(
+          deleteRequestItems.map((item) => [
+            item.id,
+            {
+              status: item.status || 'REQUESTED',
+              note: '',
+            },
+          ]),
+        ) as Record<string, { status: DeletionRequestStatus; note: string }>,
+      );
+    } catch (error) {
+      setComplianceError(getApiErrorMessage(error, 'Failed to load compliance queues'));
+      setKycQueue([]);
+      setComplaintsQueue([]);
+      setDeleteRequestsQueue([]);
+    } finally {
+      setIsComplianceLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!canViewPage) {
       return;
@@ -221,6 +336,20 @@ export const AdminPanelPage = () => {
 
     void loadUsers();
   }, [canViewPage]);
+
+  useEffect(() => {
+    if (!canViewPage || activeTab !== 'compliance') {
+      return;
+    }
+
+    void loadCompliance();
+  }, [
+    activeTab,
+    canViewPage,
+    complaintStatusFilter,
+    deleteRequestStatusFilter,
+    kycStatusFilter,
+  ]);
 
   const handleUpdateUserRole = async (user: ManagedUser) => {
     const nextRole = roleDrafts[user.id];
@@ -300,6 +429,79 @@ export const AdminPanelPage = () => {
       await loadVacancies();
     } catch (error) {
       setVacancyError(getApiErrorMessage(error, `Failed to ${action} vacancy`));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleReviewKycSubmission = async (submissionId: string) => {
+    const draft = kycReviewDrafts[submissionId];
+    if (!draft) {
+      return;
+    }
+
+    setIsMutating(true);
+    setComplianceError(null);
+    setComplianceSuccess(null);
+
+    try {
+      await complianceApi.reviewCompanyVerificationSubmission(submissionId, {
+        status: draft.status,
+        comment: draft.comment.trim() || undefined,
+      });
+      setComplianceSuccess(`KYC submission ${submissionId} reviewed.`);
+      await loadCompliance();
+    } catch (error) {
+      setComplianceError(getApiErrorMessage(error, 'Failed to review KYC submission'));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleModerateComplaint = async (complaintId: string) => {
+    const draft = complaintModerationDrafts[complaintId];
+    if (!draft) {
+      return;
+    }
+
+    setIsMutating(true);
+    setComplianceError(null);
+    setComplianceSuccess(null);
+
+    try {
+      await complianceApi.moderateComplaint(complaintId, {
+        actionType: draft.actionType,
+        complaintStatus: draft.complaintStatus,
+        note: draft.note.trim() || undefined,
+      });
+      setComplianceSuccess(`Complaint ${complaintId} moderated.`);
+      await loadCompliance();
+    } catch (error) {
+      setComplianceError(getApiErrorMessage(error, 'Failed to moderate complaint'));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleProcessDeleteRequest = async (requestId: string) => {
+    const draft = deleteProcessDrafts[requestId];
+    if (!draft) {
+      return;
+    }
+
+    setIsMutating(true);
+    setComplianceError(null);
+    setComplianceSuccess(null);
+
+    try {
+      await complianceApi.processDeleteRequest(requestId, {
+        status: draft.status,
+        note: draft.note.trim() || undefined,
+      });
+      setComplianceSuccess(`Delete request ${requestId} updated.`);
+      await loadCompliance();
+    } catch (error) {
+      setComplianceError(getApiErrorMessage(error, 'Failed to process delete request'));
     } finally {
       setIsMutating(false);
     }
@@ -386,6 +588,10 @@ export const AdminPanelPage = () => {
           <Button variant={activeTab === 'vacancies' ? 'hero' : 'outline'} onClick={() => setActiveTab('vacancies')}>
             <Archive className="h-4 w-4" />
             Vacancies
+          </Button>
+          <Button variant={activeTab === 'compliance' ? 'hero' : 'outline'} onClick={() => setActiveTab('compliance')}>
+            <AlertTriangle className="h-4 w-4" />
+            Compliance
           </Button>
         </section>
 
@@ -713,6 +919,366 @@ export const AdminPanelPage = () => {
                 )}
               </div>
             )}
+          </section>
+        )}
+
+        {activeTab === 'compliance' && (
+          <section className="space-y-6">
+            <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                    KYC status
+                  </label>
+                  <select
+                    value={kycStatusFilter}
+                    onChange={(event) => setKycStatusFilter(event.target.value as CompanyVerificationStatus)}
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  >
+                    {kycStatusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {formatEnum(status)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                    Complaints status
+                  </label>
+                  <select
+                    value={complaintStatusFilter}
+                    onChange={(event) => setComplaintStatusFilter(event.target.value as ComplaintStatus)}
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  >
+                    {complaintStatusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {formatEnum(status)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                    Delete requests
+                  </label>
+                  <select
+                    value={deleteRequestStatusFilter}
+                    onChange={(event) => setDeleteRequestStatusFilter(event.target.value as DeletionRequestStatus)}
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  >
+                    {deleteRequestStatusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {formatEnum(status)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    variant="hero"
+                    className="h-11"
+                    onClick={() => void loadCompliance()}
+                    disabled={isComplianceLoading}
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    Reload
+                  </Button>
+                </div>
+              </div>
+
+              {complianceError && (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {complianceError}
+                </div>
+              )}
+
+              {complianceSuccess && (
+                <div className="mt-4 rounded-2xl border border-[#C8D9B3] bg-[#F1F8E8] px-4 py-3 text-sm text-[#2B5A41]">
+                  {complianceSuccess}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">KYC Queue</h3>
+                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  {kycQueue.length} items
+                </span>
+              </div>
+
+              {isComplianceLoading ? (
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  Loading compliance queue...
+                </div>
+              ) : kycQueue.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  No KYC submissions for selected status.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {kycQueue.map((item) => {
+                    const draft = kycReviewDrafts[item.id] || { status: item.status, comment: '' };
+
+                    return (
+                      <div key={item.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                            {formatEnum(item.status)}
+                          </span>
+                          <span className="text-xs font-mono text-[#5D6F50]">{item.id}</span>
+                        </div>
+
+                        <p className="mt-2 text-sm text-[#33412D]">
+                          Legal name: {item.legalName || item.companyName || 'Unknown company'}
+                        </p>
+                        <p className="text-sm text-[#526347]">
+                          BIN/IIN: {item.binIin || '—'} • Created: {formatDateTime(item.createdAt)}
+                        </p>
+
+                        <div className="mt-3 grid gap-3 md:grid-cols-[200px_1fr_auto]">
+                          <select
+                            value={draft.status}
+                            onChange={(event) =>
+                              setKycReviewDrafts((prev) => ({
+                                ...prev,
+                                [item.id]: {
+                                  ...draft,
+                                  status: event.target.value as CompanyVerificationStatus,
+                                },
+                              }))
+                            }
+                            className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm"
+                          >
+                            {kycStatusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {formatEnum(status)}
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            value={draft.comment}
+                            onChange={(event) =>
+                              setKycReviewDrafts((prev) => ({
+                                ...prev,
+                                [item.id]: {
+                                  ...draft,
+                                  comment: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Review comment (optional)"
+                            className="h-11 rounded-xl border-black/10 bg-white"
+                          />
+                          <Button
+                            variant="hero"
+                            disabled={isMutating}
+                            onClick={() => void handleReviewKycSubmission(item.id)}
+                          >
+                            Review
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">Complaints Queue</h3>
+                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  {complaintsQueue.length} items
+                </span>
+              </div>
+
+              {complaintsQueue.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  No complaints for selected status.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {complaintsQueue.map((complaint) => {
+                    const draft = complaintModerationDrafts[complaint.id] || {
+                      actionType: 'WARN' as ModerationActionType,
+                      complaintStatus: complaint.status || 'IN_REVIEW',
+                      note: '',
+                    };
+
+                    return (
+                      <div key={complaint.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                            {formatEnum(complaint.status)}
+                          </span>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#33412D]">
+                            {formatEnum(complaint.targetType)}
+                          </span>
+                          <span className="text-xs font-mono text-[#5D6F50]">{complaint.id}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-[#33412D]">Reason: {complaint.reason || 'No reason'}</p>
+                        <p className="text-sm text-[#526347]">Target ID: {complaint.targetId || '—'}</p>
+                        {complaint.details && (
+                          <p className="text-sm text-[#526347]">Details: {complaint.details}</p>
+                        )}
+
+                        <div className="mt-3 grid gap-3 md:grid-cols-[180px_180px_1fr_auto]">
+                          <select
+                            value={draft.actionType}
+                            onChange={(event) =>
+                              setComplaintModerationDrafts((prev) => ({
+                                ...prev,
+                                [complaint.id]: {
+                                  ...draft,
+                                  actionType: event.target.value as ModerationActionType,
+                                },
+                              }))
+                            }
+                            className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm"
+                          >
+                            {moderationActionOptions.map((actionType) => (
+                              <option key={actionType} value={actionType}>
+                                {formatEnum(actionType)}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={draft.complaintStatus}
+                            onChange={(event) =>
+                              setComplaintModerationDrafts((prev) => ({
+                                ...prev,
+                                [complaint.id]: {
+                                  ...draft,
+                                  complaintStatus: event.target.value as ComplaintStatus,
+                                },
+                              }))
+                            }
+                            className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm"
+                          >
+                            {complaintStatusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {formatEnum(status)}
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            value={draft.note}
+                            onChange={(event) =>
+                              setComplaintModerationDrafts((prev) => ({
+                                ...prev,
+                                [complaint.id]: {
+                                  ...draft,
+                                  note: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Moderation note"
+                            className="h-11 rounded-xl border-black/10 bg-white"
+                          />
+                          <Button
+                            variant="hero"
+                            disabled={isMutating}
+                            onClick={() => void handleModerateComplaint(complaint.id)}
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">Delete Requests Queue</h3>
+                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  {deleteRequestsQueue.length} items
+                </span>
+              </div>
+
+              {deleteRequestsQueue.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  No deletion requests for selected status.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {deleteRequestsQueue.map((request) => {
+                    const draft = deleteProcessDrafts[request.id] || {
+                      status: request.status || 'REQUESTED',
+                      note: '',
+                    };
+
+                    return (
+                      <div key={request.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                            {formatEnum(request.status)}
+                          </span>
+                          <span className="text-xs font-mono text-[#5D6F50]">{request.id}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-[#33412D]">
+                          User: {request.user?.email || request.user?.id || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-[#526347]">Created: {formatDateTime(request.createdAt)}</p>
+                        {request.reason && (
+                          <p className="text-sm text-[#526347]">Reason: {request.reason}</p>
+                        )}
+
+                        <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr_auto]">
+                          <select
+                            value={draft.status}
+                            onChange={(event) =>
+                              setDeleteProcessDrafts((prev) => ({
+                                ...prev,
+                                [request.id]: {
+                                  ...draft,
+                                  status: event.target.value as DeletionRequestStatus,
+                                },
+                              }))
+                            }
+                            className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm"
+                          >
+                            {deleteRequestStatusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {formatEnum(status)}
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            value={draft.note}
+                            onChange={(event) =>
+                              setDeleteProcessDrafts((prev) => ({
+                                ...prev,
+                                [request.id]: {
+                                  ...draft,
+                                  note: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Admin note"
+                            className="h-11 rounded-xl border-black/10 bg-white"
+                          />
+                          <Button
+                            variant="hero"
+                            disabled={isMutating}
+                            onClick={() => void handleProcessDeleteRequest(request.id)}
+                          >
+                            Process
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </section>
         )}
       </main>

@@ -296,6 +296,18 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     desiredRole: candidateProfile.desiredRole,
     desiredSalary: candidateProfile.desiredSalary,
     graduationYear: candidateProfile.graduationYear,
+    openToWork: candidateProfile.openToWork,
+    availability: candidateProfile.availability,
+    hoursPerWeek: candidateProfile.hoursPerWeek,
+    remoteReady: candidateProfile.remoteReady,
+    relocationReady: candidateProfile.relocationReady,
+    educationLevel: candidateProfile.educationLevel,
+    preferredEmploymentTypes: Array.isArray(candidateProfile.preferredEmploymentTypes)
+      ? candidateProfile.preferredEmploymentTypes
+      : [],
+    preferredWorkFormats: Array.isArray(candidateProfile.preferredWorkFormats)
+      ? candidateProfile.preferredWorkFormats
+      : [],
     companyName: company.name || employerProfile.companyName,
     position: employerProfile.jobTitle,
     companyWebsite: company.website || employerProfile.companyWebsite,
@@ -566,6 +578,14 @@ export const useUserStore = create<UserStore>((set, get) => ({
             (data as Record<string, unknown>).major,
           desiredSalary: (data as Record<string, unknown>).desiredSalary,
           graduationYear: (data as Record<string, unknown>).graduationYear,
+          openToWork: (data as Record<string, unknown>).openToWork,
+          availability: (data as Record<string, unknown>).availability,
+          hoursPerWeek: (data as Record<string, unknown>).hoursPerWeek,
+          remoteReady: (data as Record<string, unknown>).remoteReady,
+          relocationReady: (data as Record<string, unknown>).relocationReady,
+          educationLevel: (data as Record<string, unknown>).educationLevel,
+          preferredEmploymentTypes: (data as Record<string, unknown>).preferredEmploymentTypes,
+          preferredWorkFormats: (data as Record<string, unknown>).preferredWorkFormats,
         };
 
         const response = await api.patch('/profile/candidate/me', candidatePayload);

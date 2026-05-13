@@ -41,6 +41,13 @@ type VacancyWizardData = {
   };
   skills: {
     skillsText: string;
+    requiredSkillsText: string;
+    optionalSkillsText: string;
+    niceToHaveSkillsText: string;
+    requiredEducationLevel: string;
+    requiredSkillLevelsText: string;
+    minHoursPerWeek: string;
+    maxHoursPerWeek: string;
   };
   languages: {
     languageIds: string[];
@@ -81,6 +88,13 @@ const emptyWizardData: VacancyWizardData = {
   },
   skills: {
     skillsText: '',
+    requiredSkillsText: '',
+    optionalSkillsText: '',
+    niceToHaveSkillsText: '',
+    requiredEducationLevel: '',
+    requiredSkillLevelsText: '',
+    minHoursPerWeek: '',
+    maxHoursPerWeek: '',
   },
   languages: {
     languageIds: [],
@@ -96,6 +110,15 @@ const vacancySteps: Array<{ id: VacancyWorkflowStep; label: string; hint: string
   { id: 'description', label: '6. Description', hint: 'Short role summary' },
   { id: 'skills', label: '7. Skills', hint: 'Stack and key skills' },
   { id: 'languages', label: '8. Languages', hint: 'Required languages' },
+];
+
+const educationLevelOptions = [
+  'NONE',
+  'SECONDARY',
+  'VOCATIONAL',
+  'BACHELOR',
+  'MASTER',
+  'PHD',
 ];
 
 const cloneEmptyWizardData = (): VacancyWizardData => {
@@ -150,6 +173,42 @@ const toggleArrayValue = (current: string[], value: string): string[] => {
   return [...current, value];
 };
 
+const mapFromSkillLevelsText = (value: string): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const [rawSkill, rawLevel] = line.split(':');
+      const skill = rawSkill?.trim().toLowerCase();
+      const level = rawLevel?.trim().toUpperCase();
+
+      if (!skill || !level) {
+        return;
+      }
+
+      if (!['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(level)) {
+        return;
+      }
+
+      result[skill] = level;
+    });
+
+  return result;
+};
+
+const mapToSkillLevelsText = (value?: Record<string, string>): string => {
+  if (!value || typeof value !== 'object') {
+    return '';
+  }
+
+  return Object.entries(value)
+    .map(([skill, level]) => `${skill}:${String(level).toUpperCase()}`)
+    .join('\n');
+};
+
 const mapVacancyToForm = (vacancy: Vacancy | null): VacancyWizardData => {
   const next = cloneEmptyWizardData();
   if (!vacancy) {
@@ -187,6 +246,19 @@ const mapVacancyToForm = (vacancy: Vacancy | null): VacancyWizardData => {
 
   const skills = Array.isArray(vacancy.skills) ? vacancy.skills : [];
   next.skills.skillsText = skills.join(', ');
+  next.skills.requiredSkillsText = Array.isArray(vacancy.requiredSkills)
+    ? vacancy.requiredSkills.join(', ')
+    : '';
+  next.skills.optionalSkillsText = Array.isArray(vacancy.optionalSkills)
+    ? vacancy.optionalSkills.join(', ')
+    : '';
+  next.skills.niceToHaveSkillsText = Array.isArray(vacancy.niceToHaveSkills)
+    ? vacancy.niceToHaveSkills.join(', ')
+    : '';
+  next.skills.requiredEducationLevel = String(vacancy.requiredEducationLevel || '');
+  next.skills.requiredSkillLevelsText = mapToSkillLevelsText(vacancy.requiredSkillLevels);
+  next.skills.minHoursPerWeek = String(vacancy.minHoursPerWeek ?? '');
+  next.skills.maxHoursPerWeek = String(vacancy.maxHoursPerWeek ?? '');
 
   next.languages.languageIds = Array.isArray(vacancy.languageIds)
     ? vacancy.languageIds
@@ -240,6 +312,13 @@ const getStepPayload = (
     case 'skills':
       return cleanPayload({
         skills: listFromText(String(formData.skills.skillsText || '')),
+        requiredSkills: listFromText(String(formData.skills.requiredSkillsText || '')),
+        optionalSkills: listFromText(String(formData.skills.optionalSkillsText || '')),
+        niceToHaveSkills: listFromText(String(formData.skills.niceToHaveSkillsText || '')),
+        requiredEducationLevel: formData.skills.requiredEducationLevel || undefined,
+        requiredSkillLevels: mapFromSkillLevelsText(formData.skills.requiredSkillLevelsText),
+        minHoursPerWeek: toNumberOrUndefined(formData.skills.minHoursPerWeek),
+        maxHoursPerWeek: toNumberOrUndefined(formData.skills.maxHoursPerWeek),
       });
     case 'languages':
       return cleanPayload({
@@ -302,6 +381,14 @@ const getCandidateName = (candidate: {
 } | null | undefined): string => {
   const fullName = `${candidate?.firstName || ''} ${candidate?.lastName || ''}`.trim();
   return fullName || candidate?.email || 'Candidate';
+};
+
+const formatPercent = (value?: number): string => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '—';
+  }
+
+  return `${Math.round(value)}%`;
 };
 
 export const EmployerPage = () => {
@@ -1157,7 +1244,7 @@ export const EmployerPage = () => {
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Key skills (comma or new line)
+                      Legacy skills (compatibility)
                     </label>
                     <Textarea
                       rows={4}
@@ -1168,6 +1255,129 @@ export const EmployerPage = () => {
                       placeholder="React, TypeScript, REST API"
                       style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                     />
+                    <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                      Optional legacy field. New matching uses buckets below.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Required skills
+                      </label>
+                      <Textarea
+                        rows={5}
+                        value={formData.skills.requiredSkillsText}
+                        onChange={(event) =>
+                          updateField('skills', 'requiredSkillsText', event.target.value)
+                        }
+                        placeholder="Node.js, TypeScript, PostgreSQL"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Optional skills
+                      </label>
+                      <Textarea
+                        rows={5}
+                        value={formData.skills.optionalSkillsText}
+                        onChange={(event) =>
+                          updateField('skills', 'optionalSkillsText', event.target.value)
+                        }
+                        placeholder="Redis, Kafka"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Nice to have
+                      </label>
+                      <Textarea
+                        rows={5}
+                        value={formData.skills.niceToHaveSkillsText}
+                        onChange={(event) =>
+                          updateField('skills', 'niceToHaveSkillsText', event.target.value)
+                        }
+                        placeholder="GraphQL"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Required education level
+                      </label>
+                      <select
+                        value={formData.skills.requiredEducationLevel}
+                        onChange={(event) =>
+                          updateField('skills', 'requiredEducationLevel', event.target.value)
+                        }
+                        className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      >
+                        <option value="">No restriction</option>
+                        {educationLevelOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {formatEnumLabel(option)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Min hours/week
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={formData.skills.minHoursPerWeek}
+                        onChange={(event) =>
+                          updateField('skills', 'minHoursPerWeek', event.target.value)
+                        }
+                        className="h-12"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        Max hours/week
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={formData.skills.maxHoursPerWeek}
+                        onChange={(event) =>
+                          updateField('skills', 'maxHoursPerWeek', event.target.value)
+                        }
+                        className="h-12"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                      Required skill levels (one per line)
+                    </label>
+                    <Textarea
+                      rows={4}
+                      value={formData.skills.requiredSkillLevelsText}
+                      onChange={(event) =>
+                        updateField('skills', 'requiredSkillLevelsText', event.target.value)
+                      }
+                      placeholder={'node.js:INTERMEDIATE\ntypescript:ADVANCED'}
+                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                      Allowed levels: BEGINNER, INTERMEDIATE, ADVANCED.
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {dictionaries.skillHints.map((skill) => (
@@ -1177,12 +1387,12 @@ export const EmployerPage = () => {
                         className="px-3 py-1 rounded-lg text-xs"
                         style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
                         onClick={() => {
-                          const current = formData.skills.skillsText;
+                          const current = formData.skills.requiredSkillsText;
                           const currentList = listFromText(current);
                           if (!currentList.includes(skill.label)) {
                             updateField(
                               'skills',
-                              'skillsText',
+                              'requiredSkillsText',
                               [...currentList, skill.label].join(', '),
                             );
                           }
@@ -1482,7 +1692,10 @@ export const EmployerPage = () => {
                             {getCandidateName(item.candidate)}
                           </h3>
                           <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
-                            Score {item.matching.score}
+                            Score {item.matching.normalizedScore ?? item.matching.score}
+                          </span>
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#ECF5DE', color: '#245338' }}>
+                            Coverage {formatPercent(item.matching.skillCoveragePercent)}
                           </span>
                           {item.existingInvite?.status && (
                             <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#333A2F', color: 'white' }}>
@@ -1503,8 +1716,38 @@ export const EmployerPage = () => {
                         <div className="flex flex-wrap items-center gap-3 text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
                           <span>City: {item.candidate.profile?.city || '—'}</span>
                           <span>Experience: {item.candidate.profile?.totalExperienceMonths || 0} months</span>
-                          <span>Skill matches: {item.matching.skillMatchCount}</span>
+                          <span>Profile completeness: {formatPercent(item.matching.profileCompletenessPercent || item.candidate.profile?.profileCompletenessPercent)}</span>
+                          {typeof item.matching.skillMatchCount === 'number' && (
+                            <span>Legacy skill matches: {item.matching.skillMatchCount}</span>
+                          )}
                         </div>
+
+                        {Boolean(item.matching.matchedRequiredSkills?.length || item.matching.missingRequiredSkills?.length) && (
+                          <div className="mb-3 space-y-2">
+                            {Boolean(item.matching.matchedRequiredSkills?.length) && (
+                              <div className="text-xs" style={{ color: '#2B5A41' }}>
+                                Matched required: {(item.matching.matchedRequiredSkills || []).join(', ')}
+                              </div>
+                            )}
+                            {Boolean(item.matching.missingRequiredSkills?.length) && (
+                              <div className="text-xs" style={{ color: '#9A3412' }}>
+                                Missing required: {(item.matching.missingRequiredSkills || []).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {item.matching.breakdown && (
+                          <div className="mb-3 grid gap-2 sm:grid-cols-3 text-xs">
+                            <span>Skills: {formatPercent(item.matching.breakdown.skills)}</span>
+                            <span>Experience: {formatPercent(item.matching.breakdown.experienceRelevance)}</span>
+                            <span>Compatibility: {formatPercent(item.matching.breakdown.compatibility)}</span>
+                            <span>Completeness: {formatPercent(item.matching.breakdown.profileCompleteness)}</span>
+                            <span>Activity: {formatPercent(item.matching.breakdown.activityRecency)}</span>
+                            <span>Penalties: {item.matching.breakdown.penalties ?? 0}</span>
+                          </div>
+                        )}
+
                         <ul className="space-y-1">
                           {item.matching.reasons.map((reason) => (
                             <li key={`${item.candidate.id}-${reason}`} className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>

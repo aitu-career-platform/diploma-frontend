@@ -6,6 +6,7 @@ export interface InviteProfile {
   desiredRole?: string;
   totalExperienceMonths?: number;
   skills?: string[];
+  profileCompletenessPercent?: number;
 }
 
 export interface InvitePerson {
@@ -37,13 +38,31 @@ export interface Invite {
   candidate?: InvitePerson | null;
 }
 
+export interface SuggestedCandidateMatchingBreakdown {
+  skills?: number;
+  experienceRelevance?: number;
+  compatibility?: number;
+  profileCompleteness?: number;
+  activityRecency?: number;
+  penalties?: number;
+}
+
+export interface SuggestedCandidateMatching {
+  score: number;
+  normalizedScore?: number;
+  skillCoveragePercent?: number;
+  matchedRequiredSkills?: string[];
+  missingRequiredSkills?: string[];
+  profileCompletenessPercent?: number;
+  breakdown?: SuggestedCandidateMatchingBreakdown | null;
+  reasons: string[];
+  // legacy fallback
+  skillMatchCount?: number;
+}
+
 export interface SuggestedCandidate {
   candidate: InvitePerson;
-  matching: {
-    score: number;
-    reasons: string[];
-    skillMatchCount: number;
-  };
+  matching: SuggestedCandidateMatching;
   existingInvite?: {
     id?: string;
     status?: InviteStatus;

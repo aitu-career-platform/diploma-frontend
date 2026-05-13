@@ -552,6 +552,16 @@ const normalizeVacancy = (payload: unknown): Vacancy => {
     payoutFrequency: asString(pickFirst(raw, ['payoutFrequency'])),
     description: asString(pickFirst(raw, ['description'])),
     skills: toStringArray(pickFirst(raw, ['skillTexts', 'skills'])),
+    requiredSkills: toStringArray(pickFirst(raw, ['requiredSkills'])),
+    optionalSkills: toStringArray(pickFirst(raw, ['optionalSkills'])),
+    niceToHaveSkills: toStringArray(pickFirst(raw, ['niceToHaveSkills'])),
+    requiredEducationLevel: asString(pickFirst(raw, ['requiredEducationLevel'])),
+    requiredSkillLevels:
+      isRecord(pickFirst(raw, ['requiredSkillLevels']))
+        ? (pickFirst(raw, ['requiredSkillLevels']) as Record<string, string>)
+        : {},
+    minHoursPerWeek: asNumber(pickFirst(raw, ['minHoursPerWeek'])),
+    maxHoursPerWeek: asNumber(pickFirst(raw, ['maxHoursPerWeek'])),
     languageIds: toIdArray(pickFirst(raw, ['languages']), ['languageId', 'id', 'value']),
     favoritesCount: asNumber(pickFirst(raw, ['favoritesCount'])),
     createdAt: asString(pickFirst(raw, ['createdAt', 'created_at'])),

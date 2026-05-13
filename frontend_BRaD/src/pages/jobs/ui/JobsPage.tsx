@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Briefcase, Sparkles } from 'lucide-react';
+import { ArrowLeft, Briefcase, Sparkles, SlidersHorizontal, MousePointerClick, FileCheck } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { JobFilters } from '@features/job-filters';
 import { JobsList } from '@widgets/jobs-list';
@@ -55,6 +55,41 @@ export const JobsPage = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Available now</p>
                 <p className="text-2xl font-extrabold text-[#1F2B18]">{jobs.length}</p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="app-kpi-card flex items-start gap-3 p-4">
+            <div className="rounded-xl bg-[#E8F0D8] p-2.5 text-[#24442E]">
+              <SlidersHorizontal className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 1</p>
+              <p className="mt-1 text-sm font-semibold text-[#23301D]">Set filters</p>
+              <p className="mt-1 text-xs text-[#516346]">Role, location, and skills narrow the feed fast.</p>
+            </div>
+          </div>
+
+          <div className="app-kpi-card flex items-start gap-3 p-4">
+            <div className="rounded-xl bg-[#E8F0D8] p-2.5 text-[#24442E]">
+              <MousePointerClick className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 2</p>
+              <p className="mt-1 text-sm font-semibold text-[#23301D]">Open details</p>
+              <p className="mt-1 text-xs text-[#516346]">Check requirements and save interesting roles.</p>
+            </div>
+          </div>
+
+          <div className="app-kpi-card flex items-start gap-3 p-4">
+            <div className="rounded-xl bg-[#E8F0D8] p-2.5 text-[#24442E]">
+              <FileCheck className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 3</p>
+              <p className="mt-1 text-sm font-semibold text-[#23301D]">Apply and track</p>
+              <p className="mt-1 text-xs text-[#516346]">All responses are visible in Applications and Chat.</p>
             </div>
           </div>
         </section>
