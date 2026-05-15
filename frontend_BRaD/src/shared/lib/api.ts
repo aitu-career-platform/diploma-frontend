@@ -109,9 +109,6 @@ export const getApiErrorMessage = (
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -168,6 +165,16 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
 api.interceptors.request.use(
   (config) => {
+    if (
+      typeof FormData !== 'undefined' &&
+      config.data instanceof FormData &&
+      config.headers
+    ) {
+      // Let the browser set multipart/form-data with boundary automatically.
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+
     const authUser = readStoredAuthUser();
     if (authUser?.accessToken) {
       config.headers.Authorization = `Bearer ${authUser.accessToken}`;

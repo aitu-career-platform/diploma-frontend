@@ -20,8 +20,13 @@ export interface UploadedFile {
 export interface UploadAndAttachInput {
   file: File;
   target: MediaUploadTarget;
-  entityType: MediaUploadTarget;
+  entityType?: MediaUploadTarget;
   resumeTitle?: string;
   isPrimary?: boolean;
   replaceResumeId?: string;
+}
+
+export interface UploadAndAttachResult {
+  file: UploadedFile;
+  attachment?: Record<string, unknown> | null;
 }

@@ -248,6 +248,18 @@ const getBoolean = (value: unknown): boolean | undefined => {
   return undefined;
 };
 
+const getIdString = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return '';
+};
+
 const pickFirstDefined = (
   sources: Array<Record<string, unknown>>,
   keys: string[],
@@ -261,6 +273,17 @@ const pickFirstDefined = (
   }
 
   return undefined;
+};
+
+const extractFilenameFromUrl = (value: string): string => {
+  try {
+    const parsedUrl = new URL(value);
+    const pathname = parsedUrl.pathname;
+    const chunk = pathname.split('/').pop() || '';
+    return decodeURIComponent(chunk) || 'Portfolio file';
+  } catch {
+    return 'Portfolio file';
+  }
 };
 
 const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | null => {
@@ -280,7 +303,48 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     : isRecord(payload.notifications)
       ? payload.notifications
       : {};
-  const telegramSources = [payload, user, candidateProfile, employerProfile, notificationSettings];
+  const payloadTelegram = isRecord(payload.telegram) ? payload.telegram : {};
+  const userTelegram = isRecord(user.telegram) ? user.telegram : {};
+  const candidateTelegram = isRecord(candidateProfile.telegram) ? candidateProfile.telegram : {};
+  const employerTelegram = isRecord(employerProfile.telegram) ? employerProfile.telegram : {};
+  const notificationTelegram = isRecord(notificationSettings.telegram)
+    ? notificationSettings.telegram
+    : {};
+  const telegramSources = [
+    payload,
+    user,
+    candidateProfile,
+    employerProfile,
+    notificationSettings,
+    payloadTelegram,
+    userTelegram,
+    candidateTelegram,
+    employerTelegram,
+    notificationTelegram,
+  ];
+  const avatarUrlFallback =
+    getString(user.avatarUrl) ||
+    getString(user.avatar) ||
+    getString(payload.avatarUrl) ||
+    getString(payload.avatar) ||
+    undefined;
+  const portfolioImageUrls = Array.isArray(candidateProfile.portfolioImageUrls)
+    ? candidateProfile.portfolioImageUrls.filter(
+        (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+      )
+    : [];
+  const portfolioFiles = Array.isArray(candidateProfile.portfolioFiles)
+    ? candidateProfile.portfolioFiles
+    : [];
+  const normalizedPortfolioFiles = portfolioFiles.length
+    ? portfolioFiles
+    : portfolioImageUrls.map((url) => ({
+        id: url,
+        fileId: url,
+        filename: extractFilenameFromUrl(url),
+        downloadUrl: url,
+        url,
+      }));
 
   return {
     role: payload.role,
@@ -317,10 +381,13 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     hrEmail: employerProfile.hrEmail,
     hrPhone: employerProfile.hrPhone,
     avatarUrl:
+      getString(user.avatarUrl) ||
+      getString(payload.avatarUrl) ||
       getString(avatarFile.downloadUrl) ||
       getString(avatarFile.url) ||
       getString(rootAvatarFile.downloadUrl) ||
       getString(rootAvatarFile.url) ||
+      avatarUrlFallback ||
       undefined,
     avatarFile:
       Object.keys(avatarFile).length
@@ -328,15 +395,33 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
         : Object.keys(rootAvatarFile).length
           ? rootAvatarFile
           : null,
-    companyLogoUrl: getString(logoFile.downloadUrl) || getString(logoFile.url) || undefined,
+    companyLogoUrl:
+      getString(payload.logoUrl) ||
+      getString(employerProfile.logoUrl) ||
+      getString(company.logoUrl) ||
+      getString(logoFile.downloadUrl) ||
+      getString(logoFile.url) ||
+      undefined,
+    logoUrl:
+      getString(payload.logoUrl) ||
+      getString(employerProfile.logoUrl) ||
+      getString(company.logoUrl) ||
+      getString(logoFile.downloadUrl) ||
+      getString(logoFile.url) ||
+      undefined,
     companyLogoFile: Object.keys(logoFile).length ? logoFile : null,
     resumes: Array.isArray(candidateProfile.resumes) ? candidateProfile.resumes : [],
-    portfolioFiles: Array.isArray(candidateProfile.portfolioFiles)
-      ? candidateProfile.portfolioFiles
-      : [],
+    portfolioFiles: normalizedPortfolioFiles,
+    portfolioImageUrls,
     telegramChatId:
-      getString(
-        pickFirstDefined(telegramSources, ['telegramChatId', 'telegram_chat_id', 'chatId']),
+      getIdString(
+        pickFirstDefined(telegramSources, [
+          'telegramChatId',
+          'telegram_chat_id',
+          'telegram_chatid',
+          'chatId',
+          'chat_id',
+        ]),
       ) || null,
     telegramNotificationsEnabled:
       getBoolean(

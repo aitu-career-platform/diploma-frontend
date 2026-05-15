@@ -50,6 +50,18 @@ const asString = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
 };
 
+const asIdString = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return '';
+};
+
 const asNumber = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -151,6 +163,25 @@ const normalizeTelegramSettings = (settings?: Partial<TelegramSettings> | null):
       defaultTelegramSettings.telegramNotifyApplications,
     ),
   };
+};
+
+const extractTelegramChatId = (payload: Record<string, unknown>): string => {
+  const direct =
+    asIdString(payload.telegramChatId) ||
+    asIdString(payload.telegram_chat_id) ||
+    asIdString(payload.chatId) ||
+    asIdString(payload.chat_id);
+  if (direct) {
+    return direct;
+  }
+
+  const telegram = isRecord(payload.telegram) ? payload.telegram : {};
+  return (
+    asIdString(telegram.telegramChatId) ||
+    asIdString(telegram.telegram_chat_id) ||
+    asIdString(telegram.chatId) ||
+    asIdString(telegram.chat_id)
+  );
 };
 
 export const useNotificationsStore = create<NotificationsStore>((set) => ({
@@ -278,7 +309,7 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
           ...state.telegramSettings,
           ...settings,
           telegramChatId:
-            asString(responsePayload.telegramChatId) ||
+            extractTelegramChatId(responsePayload) ||
             settings.telegramChatId ||
             state.telegramSettings.telegramChatId,
           telegramNotificationsEnabled:

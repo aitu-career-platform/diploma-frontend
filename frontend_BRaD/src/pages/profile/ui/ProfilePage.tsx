@@ -1,12 +1,18 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
   AlertTriangle,
+  ArrowRight,
   Bell,
-  Bookmark,
+  BellRing,
   Briefcase,
+  CheckCheck,
+  CheckCircle2,
+  Copy,
   Building2,
+  Compass,
+  Eye,
   FileArchive,
   Download,
   ExternalLink,
@@ -15,11 +21,17 @@ import {
   ImagePlus,
   Mail,
   MapPin,
+  Pencil,
+  RefreshCcw,
+  Rocket,
   Send,
+  Sparkles,
+  MessageCircle,
   Trash2,
   UploadCloud,
   User,
   UserRoundX,
+  X,
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
@@ -37,7 +49,8 @@ import { isCandidateRole, isEmployerRole, useUserStore } from '@entities/user';
 import { useFavoritesStore } from '@entities/favorite';
 import { useInviteStore } from '@entities/invite';
 import { useNotificationsStore, type AppNotification } from '@entities/notification';
-import { useMediaStore } from '@entities/media';
+import { useMediaStore, type MediaUploadTarget } from '@entities/media';
+import type { UploadedFile } from '@entities/media';
 
 interface ProfileFormValues {
   bio: string;
@@ -64,6 +77,7 @@ interface ProfileFormValues {
 }
 
 type ProfileTab = 'profile' | 'documents' | 'activity' | 'notifications' | 'privacy';
+type PreferredFieldKey = 'preferredEmploymentTypesText' | 'preferredWorkFormatsText';
 
 const privacyConsentTypes: ConsentType[] = ['PRIVACY', 'TERMS', 'MARKETING'];
 const complaintTargetTypes: ComplaintTargetType[] = ['VACANCY', 'PROFILE', 'MESSAGE'];
@@ -75,13 +89,198 @@ const companyVerificationStatuses: CompanyVerificationStatus[] = [
   'RETRY_REQUIRED',
 ];
 
+const preferredEmploymentTypeOptions = [
+  { value: 'FULL_TIME', label: 'Full-time' },
+  { value: 'PART_TIME', label: 'Part-time' },
+  { value: 'WATCH', label: 'Internship' },
+  { value: 'PROJECT', label: 'Project' },
+  { value: 'SIDE_JOB', label: 'Side Job' },
+] as const;
+
+const preferredWorkFormatOptions = [
+  { value: 'ONSITE', label: 'Onsite' },
+  { value: 'REMOTE', label: 'Remote' },
+  { value: 'HYBRID', label: 'Hybrid' },
+] as const;
+
 const cardStyle = {
   backgroundColor: 'white',
   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
 };
 
+const avatarLogoMaxBytes = 15 * 1024 * 1024;
+const resumePortfolioMaxBytes = 40 * 1024 * 1024;
+const authStorageKey = 'authUser';
+const avatarCachePrefix = 'uploadedAvatar';
+const uploadedFilesCachePrefix = 'uploadedFiles';
+
+const getUploadLimitBytes = (target: MediaUploadTarget): number => {
+  return target === 'USER_AVATAR' || target === 'COMPANY_LOGO'
+    ? avatarLogoMaxBytes
+    : resumePortfolioMaxBytes;
+};
+
+const getUploadLimitLabel = (target: MediaUploadTarget): string => {
+  return target === 'USER_AVATAR' || target === 'COMPANY_LOGO' ? '15MB' : '40MB';
+};
+
+const getAvatarCacheKey = (userId: string): string => `${avatarCachePrefix}:${userId}`;
+
+const readCachedAvatar = (userId: string): { fileId?: string; url?: string } | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const raw = localStorage.getItem(getAvatarCacheKey(userId));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { fileId?: unknown; url?: unknown };
+    const fileId = typeof parsed.fileId === 'string' ? parsed.fileId : undefined;
+    const url = typeof parsed.url === 'string' ? parsed.url : undefined;
+    return fileId || url ? { fileId, url } : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedAvatar = (userId: string, value: { fileId?: string; url?: string }): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem(getAvatarCacheKey(userId), JSON.stringify(value));
+};
+
+const clearCachedAvatar = (userId: string): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.removeItem(getAvatarCacheKey(userId));
+};
+
+const getUploadedFilesCacheKey = (
+  userId: string,
+  kind: 'resumes' | 'portfolio',
+): string => `${uploadedFilesCachePrefix}:${kind}:${userId}`;
+
+const readCachedUploadedFiles = (
+  userId: string,
+  kind: 'resumes' | 'portfolio',
+): Record<string, unknown>[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const raw = localStorage.getItem(getUploadedFilesCacheKey(userId, kind));
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return getFileArray(parsed);
+  } catch {
+    return [];
+  }
+};
+
+const writeCachedUploadedFiles = (
+  userId: string,
+  kind: 'resumes' | 'portfolio',
+  files: Record<string, unknown>[],
+): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem(getUploadedFilesCacheKey(userId, kind), JSON.stringify(files));
+};
+
 const getString = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
+};
+
+const getIdString = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return '';
+};
+
+const extractTelegramChatId = (profile: Record<string, unknown> | null): string | null => {
+  if (!profile) {
+    return null;
+  }
+
+  const direct =
+    getIdString(profile.telegramChatId) ||
+    getIdString(profile.telegram_chat_id) ||
+    getIdString(profile.chatId) ||
+    getIdString(profile.chat_id);
+  if (direct) {
+    return direct;
+  }
+
+  const nestedSources = [
+    getRecord(profile.telegram),
+    getRecord(profile.notificationSettings),
+    getRecord(profile.notifications),
+  ].filter((entry): entry is Record<string, unknown> => Boolean(entry));
+
+  for (const source of nestedSources) {
+    const nested =
+      getIdString(source.telegramChatId) ||
+      getIdString(source.telegram_chat_id) ||
+      getIdString(source.chatId) ||
+      getIdString(source.chat_id);
+    if (nested) {
+      return nested;
+    }
+
+    const nestedTelegram = getRecord(source.telegram);
+    if (nestedTelegram) {
+      const deep =
+        getIdString(nestedTelegram.telegramChatId) ||
+        getIdString(nestedTelegram.telegram_chat_id) ||
+        getIdString(nestedTelegram.chatId) ||
+        getIdString(nestedTelegram.chat_id);
+      if (deep) {
+        return deep;
+      }
+    }
+  }
+
+  return null;
+};
+
+const syncAuthUserAvatar = (avatarUrl?: string): void => {
+  const state = useUserStore.getState();
+  const currentUser = state.currentUser;
+  if (!currentUser) {
+    return;
+  }
+
+  const nextUser = {
+    ...currentUser,
+    avatar: avatarUrl || undefined,
+  };
+
+  useUserStore.setState({ currentUser: nextUser });
+
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem(authStorageKey, JSON.stringify(nextUser));
 };
 
 const getBoolean = (value: unknown, fallback = false): boolean => {
@@ -122,10 +321,7 @@ const getFileHref = (file: Record<string, unknown> | null): string => {
   return (
     getString(file?.fileDownloadUrl) ||
     getString(file?.downloadUrl) ||
-    getString(nestedFile?.downloadUrl) ||
-    getString(file?.fileUrl) ||
-    getString(file?.url) ||
-    getString(nestedFile?.url)
+    getString(nestedFile?.downloadUrl)
   );
 };
 
@@ -133,11 +329,42 @@ const getFileName = (file: Record<string, unknown> | null): string => {
   const nestedFile = getRecord(file?.file);
 
   return (
+    getString(file?.resumeTitle) ||
+    getString(file?.name) ||
     getString(nestedFile?.filename) ||
     getString(file?.filename) ||
     getString(file?.title) ||
     'Untitled file'
   );
+};
+
+const makeLocalFileEntry = (file: UploadedFile, extras?: Record<string, unknown>): Record<string, unknown> => {
+  const href = file.downloadUrl || file.url || '';
+  const nestedFile: Record<string, unknown> = {
+    id: file.id,
+    filename: file.filename,
+  };
+
+  if (href) {
+    nestedFile.downloadUrl = href;
+  }
+
+  if (file.url) {
+    nestedFile.url = file.url;
+  }
+
+  return {
+    id: file.id,
+    fileId: file.id,
+    filename: file.filename,
+    mimeType: file.mimeType || undefined,
+    sizeBytes: file.sizeBytes || undefined,
+    createdAt: file.createdAt,
+    updatedAt: file.updatedAt,
+    downloadUrl: href || undefined,
+    file: nestedFile,
+    ...(extras || {}),
+  };
 };
 
 const formatFileSize = (value: unknown): string => {
@@ -218,6 +445,26 @@ const formatInviteStatus = (status?: string): string => {
     .join(' ');
 };
 
+const getInviteStatusStyle = (
+  status?: string,
+): { backgroundColor: string; color: string } => {
+  const normalized = String(status || 'SENT').toUpperCase();
+
+  if (normalized === 'ACCEPTED') {
+    return { backgroundColor: '#DBF2DD', color: '#166534' };
+  }
+
+  if (normalized === 'REJECTED') {
+    return { backgroundColor: '#FEE2E2', color: '#991B1B' };
+  }
+
+  if (normalized === 'EXPIRED') {
+    return { backgroundColor: '#E5E7EB', color: '#374151' };
+  }
+
+  return { backgroundColor: '#EAF4DF', color: '#2D553F' };
+};
+
 const formatEnum = (value?: string): string => {
   if (!value) {
     return '—';
@@ -235,6 +482,10 @@ const listFromText = (value: string): string[] => {
     .split(/[\n,]/g)
     .map((entry) => entry.trim())
     .filter(Boolean);
+};
+
+const normalizePreferredList = (value: string): string[] => {
+  return Array.from(new Set(listFromText(value).map((entry) => entry.toUpperCase())));
 };
 
 const getNotificationHref = (notification: AppNotification): string | null => {
@@ -294,10 +545,18 @@ export const ProfilePage = () => {
   const [activitySuccess, setActivitySuccess] = useState<string | null>(null);
   const [resumeTitle, setResumeTitle] = useState('');
   const [resumePrimary, setResumePrimary] = useState(true);
+  const [isResumeUploadModalOpen, setIsResumeUploadModalOpen] = useState(false);
+  const [isPortfolioUploadModalOpen, setIsPortfolioUploadModalOpen] = useState(false);
+  const [resumeUploadFile, setResumeUploadFile] = useState<File | null>(null);
+  const [portfolioUploadFile, setPortfolioUploadFile] = useState<File | null>(null);
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState('');
+  const [resolvedCompanyLogoUrl, setResolvedCompanyLogoUrl] = useState('');
   const [privacyError, setPrivacyError] = useState<string | null>(null);
   const [privacySuccess, setPrivacySuccess] = useState<string | null>(null);
   const [isPrivacyLoading, setIsPrivacyLoading] = useState(false);
   const [isPrivacyMutating, setIsPrivacyMutating] = useState(false);
+  const [localResumeFiles, setLocalResumeFiles] = useState<Record<string, unknown>[]>([]);
+  const [localPortfolioFiles, setLocalPortfolioFiles] = useState<Record<string, unknown>[]>([]);
   const [consentVersion, setConsentVersion] = useState('v1.0-2026-05-13');
   const [consentDraft, setConsentDraft] = useState<Record<ConsentType, boolean>>({
     PRIVACY: false,
@@ -322,23 +581,37 @@ export const ProfilePage = () => {
   const [complaintDetails, setComplaintDetails] = useState('');
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
   const [companyVerification, setCompanyVerification] = useState<CompanyVerificationMe | null>(null);
+  const resumeFileInputRef = useRef<HTMLInputElement | null>(null);
+  const portfolioFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const profile = (currentProfile as Record<string, unknown> | null) || null;
   const currentUserId = currentUser?.id || null;
   const currentUserRole = currentUser?.role || null;
   const rawUser = getRecord(profile?.user);
   const rawAvatarFile = getRecord(rawUser?.avatarFile) || getRecord(profile?.avatarFile);
+  const avatarFileId = getFileId(rawAvatarFile);
+  const companyLogoFileId = getFileId(getRecord(profile?.companyLogoFile));
   const avatarSrc =
+    resolvedAvatarUrl ||
+    getString(rawUser?.avatarUrl) ||
     getString(profile?.avatarUrl) ||
     getString(rawAvatarFile?.downloadUrl) ||
     getString(rawAvatarFile?.url) ||
     currentUser?.avatar ||
     '';
+  const companyLogoSrc =
+    resolvedCompanyLogoUrl ||
+    getString(profile?.logoUrl) ||
+    getString(profile?.companyLogoUrl) ||
+    getFileHref(getRecord(profile?.companyLogoFile));
+  const isTelegramLinked = Boolean(telegramSettings.telegramChatId);
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
   } = useForm<ProfileFormValues>({
     defaultValues: buildInitialValues(profile),
   });
@@ -365,20 +638,66 @@ export const ProfilePage = () => {
   }, [profile, reset]);
 
   useEffect(() => {
+    if (!avatarFileId) {
+      const cached = currentUserId ? readCachedAvatar(currentUserId) : null;
+      setResolvedAvatarUrl(cached?.url || '');
+      return;
+    }
+
+    let cancelled = false;
+
+    void getDownloadUrl(avatarFileId)
+      .then((downloadUrl) => {
+        if (!cancelled) {
+          setResolvedAvatarUrl(downloadUrl);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResolvedAvatarUrl('');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [avatarFileId, currentUserId, getDownloadUrl]);
+
+  useEffect(() => {
+    if (!companyLogoFileId) {
+      setResolvedCompanyLogoUrl('');
+      return;
+    }
+
+    let cancelled = false;
+
+    void getDownloadUrl(companyLogoFileId)
+      .then((downloadUrl) => {
+        if (!cancelled) {
+          setResolvedCompanyLogoUrl(downloadUrl);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResolvedCompanyLogoUrl('');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyLogoFileId, getDownloadUrl]);
+
+  useEffect(() => {
+    const telegramChatId = extractTelegramChatId(profile);
+
     initializeTelegramSettings({
-      telegramChatId:
-        typeof profile?.telegramChatId === 'string' ? profile.telegramChatId : null,
+      telegramChatId,
       telegramNotificationsEnabled: getBoolean(profile?.telegramNotificationsEnabled, false),
       telegramNotifyInvites: getBoolean(profile?.telegramNotifyInvites, true),
       telegramNotifyApplications: getBoolean(profile?.telegramNotifyApplications, true),
     });
-  }, [
-    initializeTelegramSettings,
-    profile?.telegramChatId,
-    profile?.telegramNotificationsEnabled,
-    profile?.telegramNotifyInvites,
-    profile?.telegramNotifyApplications,
-  ]);
+  }, [initializeTelegramSettings, profile]);
 
   useEffect(() => {
     if (!currentUserId || !currentUserRole) {
@@ -455,9 +774,103 @@ export const ProfilePage = () => {
   const isCandidate = isCandidateRole(currentUser?.role);
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const avatarFile = getRecord(profile?.avatarFile);
+  const cachedAvatar = currentUserId ? readCachedAvatar(currentUserId) : null;
+  const avatarFileIdForDelete = getFileId(avatarFile) || getString(cachedAvatar?.fileId);
   const companyLogoFile = getRecord(profile?.companyLogoFile);
   const resumes = getFileArray(profile?.resumes);
   const portfolioFiles = getFileArray(profile?.portfolioFiles);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setLocalResumeFiles([]);
+      setLocalPortfolioFiles([]);
+      return;
+    }
+
+    setLocalResumeFiles(readCachedUploadedFiles(currentUserId, 'resumes'));
+    setLocalPortfolioFiles(readCachedUploadedFiles(currentUserId, 'portfolio'));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      return;
+    }
+
+    writeCachedUploadedFiles(currentUserId, 'resumes', localResumeFiles);
+  }, [currentUserId, localResumeFiles]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      return;
+    }
+
+    writeCachedUploadedFiles(currentUserId, 'portfolio', localPortfolioFiles);
+  }, [currentUserId, localPortfolioFiles]);
+
+  useEffect(() => {
+    const serverResumeIds = new Set(
+      resumes.map((entry) => getFileId(entry)).filter(Boolean),
+    );
+    if (!serverResumeIds.size) {
+      return;
+    }
+
+    setLocalResumeFiles((prev) =>
+      prev.filter((entry) => {
+        const id = getFileId(entry);
+        return !id || !serverResumeIds.has(id);
+      }),
+    );
+  }, [resumes]);
+
+  useEffect(() => {
+    const serverPortfolioIds = new Set(
+      portfolioFiles.map((entry) => getFileId(entry)).filter(Boolean),
+    );
+    if (!serverPortfolioIds.size) {
+      return;
+    }
+
+    setLocalPortfolioFiles((prev) =>
+      prev.filter((entry) => {
+        const id = getFileId(entry);
+        return !id || !serverPortfolioIds.has(id);
+      }),
+    );
+  }, [portfolioFiles]);
+
+  const displayedResumes = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: Record<string, unknown>[] = [];
+
+    for (const file of [...resumes, ...localResumeFiles]) {
+      const id = getFileId(file);
+      const key = id || JSON.stringify(file);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      merged.push(file);
+    }
+
+    return merged;
+  }, [localResumeFiles, resumes]);
+  const displayedPortfolioFiles = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: Record<string, unknown>[] = [];
+
+    for (const file of [...portfolioFiles, ...localPortfolioFiles]) {
+      const id = getFileId(file);
+      const key = id || JSON.stringify(file);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      merged.push(file);
+    }
+
+    return merged;
+  }, [localPortfolioFiles, portfolioFiles]);
 
   const availableTabs = useMemo(
     () =>
@@ -497,6 +910,43 @@ export const ProfilePage = () => {
   const location = useMemo(() => {
     return [getString(profile?.city), getString(profile?.country)].filter(Boolean).join(', ');
   }, [profile]);
+  const preferredEmploymentTypesRaw = watch('preferredEmploymentTypesText');
+  const preferredWorkFormatsRaw = watch('preferredWorkFormatsText');
+  const selectedEmploymentTypes = useMemo(
+    () => normalizePreferredList(preferredEmploymentTypesRaw || ''),
+    [preferredEmploymentTypesRaw],
+  );
+  const selectedWorkFormats = useMemo(
+    () => normalizePreferredList(preferredWorkFormatsRaw || ''),
+    [preferredWorkFormatsRaw],
+  );
+  const preferredEmploymentTypes = useMemo(() => {
+    return Array.isArray(profile?.preferredEmploymentTypes)
+      ? profile.preferredEmploymentTypes.filter(
+          (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+        )
+      : [];
+  }, [profile]);
+  const preferredWorkFormats = useMemo(() => {
+    return Array.isArray(profile?.preferredWorkFormats)
+      ? profile.preferredWorkFormats.filter(
+          (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+        )
+      : [];
+  }, [profile]);
+
+  const togglePreferredOption = (field: PreferredFieldKey, value: string) => {
+    const current = normalizePreferredList(
+      field === 'preferredEmploymentTypesText'
+        ? preferredEmploymentTypesRaw || ''
+        : preferredWorkFormatsRaw || '',
+    );
+    const next = current.includes(value)
+      ? current.filter((entry) => entry !== value)
+      : [...current, value];
+
+    setValue(field, next.join(', '), { shouldDirty: true });
+  };
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!currentUser) {
@@ -596,6 +1046,21 @@ export const ProfilePage = () => {
     }
   };
 
+  const handleTelegramChatIdCopy = async () => {
+    if (!telegramSettings.telegramChatId) {
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(telegramSettings.telegramChatId);
+        setActivitySuccess('Telegram Chat ID copied.');
+      }
+    } catch {
+      setActivityError('Failed to copy Chat ID.');
+    }
+  };
+
   const handleTelegramStatusRefresh = async () => {
     setActivityError(null);
     setActivitySuccess(null);
@@ -604,10 +1069,17 @@ export const ProfilePage = () => {
       await loadProfile();
 
       const nextProfile = (useUserStore.getState().currentProfile as Record<string, unknown> | null) || null;
-      const nextChatId =
-        nextProfile && typeof nextProfile.telegramChatId === 'string'
-          ? nextProfile.telegramChatId
-          : null;
+      let nextChatId = extractTelegramChatId(nextProfile);
+
+      if (!nextChatId) {
+        await updateTelegramSettings({
+          telegramNotificationsEnabled: telegramSettings.telegramNotificationsEnabled,
+          telegramNotifyInvites: telegramSettings.telegramNotifyInvites,
+          telegramNotifyApplications: telegramSettings.telegramNotifyApplications,
+        });
+
+        nextChatId = useNotificationsStore.getState().telegramSettings.telegramChatId;
+      }
 
       if (nextChatId) {
         setActivitySuccess('Telegram linked successfully. You can save notification flags now.');
@@ -652,10 +1124,119 @@ export const ProfilePage = () => {
   };
 
   const handleProfileUpload = async (
+    file: File,
+    config: {
+      target: MediaUploadTarget;
+      successMessage: string;
+      resumeTitle?: string;
+      isPrimary?: boolean;
+    },
+  ): Promise<boolean> => {
+    const maxBytes = getUploadLimitBytes(config.target);
+    if (file.size > maxBytes) {
+      setActivityError(`File is too large. Max allowed for this upload is ${getUploadLimitLabel(config.target)}.`);
+      setActivitySuccess(null);
+      return false;
+    }
+
+    setActivityError(null);
+    setActivitySuccess(null);
+
+    try {
+      const uploadResult = await uploadAndAttach({
+        file,
+        target: config.target,
+        resumeTitle: config.resumeTitle,
+        isPrimary: config.isPrimary,
+      });
+      const uploadedFile = uploadResult.file;
+      const hasAttachment = Boolean(
+        uploadResult.attachment && Object.keys(uploadResult.attachment).length,
+      );
+
+      if (config.target === 'USER_AVATAR') {
+        let nextAvatarUrl = '';
+
+        if (uploadedFile.downloadUrl) {
+          nextAvatarUrl = uploadedFile.downloadUrl;
+        } else if (uploadedFile.id) {
+          try {
+            const uploadDownloadUrl = await getDownloadUrl(uploadedFile.id);
+            nextAvatarUrl = uploadDownloadUrl;
+          } catch {
+            if (uploadedFile.url) {
+              nextAvatarUrl = uploadedFile.url;
+            }
+          }
+        } else if (uploadedFile.url) {
+          nextAvatarUrl = uploadedFile.url;
+        }
+
+        if (nextAvatarUrl) {
+          setResolvedAvatarUrl(nextAvatarUrl);
+          syncAuthUserAvatar(nextAvatarUrl);
+          if (currentUserId) {
+            writeCachedAvatar(currentUserId, {
+              fileId: uploadedFile.id || undefined,
+              url: nextAvatarUrl,
+            });
+          }
+        }
+      }
+
+      if (config.target === 'CANDIDATE_RESUME' && !hasAttachment && uploadedFile.id) {
+        setLocalResumeFiles((prev) => [
+          makeLocalFileEntry(uploadedFile, {
+            title: config.resumeTitle,
+            resumeTitle: config.resumeTitle,
+            isPrimary: config.isPrimary === true,
+          }),
+          ...prev.filter((entry) => getFileId(entry) !== uploadedFile.id),
+        ]);
+      }
+
+      if (config.target === 'CANDIDATE_PORTFOLIO' && !hasAttachment && uploadedFile.id) {
+        setLocalPortfolioFiles((prev) => [
+          makeLocalFileEntry(uploadedFile),
+          ...prev.filter((entry) => getFileId(entry) !== uploadedFile.id),
+        ]);
+      }
+
+      if (config.target === 'COMPANY_LOGO') {
+        if (uploadedFile.downloadUrl) {
+          setResolvedCompanyLogoUrl(uploadedFile.downloadUrl);
+        } else if (uploadedFile.id) {
+          try {
+            const uploadDownloadUrl = await getDownloadUrl(uploadedFile.id);
+            setResolvedCompanyLogoUrl(uploadDownloadUrl);
+          } catch {
+            if (uploadedFile.url) {
+              setResolvedCompanyLogoUrl(uploadedFile.url);
+            }
+          }
+        } else if (uploadedFile.url) {
+          setResolvedCompanyLogoUrl(uploadedFile.url);
+        }
+      }
+
+      await loadProfile();
+      setActivitySuccess(config.successMessage);
+
+      if (config.target === 'CANDIDATE_RESUME') {
+        setResumeTitle('');
+        setResumePrimary(false);
+      }
+      return true;
+    } catch (uploadError) {
+      setActivityError(uploadError instanceof Error ? uploadError.message : 'Failed to upload file');
+      return false;
+    }
+  };
+
+  const handleFileInputChange = async (
     event: ChangeEvent<HTMLInputElement>,
     config: {
-      target: 'USER_AVATAR' | 'COMPANY_LOGO' | 'CANDIDATE_RESUME' | 'CANDIDATE_PORTFOLIO';
-      entityType: 'USER_AVATAR' | 'COMPANY_LOGO' | 'CANDIDATE_RESUME' | 'CANDIDATE_PORTFOLIO';
+      target: MediaUploadTarget;
       successMessage: string;
       resumeTitle?: string;
       isPrimary?: boolean;
@@ -663,35 +1244,54 @@ export const ProfilePage = () => {
   ) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-
     if (!file) {
       return;
     }
 
-    setActivityError(null);
-    setActivitySuccess(null);
+    await handleProfileUpload(file, config);
+  };
 
-    try {
-      await uploadAndAttach({
-        file,
-        target: config.target,
-        entityType: config.entityType,
-        resumeTitle: config.resumeTitle,
-        isPrimary: config.isPrimary,
-      });
-      await loadProfile();
-      setActivitySuccess(config.successMessage);
+  const handleResumeUploadConfirm = async () => {
+    if (!resumeUploadFile) {
+      setActivityError('Pick a resume file first.');
+      return;
+    }
 
-      if (config.entityType === 'CANDIDATE_RESUME') {
-        setResumeTitle('');
-        setResumePrimary(false);
-      }
-    } catch (uploadError) {
-      setActivityError(uploadError instanceof Error ? uploadError.message : 'Failed to upload file');
+    const ok = await handleProfileUpload(resumeUploadFile, {
+      target: 'CANDIDATE_RESUME',
+      resumeTitle: resumeTitle.trim() || undefined,
+      isPrimary: resumePrimary,
+      successMessage: 'Resume uploaded.',
+    });
+
+    if (ok) {
+      setResumeUploadFile(null);
+      setIsResumeUploadModalOpen(false);
     }
   };
 
-  const handleDeleteUploadedFile = async (fileId: string, successMessage: string) => {
+  const handlePortfolioUploadConfirm = async () => {
+    if (!portfolioUploadFile) {
+      setActivityError('Pick a portfolio file first.');
+      return;
+    }
+
+    const ok = await handleProfileUpload(portfolioUploadFile, {
+      target: 'CANDIDATE_PORTFOLIO',
+      successMessage: 'Portfolio file uploaded.',
+    });
+
+    if (ok) {
+      setPortfolioUploadFile(null);
+      setIsPortfolioUploadModalOpen(false);
+    }
+  };
+
+  const handleDeleteUploadedFile = async (
+    fileId: string,
+    successMessage: string,
+    target?: MediaUploadTarget,
+  ) => {
     if (!fileId) {
       setActivityError('File ID is missing');
       return;
@@ -702,6 +1302,15 @@ export const ProfilePage = () => {
 
     try {
       await deleteFile(fileId);
+      setLocalResumeFiles((prev) => prev.filter((entry) => getFileId(entry) !== fileId));
+      setLocalPortfolioFiles((prev) => prev.filter((entry) => getFileId(entry) !== fileId));
+      if (target === 'USER_AVATAR') {
+        setResolvedAvatarUrl('');
+        syncAuthUserAvatar(undefined);
+        if (currentUserId) {
+          clearCachedAvatar(currentUserId);
+        }
+      }
       await loadProfile();
       setActivitySuccess(successMessage);
     } catch (deleteError) {
@@ -711,10 +1320,13 @@ export const ProfilePage = () => {
 
   const handleOpenFile = async (file: Record<string, unknown> | null) => {
     const fileId = getFileId(file);
-    const fallbackHref = getFileHref(file);
+    if (!fileId) {
+      setActivityError('File is unavailable for download.');
+      return;
+    }
 
     try {
-      const nextHref = fileId ? await getDownloadUrl(fileId) : fallbackHref;
+      const nextHref = await getDownloadUrl(fileId);
 
       if (!nextHref) {
         throw new Error('Download URL is unavailable');
@@ -933,18 +1545,28 @@ export const ProfilePage = () => {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {availableTabs.map((tab) => {
                   const active = activeTab === tab.id;
+                  const unreadTabCount = tab.id === 'notifications' ? notificationsMeta.unread : 0;
+                  const showUnreadTabBadge = unreadTabCount > 0;
 
                   return (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left transition-colors ${
+                      className={`relative rounded-2xl border px-4 py-3 text-left transition-colors ${
                         active
                           ? 'border-[#2B6A4D]/30 bg-[#EAF4DF]'
                           : 'border-[#9FB08A]/30 bg-white hover:bg-[#F4F8EA]'
                       }`}
                     >
+                      {showUnreadTabBadge && (
+                        <span
+                          className="absolute right-3 top-3 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#D62525] px-1 text-[11px] font-semibold leading-none text-white"
+                          aria-label={`${unreadTabCount} unread notification${unreadTabCount === 1 ? '' : 's'}`}
+                        >
+                          {unreadTabCount > 9 ? '9+' : unreadTabCount}
+                        </span>
+                      )}
                       <p className="text-sm font-semibold text-[#23311D]">{tab.label}</p>
                       <p className="mt-1 text-xs text-[#566B4A]">{tab.description}</p>
                     </button>
@@ -1011,19 +1633,20 @@ export const ProfilePage = () => {
                   accept="image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={(event) =>
-                    void handleProfileUpload(event, {
+                    void handleFileInputChange(event, {
                       target: 'USER_AVATAR',
-                      entityType: 'USER_AVATAR',
                       successMessage: 'Avatar updated.',
                     })
                   }
                 />
               </label>
 
-              {avatarFile && (
+              {avatarFileIdForDelete && (
                 <button
                   type="button"
-                  onClick={() => void handleDeleteUploadedFile(getFileId(avatarFile), 'Avatar removed.')}
+                  onClick={() =>
+                    void handleDeleteUploadedFile(avatarFileIdForDelete, 'Avatar removed.', 'USER_AVATAR')
+                  }
                   disabled={isDeletingMedia}
                   className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
                   style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'white', color: '#b91c1c' }}
@@ -1046,9 +1669,8 @@ export const ProfilePage = () => {
                       accept="image/png,image/jpeg,image/webp"
                       className="hidden"
                       onChange={(event) =>
-                        void handleProfileUpload(event, {
+                        void handleFileInputChange(event, {
                           target: 'COMPANY_LOGO',
-                          entityType: 'COMPANY_LOGO',
                           successMessage: 'Company logo updated.',
                         })
                       }
@@ -1241,29 +1863,59 @@ export const ProfilePage = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
                           Preferred employment types
                         </label>
-                        <Textarea
-                          {...register('preferredEmploymentTypesText')}
-                          rows={3}
-                          placeholder="FULL_TIME, PROJECT"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                        />
+                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FAF3' }}>
+                          {preferredEmploymentTypeOptions.map((option) => {
+                            const active = selectedEmploymentTypes.includes(option.value);
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => togglePreferredOption('preferredEmploymentTypesText', option.value)}
+                                className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+                                style={{
+                                  borderColor: active ? '#2B6A4D' : 'rgba(51, 58, 47, 0.18)',
+                                  backgroundColor: active ? '#E3F1E5' : 'white',
+                                  color: active ? '#1F513A' : '#33412C',
+                                }}
+                              >
+                                {option.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <input type="hidden" {...register('preferredEmploymentTypesText')} />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
                           Preferred work formats
                         </label>
-                        <Textarea
-                          {...register('preferredWorkFormatsText')}
-                          rows={3}
-                          placeholder="REMOTE, HYBRID"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                        />
+                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FAF3' }}>
+                          {preferredWorkFormatOptions.map((option) => {
+                            const active = selectedWorkFormats.includes(option.value);
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => togglePreferredOption('preferredWorkFormatsText', option.value)}
+                                className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+                                style={{
+                                  borderColor: active ? '#2B6A4D' : 'rgba(51, 58, 47, 0.18)',
+                                  backgroundColor: active ? '#E3F1E5' : 'white',
+                                  color: active ? '#1F513A' : '#33412C',
+                                }}
+                              >
+                                {option.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <input type="hidden" {...register('preferredWorkFormatsText')} />
                       </div>
                     </div>
                   </>
@@ -1281,14 +1933,29 @@ export const ProfilePage = () => {
               </form>
             ) : (
               <div className="space-y-6">
-                {getString(profile?.bio) && (
-                  <div>
-                    <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
+                <section
+                  className="rounded-2xl border px-5 py-5 sm:px-6"
+                  style={{
+                    borderColor: 'rgba(51, 58, 47, 0.12)',
+                    background:
+                      'linear-gradient(145deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,0.92) 100%)',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: '#E3EAD4', color: '#2E3A2A' }}
+                    >
+                      <User className="h-4 w-4" />
+                    </span>
+                    <h2 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
                       About
                     </h2>
-                    <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{getString(profile?.bio)}</p>
                   </div>
-                )}
+                  <p className="mt-4 text-sm leading-7 sm:text-base" style={{ color: '#4F5E46' }}>
+                    {getString(profile?.bio) || 'Add a short summary about your goals, strengths, and the type of work you are looking for.'}
+                  </p>
+                </section>
 
                 {isHr ? (
                   <>
@@ -1334,40 +2001,137 @@ export const ProfilePage = () => {
                   </>
                 ) : (
                   <>
-                    {(getString(profile?.desiredRole) || profile?.desiredSalary || profile?.graduationYear || getString(profile?.dateOfBirth)) && (
-                      <div>
-                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
+                    <section
+                      className="rounded-2xl border p-5 sm:p-6"
+                      style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#FCFDF9' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
+                          style={{ backgroundColor: '#E9EFDA', color: '#2E3A2A' }}
+                        >
+                          <Briefcase className="h-4 w-4" />
+                        </span>
+                        <h2 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
                           Career Preferences
                         </h2>
-                        <div className="flex items-center gap-2 mb-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                          <Briefcase className="w-4 h-4" />
-                          <span>{getString(profile?.desiredRole) || 'Desired role not set'}</span>
+                      </div>
+
+                      <p className="mt-3 text-base font-semibold" style={{ color: '#2F3B2A' }}>
+                        {getString(profile?.desiredRole) || 'Desired role is not set yet'}
+                      </p>
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Salary</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {profile?.desiredSalary !== undefined && profile?.desiredSalary !== null ? String(profile.desiredSalary) : 'Not set'}
+                          </p>
                         </div>
-                        <div className="space-y-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                          {profile?.desiredSalary !== undefined && profile?.desiredSalary !== null && (
-                            <p>Desired salary: {String(profile.desiredSalary)}</p>
-                          )}
-                          {profile?.graduationYear !== undefined && profile?.graduationYear !== null && (
-                            <p>Graduation year: {String(profile.graduationYear)}</p>
-                          )}
-                          {getString(profile?.dateOfBirth) && (
-                            <p>Date of birth: {getString(profile?.dateOfBirth).slice(0, 10)}</p>
-                          )}
-                          <p>Open to work: {getBoolean(profile?.openToWork, false) ? 'Yes' : 'No'}</p>
-                          {getString(profile?.availability) && (
-                            <p>Availability: {getString(profile?.availability)}</p>
-                          )}
-                          {(profile?.hoursPerWeek !== undefined && profile?.hoursPerWeek !== null) && (
-                            <p>Hours per week: {String(profile.hoursPerWeek)}</p>
-                          )}
-                          <p>Remote ready: {getBoolean(profile?.remoteReady, false) ? 'Yes' : 'No'}</p>
-                          <p>Relocation ready: {getBoolean(profile?.relocationReady, false) ? 'Yes' : 'No'}</p>
-                          {getString(profile?.educationLevel) && (
-                            <p>Education: {getString(profile?.educationLevel)}</p>
-                          )}
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Graduation</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {profile?.graduationYear !== undefined && profile?.graduationYear !== null ? String(profile.graduationYear) : 'Not set'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Education</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {getString(profile?.educationLevel) ? formatEnum(getString(profile?.educationLevel)) : 'Not set'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Availability</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {getString(profile?.availability) ? formatEnum(getString(profile?.availability)) : 'Not set'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Hours / Week</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {profile?.hoursPerWeek !== undefined && profile?.hoursPerWeek !== null ? String(profile.hoursPerWeek) : 'Not set'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Date of Birth</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                            {getString(profile?.dateOfBirth) ? getString(profile?.dateOfBirth).slice(0, 10) : 'Not set'}
+                          </p>
                         </div>
                       </div>
-                    )}
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span
+                          className="rounded-full px-3 py-1 text-xs font-semibold"
+                          style={{
+                            backgroundColor: getBoolean(profile?.openToWork, false) ? '#DBF2DD' : '#ECEDE7',
+                            color: getBoolean(profile?.openToWork, false) ? '#166534' : '#4D5A45',
+                          }}
+                        >
+                          Open to work: {getBoolean(profile?.openToWork, false) ? 'Yes' : 'No'}
+                        </span>
+                        <span
+                          className="rounded-full px-3 py-1 text-xs font-semibold"
+                          style={{
+                            backgroundColor: getBoolean(profile?.remoteReady, false) ? '#DDECF6' : '#ECEDE7',
+                            color: getBoolean(profile?.remoteReady, false) ? '#1D4F72' : '#4D5A45',
+                          }}
+                        >
+                          Remote ready: {getBoolean(profile?.remoteReady, false) ? 'Yes' : 'No'}
+                        </span>
+                        <span
+                          className="rounded-full px-3 py-1 text-xs font-semibold"
+                          style={{
+                            backgroundColor: getBoolean(profile?.relocationReady, false) ? '#FCE8D8' : '#ECEDE7',
+                            color: getBoolean(profile?.relocationReady, false) ? '#9A3412' : '#4D5A45',
+                          }}
+                        >
+                          Relocation: {getBoolean(profile?.relocationReady, false) ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+
+                      {(preferredEmploymentTypes.length > 0 || preferredWorkFormats.length > 0) && (
+                        <div className="mt-5 space-y-3">
+                          {preferredEmploymentTypes.length > 0 && (
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                                Preferred Employment
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {preferredEmploymentTypes.map((entry) => (
+                                  <span
+                                    key={entry}
+                                    className="rounded-lg px-2.5 py-1 text-xs font-medium"
+                                    style={{ backgroundColor: '#EEF3E3', color: '#334028' }}
+                                  >
+                                    {formatEnum(entry)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {preferredWorkFormats.length > 0 && (
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                                Preferred Formats
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {preferredWorkFormats.map((entry) => (
+                                  <span
+                                    key={entry}
+                                    className="rounded-lg px-2.5 py-1 text-xs font-medium"
+                                    style={{ backgroundColor: '#E8F2F3', color: '#264146' }}
+                                  >
+                                    {formatEnum(entry)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </section>
                   </>
                 )}
               </div>
@@ -1383,13 +2147,17 @@ export const ProfilePage = () => {
                     Company Media
                   </h2>
                   <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                    Logo is uploaded via signed S3/R2 URL and attached to your company profile.
+                    Logo is uploaded through backend proxy and opened via secure download URL. Max size: 15MB.
                   </p>
                 </div>
-                {companyLogoFile && (
+                {(companyLogoFile || companyLogoSrc) && (
                   <button
                     type="button"
-                    onClick={() => void handleOpenFile(companyLogoFile)}
+                    onClick={() =>
+                      companyLogoFile
+                        ? void handleOpenFile(companyLogoFile)
+                        : window.open(companyLogoSrc, '_blank', 'noopener,noreferrer')
+                    }
                     className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                     style={{ color: '#333A2F' }}
                   >
@@ -1399,18 +2167,20 @@ export const ProfilePage = () => {
                 )}
               </div>
 
-              {companyLogoFile && getFileHref(companyLogoFile) ? (
+              {companyLogoSrc ? (
                 <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
                   <img
-                    src={getFileHref(companyLogoFile)}
+                    src={companyLogoSrc}
                     alt={getString(profile?.companyName) || 'Company logo'}
                     className="h-24 w-24 rounded-2xl object-cover"
                   />
                   <div className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
                     <p className="font-semibold" style={{ color: '#333A2F' }}>
-                      {getFileName(companyLogoFile)}
+                      {companyLogoFile ? getFileName(companyLogoFile) : 'Company logo'}
                     </p>
-                    <p className="mt-1">{formatFileSize(companyLogoFile.sizeBytes)}</p>
+                    {companyLogoFile && (
+                      <p className="mt-1">{formatFileSize(companyLogoFile.sizeBytes)}</p>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1443,194 +2213,406 @@ export const ProfilePage = () => {
           )}
 
           {activeTab === 'documents' && isCandidate && (
-            <section id="files" className="grid gap-6 xl:grid-cols-2">
-              <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                      Resumes
-                    </h2>
-                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                      Upload CV files via presigned URL. HR can open them from application details.
-                    </p>
-                  </div>
-                  <label
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+            <>
+              <section id="files" className="grid gap-6 xl:grid-cols-2">
+                <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+                  <div
+                    className="rounded-2xl border p-4 sm:p-5"
+                    style={{
+                      borderColor: 'rgba(51, 58, 47, 0.12)',
+                      background:
+                        'linear-gradient(140deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,1) 100%)',
+                    }}
                   >
-                    <FileUp className="w-4 h-4" />
-                    Upload resume
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      className="hidden"
-                      onChange={(event) =>
-                        void handleProfileUpload(event, {
-                          target: 'CANDIDATE_RESUME',
-                          entityType: 'CANDIDATE_RESUME',
-                          resumeTitle: resumeTitle || undefined,
-                          isPrimary: resumePrimary,
-                          successMessage: 'Resume uploaded.',
-                        })
-                      }
-                    />
-                  </label>
-                </div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h2 className="font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                          Resumes
+                        </h2>
+                        <p className="mt-2 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.74)' }}>
+                          CV library for applications. Upload PDF or DOCX via backend proxy.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#E5EDD7', color: '#34523B' }}>
+                            {displayedResumes.length} file(s)
+                          </span>
+                          <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EDF1E7', color: '#4D5A45' }}>
+                            Max size 40MB
+                          </span>
+                        </div>
+                      </div>
 
-                <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
-                  <Input
-                    value={resumeTitle}
-                    onChange={(event) => setResumeTitle(event.target.value)}
-                    placeholder="Resume title, for example Frontend CV v2"
-                    className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
-                  />
-                  <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-2 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F9FAF3', color: '#333A2F' }}>
-                    <input
-                      type="checkbox"
-                      checked={resumePrimary}
-                      onChange={(event) => setResumePrimary(event.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    Mark as primary
-                  </label>
-                </div>
-
-                {resumes.length === 0 ? (
-                  <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                    No resumes yet. Upload one PDF or DOCX file to use it in applications.
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResumeUploadFile(null);
+                          setResumeTitle('');
+                          setResumePrimary(displayedResumes.length === 0);
+                          setIsResumeUploadModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-sm"
+                        style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: '#2D3928' }}
+                      >
+                        <FileUp className="h-4 w-4" />
+                        Add Resume
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <div className="mt-6 space-y-4">
-                    {resumes.map((resume) => (
-                      <div key={getString(resume.id)} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-semibold" style={{ color: '#333A2F' }}>
-                                {getFileName(resume)}
-                              </p>
-                              {resume.isPrimary === true && (
-                                <span className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ backgroundColor: '#333A2F', color: 'white' }}>
-                                  Primary
+
+                  {displayedResumes.length === 0 ? (
+                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="font-semibold" style={{ color: '#3A4833' }}>No resumes yet</p>
+                      <p className="mt-2">Use “Add Resume” to upload your first CV with a custom title.</p>
+                    </div>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      {displayedResumes.map((resume, index) => (
+                        <article
+                          key={getFileId(resume) || getString(resume.id) || `resume-${index}`}
+                          className="rounded-2xl border p-4"
+                          style={{
+                            borderColor: 'rgba(51, 58, 47, 0.1)',
+                            background:
+                              'linear-gradient(145deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,1) 100%)',
+                          }}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: '#E2EBD4', color: '#364631' }}>
+                                  <FileArchive className="h-4 w-4" />
                                 </span>
-                              )}
+                                <p className="font-semibold" style={{ color: '#2D3928' }}>
+                                  {getFileName(resume)}
+                                </p>
+                                {resume.isPrimary === true && (
+                                  <span className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ backgroundColor: '#2F6A4A', color: 'white' }}>
+                                    Primary
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-2 text-xs" style={{ color: 'rgba(51, 58, 47, 0.63)' }}>
+                                {formatFileSize(resume.sizeBytes)} • Updated {formatDateTime(getString(resume.updatedAt) || getString(resume.createdAt))}
+                              </p>
                             </div>
-                            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                              Updated: {formatDateTime(getString(resume.updatedAt) || getString(resume.createdAt))}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            {getFileId(resume) && (
+
+                            <div className="flex flex-wrap gap-2">
+                              {getFileId(resume) && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleOpenFile(resume)}
+                                  className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
+                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D3928', backgroundColor: 'white' }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Open
+                                </button>
+                              )}
                               <button
                                 type="button"
-                                onClick={() => void handleOpenFile(resume)}
-                                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-                                style={{ color: '#333A2F' }}
+                                onClick={() =>
+                                  void handleDeleteUploadedFile(getFileId(resume), 'Resume deleted.')
+                                }
+                                disabled={isDeletingMedia}
+                                className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
+                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'white' }}
                               >
-                                <Download className="w-4 h-4" />
-                                Open
+                                <Trash2 className="h-4 w-4" />
+                                Delete
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void handleDeleteUploadedFile(getFileId(resume), 'Resume deleted.')
-                              }
-                              disabled={isDeletingMedia}
-                              className="inline-flex items-center gap-2 text-sm font-medium"
-                              style={{ color: '#b91c1c' }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                      Portfolio Files
-                    </h2>
-                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                      Images and supporting documents stored in the new media module.
-                    </p>
-                  </div>
-                  <label
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
-                  >
-                    <UploadCloud className="w-4 h-4" />
-                    Upload portfolio file
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      className="hidden"
-                      onChange={(event) =>
-                        void handleProfileUpload(event, {
-                          target: 'CANDIDATE_PORTFOLIO',
-                          entityType: 'CANDIDATE_PORTFOLIO',
-                          successMessage: 'Portfolio file uploaded.',
-                        })
-                      }
-                    />
-                  </label>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {portfolioFiles.length === 0 ? (
-                  <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                    No portfolio files yet.
-                  </div>
-                ) : (
-                  <div className="mt-6 space-y-4">
-                    {portfolioFiles.map((file) => (
-                      <div key={getFileId(file)} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="font-semibold" style={{ color: '#333A2F' }}>
-                              {getFileName(file)}
-                            </p>
-                            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                              {formatFileSize(file.sizeBytes)} • Uploaded {formatDateTime(getString(file.createdAt))}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            {getFileId(file) && (
-                              <button
-                                type="button"
-                                onClick={() => void handleOpenFile(file)}
-                                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-                                style={{ color: '#333A2F' }}
-                              >
-                                <Download className="w-4 h-4" />
-                                Open
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void handleDeleteUploadedFile(getFileId(file), 'Portfolio file deleted.')
-                              }
-                              disabled={isDeletingMedia}
-                              className="inline-flex items-center gap-2 text-sm font-medium"
-                              style={{ color: '#b91c1c' }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
-                          </div>
+                <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+                  <div
+                    className="rounded-2xl border p-4 sm:p-5"
+                    style={{
+                      borderColor: 'rgba(51, 58, 47, 0.12)',
+                      background:
+                        'linear-gradient(140deg, rgba(241,247,250,0.9) 0%, rgba(255,255,255,1) 100%)',
+                    }}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h2 className="font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                          Portfolio Files
+                        </h2>
+                        <p className="mt-2 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.74)' }}>
+                          Certificates, cases, and work samples for recruiters.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#DFEEF2', color: '#2D4D58' }}>
+                            {displayedPortfolioFiles.length} file(s)
+                          </span>
+                          <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EDF1E7', color: '#4D5A45' }}>
+                            Max size 40MB
+                          </span>
                         </div>
                       </div>
-                    ))}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPortfolioUploadFile(null);
+                          setIsPortfolioUploadModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-sm"
+                        style={{ borderColor: '#7EA2AF', backgroundColor: '#E7F1F4', color: '#27444F' }}
+                      >
+                        <UploadCloud className="h-4 w-4" />
+                        Add Portfolio
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            </section>
+
+                  {displayedPortfolioFiles.length === 0 ? (
+                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="font-semibold" style={{ color: '#3A4833' }}>No portfolio files yet</p>
+                      <p className="mt-2">Add visual or document evidence of your experience.</p>
+                    </div>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      {displayedPortfolioFiles.map((file, index) => (
+                        <article
+                          key={getFileId(file) || getString(file.id) || `portfolio-${index}`}
+                          className="rounded-2xl border p-4"
+                          style={{
+                            borderColor: 'rgba(51, 58, 47, 0.1)',
+                            background:
+                              'linear-gradient(145deg, rgba(244,248,250,0.85) 0%, rgba(255,255,255,1) 100%)',
+                          }}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: '#DCEBF1', color: '#2D4D58' }}>
+                                  <FileArchive className="h-4 w-4" />
+                                </span>
+                                <p className="font-semibold" style={{ color: '#2D3928' }}>
+                                  {getFileName(file)}
+                                </p>
+                              </div>
+                              <p className="mt-2 text-xs" style={{ color: 'rgba(51, 58, 47, 0.63)' }}>
+                                {formatFileSize(file.sizeBytes)} • Uploaded {formatDateTime(getString(file.createdAt))}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {getFileId(file) && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleOpenFile(file)}
+                                  className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
+                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D3928', backgroundColor: 'white' }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Open
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleDeleteUploadedFile(getFileId(file), 'Portfolio file deleted.')
+                                }
+                                disabled={isDeletingMedia}
+                                className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
+                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'white' }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {isResumeUploadModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm">
+                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'rgba(51, 58, 47, 0.15)' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#5A6F4B' }}>
+                          Resume Upload
+                        </p>
+                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                          Add New Resume
+                        </h3>
+                        <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                          Set a custom title and upload one PDF or DOCX file.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsResumeUploadModalOpen(false)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.18)', color: '#4B5D41' }}
+                        aria-label="Close"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F8FAF3' }}>
+                        <input
+                          ref={resumeFileInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] || null;
+                            event.target.value = '';
+                            setResumeUploadFile(file);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => resumeFileInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+                          style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: '#2D3928' }}
+                        >
+                          <UploadCloud className="h-4 w-4" />
+                          {resumeUploadFile ? 'Change File' : 'Choose File'}
+                        </button>
+                        <p className="mt-3 text-sm" style={{ color: '#4A5B42' }}>
+                          {resumeUploadFile ? `${resumeUploadFile.name} • ${formatFileSize(resumeUploadFile.size)}` : 'No file selected yet'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold" style={{ color: '#33412C' }}>
+                          Resume Title Editor
+                        </label>
+                        <div className="relative">
+                          <Pencil className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6A7A60' }} />
+                          <Input
+                            value={resumeTitle}
+                            onChange={(event) => setResumeTitle(event.target.value)}
+                            placeholder="Frontend CV v3 / Product Resume / Internship Resume"
+                            className="h-12 rounded-xl border pl-10"
+                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#FBFCF8' }}
+                          />
+                        </div>
+                      </div>
+
+                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: '#33412C' }}>
+                        <input
+                          type="checkbox"
+                          checked={resumePrimary}
+                          onChange={(event) => setResumePrimary(event.target.checked)}
+                          className="h-4 w-4"
+                        />
+                        Mark as primary resume
+                      </label>
+                    </div>
+
+                    <div className="mt-7 flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsResumeUploadModalOpen(false)}
+                        className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.16)', color: '#3F4C37', backgroundColor: 'white' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleResumeUploadConfirm()}
+                        disabled={!resumeUploadFile || isUploadingMedia}
+                        className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        style={{ backgroundColor: '#2F6A4A' }}
+                      >
+                        {isUploadingMedia ? 'Uploading...' : 'Upload Resume'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isPortfolioUploadModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm">
+                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'rgba(51, 58, 47, 0.15)' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#4E6D75' }}>
+                          Portfolio Upload
+                        </p>
+                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                          Add Portfolio File
+                        </h3>
+                        <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                          Upload image or document that shows your work.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsPortfolioUploadModalOpen(false)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.18)', color: '#4B5D41' }}
+                        aria-label="Close"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F5FAFC' }}>
+                      <input
+                        ref={portfolioFileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] || null;
+                          event.target.value = '';
+                          setPortfolioUploadFile(file);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => portfolioFileInputRef.current?.click()}
+                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+                        style={{ borderColor: '#7EA2AF', backgroundColor: '#E7F1F4', color: '#27444F' }}
+                      >
+                        <UploadCloud className="h-4 w-4" />
+                        {portfolioUploadFile ? 'Change File' : 'Choose File'}
+                      </button>
+                      <p className="mt-3 text-sm" style={{ color: '#3D5560' }}>
+                        {portfolioUploadFile ? `${portfolioUploadFile.name} • ${formatFileSize(portfolioUploadFile.size)}` : 'No file selected yet'}
+                      </p>
+                    </div>
+
+                    <div className="mt-7 flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPortfolioUploadModalOpen(false)}
+                        className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.16)', color: '#3F4C37', backgroundColor: 'white' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handlePortfolioUploadConfirm()}
+                        disabled={!portfolioUploadFile || isUploadingMedia}
+                        className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        style={{ backgroundColor: '#2A5C66' }}
+                      >
+                        {isUploadingMedia ? 'Uploading...' : 'Upload Portfolio'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {activeTab === 'activity' && isCandidate && (
@@ -1645,8 +2627,8 @@ export const ProfilePage = () => {
                       Favorites loaded from the new `/favorites/my` flow.
                     </p>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
-                    <Bookmark className="w-3.5 h-3.5" />
+                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#E6F0DA', color: '#2F5138' }}>
+                    <Sparkles className="w-3.5 h-3.5" />
                     {favoriteItems.length} saved
                   </div>
                 </div>
@@ -1654,9 +2636,20 @@ export const ProfilePage = () => {
                 {favoritesLoading ? (
                   <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading saved vacancies...</p>
                 ) : favoriteItems.length === 0 ? (
-                  <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                    Save a vacancy from the jobs list or vacancy details to see it here.
-                  </p>
+                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF0' }}>
+                    <p style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                      Save a vacancy from the jobs list or vacancy details to see it here.
+                    </p>
+                    <Link
+                      to="/app/jobs"
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all hover:shadow-sm"
+                      style={{ borderColor: '#8FA683', color: '#2D553F', backgroundColor: '#EAF3DD' }}
+                    >
+                      <Compass className="h-4 w-4" />
+                      Browse jobs
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {favoriteItems.map((item) => (
@@ -1687,6 +2680,15 @@ export const ProfilePage = () => {
                         <p className="mt-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
                           Saved at: {formatDateTime(item.favoriteCreatedAt)}
                         </p>
+                        <Link
+                          to={`/app/jobs/${item.vacancy.id}`}
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D553F', backgroundColor: 'white' }}
+                        >
+                          <Eye className="h-4 w-4" />
+                          View vacancy
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
                       </div>
                     ))}
                   </div>
@@ -1703,7 +2705,7 @@ export const ProfilePage = () => {
                       Candidate invites loaded from `/invites/my`.
                     </p>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
+                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EAF4DF', color: '#2D553F' }}>
                     <Send className="w-3.5 h-3.5" />
                     {myInvites.length} invite(s)
                   </div>
@@ -1712,9 +2714,20 @@ export const ProfilePage = () => {
                 {invitesLoading ? (
                   <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading invites...</p>
                 ) : myInvites.length === 0 ? (
-                  <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                    HR invites will appear here after an employer sends one.
-                  </p>
+                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF0' }}>
+                    <p style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                      HR invites will appear here after an employer sends one.
+                    </p>
+                    <Link
+                      to="/app/applications"
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all hover:shadow-sm"
+                      style={{ borderColor: '#8FA683', color: '#2D553F', backgroundColor: '#EAF3DD' }}
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      Open applications
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {myInvites.map((invite) => (
@@ -1728,7 +2741,10 @@ export const ProfilePage = () => {
                               {invite.vacancy?.company?.name || 'Company'}
                             </p>
                           </div>
-                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                          <span
+                            className="rounded-lg px-2 py-1 text-xs font-semibold"
+                            style={getInviteStatusStyle(invite.status)}
+                          >
                             {formatInviteStatus(invite.status)}
                           </span>
                         </div>
@@ -1745,9 +2761,14 @@ export const ProfilePage = () => {
                         </div>
 
                         {invite.vacancy?.id && (
-                          <Link to={`/app/jobs/${invite.vacancy.id}`} className="mt-3 inline-flex items-center gap-2 text-sm font-medium hover:underline" style={{ color: '#333A2F' }}>
-                            Open vacancy
+                          <Link
+                            to={`/app/jobs/${invite.vacancy.id}`}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
+                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D553F', backgroundColor: 'white' }}
+                          >
                             <ExternalLink className="w-4 h-4" />
+                            Open vacancy
+                            <ArrowRight className="w-4 h-4" />
                           </Link>
                         )}
                       </div>
@@ -1772,8 +2793,8 @@ export const ProfilePage = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
-                      <Bell className="h-3.5 w-3.5" />
+                    <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EAF4DF', color: '#2D553F' }}>
+                      <BellRing className="h-3.5 w-3.5" />
                       {notificationsMeta.unread} unread
                     </div>
                     <Button
@@ -1783,6 +2804,7 @@ export const ProfilePage = () => {
                       disabled={notificationsLoading}
                       style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                     >
+                      <RefreshCcw className="h-4 w-4" />
                       Refresh
                     </Button>
                     <Button
@@ -1792,6 +2814,7 @@ export const ProfilePage = () => {
                       onClick={() => void handleMarkAllNotificationsRead()}
                       style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                     >
+                      <CheckCheck className="h-4 w-4" />
                       Mark all read
                     </Button>
                   </div>
@@ -1846,7 +2869,7 @@ export const ProfilePage = () => {
 
                           <div className="mt-3 flex flex-wrap gap-3">
                             {href && (
-                              <Link to={href} className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline" style={{ color: '#2B5A41' }}>
+                              <Link to={href} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2B5A41', backgroundColor: 'white' }}>
                                 Open
                                 <ExternalLink className="h-4 w-4" />
                               </Link>
@@ -1855,9 +2878,10 @@ export const ProfilePage = () => {
                               <button
                                 type="button"
                                 onClick={() => void handleMarkNotificationRead(notification.id)}
-                                className="text-sm font-medium hover:underline"
-                                style={{ color: '#333A2F' }}
+                                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
+                                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'white' }}
                               >
+                                <CheckCircle2 className="h-4 w-4" />
                                 Mark as read
                               </button>
                             )}
@@ -1879,6 +2903,38 @@ export const ProfilePage = () => {
                   </p>
                 </div>
 
+                <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1' }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#61755A' }}>
+                        Connection Status
+                      </p>
+                      <div className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: isTelegramLinked ? '#DCF2DE' : '#FEE2E2', color: isTelegramLinked ? '#166534' : '#991B1B' }}>
+                        {isTelegramLinked ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                        {isTelegramLinked ? 'Connected' : 'Not connected'}
+                      </div>
+                    </div>
+                    {isTelegramLinked && (
+                      <button
+                        type="button"
+                        onClick={() => void handleTelegramChatIdCopy()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-sm"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2E4030', backgroundColor: 'white' }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy ID
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3 rounded-xl border px-3 py-2" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: 'white' }}>
+                    <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: '#73836C' }}>Chat ID</p>
+                    <p className="mt-1 font-mono text-sm" style={{ color: '#2D3928' }}>
+                      {telegramSettings.telegramChatId || '—'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-3">
                   <button
                     type="button"
@@ -1894,7 +2950,7 @@ export const ProfilePage = () => {
                         Enable Telegram notifications
                       </p>
                       <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
-                        Chat ID: {telegramSettings.telegramChatId || 'not linked yet'}
+                        Toggle delivery to Telegram for all enabled event types.
                       </p>
                     </div>
                     <span className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${telegramSettings.telegramNotificationsEnabled ? 'bg-[#2B6A4D]' : 'bg-[#D7DCCC]'}`}>
@@ -1955,6 +3011,7 @@ export const ProfilePage = () => {
                     className="justify-center"
                     style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                   >
+                    <CheckCheck className="h-4 w-4" />
                     Save settings
                   </Button>
                   <Button
@@ -1964,6 +3021,7 @@ export const ProfilePage = () => {
                     className="justify-center"
                     style={{ backgroundColor: '#2B6A4D', color: 'white' }}
                   >
+                    <Rocket className="h-4 w-4" />
                     Generate Telegram link
                   </Button>
                   <Button
@@ -1973,13 +3031,15 @@ export const ProfilePage = () => {
                     className="justify-center"
                     style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                   >
+                    <RefreshCcw className="h-4 w-4" />
                     Refresh connection status
                   </Button>
                 </div>
 
                 {telegramLinkSession?.deepLink && (
                   <div className="mt-5 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4">
-                    <p className="font-medium" style={{ color: '#333A2F' }}>
+                    <p className="inline-flex items-center gap-2 font-medium" style={{ color: '#333A2F' }}>
+                      <MessageCircle className="h-4 w-4" />
                       Telegram deep-link is ready
                     </p>
                     <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
