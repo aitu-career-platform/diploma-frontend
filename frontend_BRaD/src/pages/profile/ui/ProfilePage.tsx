@@ -362,10 +362,12 @@ const getFileName = (file: Record<string, unknown> | null): string => {
 
   return (
     getString(file?.resumeTitle) ||
+    getString(file?.title) ||
     getString(file?.name) ||
+    getString(nestedFile?.resumeTitle) ||
+    getString(nestedFile?.title) ||
     getString(nestedFile?.filename) ||
     getString(file?.filename) ||
-    getString(file?.title) ||
     'Untitled file'
   );
 };
@@ -884,17 +886,35 @@ export const ProfilePage = () => {
   }, [currentUserId, localPortfolioFiles]);
 
   useEffect(() => {
-    const serverResumeIds = new Set(
-      resumes.map((entry) => getFileId(entry)).filter(Boolean),
-    );
-    if (!serverResumeIds.size) {
+    const serverResumesById = new Map<string, Record<string, unknown>>();
+    resumes.forEach((entry) => {
+      const id = getFileId(entry);
+      if (id) {
+        serverResumesById.set(id, entry);
+      }
+    });
+
+    if (!serverResumesById.size) {
       return;
     }
 
     setLocalResumeFiles((prev) =>
       prev.filter((entry) => {
         const id = getFileId(entry);
-        return !id || !serverResumeIds.has(id);
+        if (!id) {
+          return true;
+        }
+
+        const serverEntry = serverResumesById.get(id);
+        if (!serverEntry) {
+          return true;
+        }
+
+        const serverTitle =
+          getString(serverEntry.resumeTitle) || getString(serverEntry.title) || getString(serverEntry.name);
+        const localTitle = getString(entry.resumeTitle) || getString(entry.title) || getString(entry.name);
+
+        return Boolean(localTitle && !serverTitle);
       }),
     );
   }, [resumes]);
@@ -918,8 +938,52 @@ export const ProfilePage = () => {
   const displayedResumes = useMemo(() => {
     const seen = new Set<string>();
     const merged: Record<string, unknown>[] = [];
+    const localById = new Map<string, Record<string, unknown>>();
 
-    for (const file of [...resumes, ...localResumeFiles]) {
+    for (const localEntry of localResumeFiles) {
+      const localId = getFileId(localEntry);
+      if (localId) {
+        localById.set(localId, localEntry);
+      }
+    }
+
+    for (const file of resumes) {
+      const id = getFileId(file);
+      if (id && localById.has(id)) {
+        const local = localById.get(id);
+        const mergedEntry: Record<string, unknown> = {
+          ...file,
+          title:
+            getString(file.title) ||
+            getString(file.resumeTitle) ||
+            getString(local?.title) ||
+            getString(local?.resumeTitle) ||
+            undefined,
+          resumeTitle:
+            getString(file.resumeTitle) ||
+            getString(file.title) ||
+            getString(local?.resumeTitle) ||
+            getString(local?.title) ||
+            undefined,
+        };
+        const key = id;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(mergedEntry);
+        }
+        localById.delete(id);
+        continue;
+      }
+
+      const key = id || JSON.stringify(file);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      merged.push(file);
+    }
+
+    for (const file of localResumeFiles) {
       const id = getFileId(file);
       const key = id || JSON.stringify(file);
       if (seen.has(key)) {

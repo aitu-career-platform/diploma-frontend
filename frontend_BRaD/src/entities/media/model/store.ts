@@ -91,7 +91,9 @@ export const useMediaStore = create<MediaStore>((set) => ({
       }
 
       if (input.resumeTitle?.trim()) {
-        formData.append('resumeTitle', input.resumeTitle.trim());
+        const normalizedResumeTitle = input.resumeTitle.trim();
+        formData.append('resumeTitle', normalizedResumeTitle);
+        formData.append('title', normalizedResumeTitle);
       }
 
       if (input.replaceResumeId) {

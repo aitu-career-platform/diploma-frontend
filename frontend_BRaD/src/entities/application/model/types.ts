@@ -31,6 +31,21 @@ export interface ApplicationCandidateProfile {
   city?: string;
   country?: string;
   desiredRole?: string;
+  about?: string;
+  experience?: string;
+  educationLevel?: string;
+  desiredSalary?: string | number;
+  availability?: string;
+  openToWork?: boolean;
+  remoteReady?: boolean;
+  relocationReady?: boolean;
+  preferredEmploymentTypes?: string[];
+  preferredWorkFormats?: string[];
+  skills?: string[];
+  skillTexts?: string[];
+  skill_tags?: string[];
+  skillLevels?: Record<string, string>;
+  requiredSkillLevels?: Record<string, string>;
   resumes?: ApplicationResume[];
 }
 

@@ -23,6 +23,7 @@ export const AppRouter = () => {
         <Route path="/app/jobs" element={<JobsPage />} />
         <Route path="/app/jobs/:id" element={<JobDetailPage />} />
         <Route path="/app/applications" element={<ApplicationsPage />} />
+        <Route path="/app/applications/:applicationId" element={<ApplicationsPage />} />
         <Route path="/app/profile" element={<ProfilePage />} />
         <Route path="/app/employer" element={<EmployerPage />} />
         <Route path="/app/admin" element={<AdminPanelPage />} />

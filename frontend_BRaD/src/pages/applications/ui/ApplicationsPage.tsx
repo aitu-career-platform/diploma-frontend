@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   CalendarDays,
   CheckCircle2,
@@ -105,7 +105,86 @@ const getPrimaryResume = (application: Application) => {
   return resumes.find((resume) => resume.isPrimary) || resumes[0] || null;
 };
 
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+};
+
+const toSkillLevelPairs = (value: unknown): Array<{ skill: string; level: string }> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.entries(value).flatMap(([skill, level]) => {
+    if (!skill.trim() || typeof level !== 'string' || !level.trim()) {
+      return [];
+    }
+
+    return [{ skill: skill.trim(), level: level.trim() }];
+  });
+};
+
+const formatFlag = (value: unknown): string => {
+  if (value === true) {
+    return 'Yes';
+  }
+
+  if (value === false) {
+    return 'No';
+  }
+
+  return '—';
+};
+
+const formatToken = (value?: string): string => {
+  if (!value) {
+    return '—';
+  }
+
+  return value
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+};
+
+const getCandidateSkills = (application: Application): string[] => {
+  const profile = application.candidate?.profile;
+  if (!profile) {
+    return [];
+  }
+
+  const sourceSkills = [
+    ...toStringArray(profile.skills),
+    ...toStringArray(profile.skillTexts),
+    ...toStringArray(profile.skill_tags),
+  ];
+
+  return Array.from(new Set(sourceSkills));
+};
+
+const getCandidateSkillLevels = (application: Application): Array<{ skill: string; level: string }> => {
+  const profile = application.candidate?.profile;
+  if (!profile) {
+    return [];
+  }
+
+  const fromSkillLevels = toSkillLevelPairs(profile.skillLevels);
+  if (fromSkillLevels.length > 0) {
+    return fromSkillLevels;
+  }
+
+  return toSkillLevelPairs(profile.requiredSkillLevels);
+};
+
 export const ApplicationsPage = () => {
+  const navigate = useNavigate();
+  const { applicationId } = useParams<{ applicationId?: string }>();
   const { currentUser, isAuthenticated } = useUserStore();
   const {
     items,
@@ -133,11 +212,15 @@ export const ApplicationsPage = () => {
   });
   const [pageError, setPageError] = useState<string | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [candidatePreviewApplication, setCandidatePreviewApplication] = useState<Application | null>(
+    null,
+  );
 
   const isCandidate = isCandidateRole(currentUser?.role);
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
   const canViewPage = isAuthenticated && (isCandidate || isHr || isAdmin);
+  const isDetailPage = Boolean(applicationId);
 
   const currentTimeline = selectedApplication ? timelines[selectedApplication.id] : null;
 
@@ -185,6 +268,14 @@ export const ApplicationsPage = () => {
     }));
   };
 
+  const closeCandidatePreview = () => {
+    setCandidatePreviewApplication(null);
+  };
+
+  const openCandidatePreview = (application: Application) => {
+    setCandidatePreviewApplication(application);
+  };
+
   const refreshList = async (nextFilters: ApplicationFilters = filters) => {
     if (!currentUser) {
       return;
@@ -207,6 +298,48 @@ export const ApplicationsPage = () => {
     void refreshList();
   }, [canViewPage, currentUser]);
 
+  useEffect(() => {
+    if (!canViewPage || !applicationId) {
+      return;
+    }
+
+    setPageError(null);
+
+    const loadFullApplication = async () => {
+      try {
+        await Promise.all([loadApplication(applicationId), loadTimeline(applicationId)]);
+        setStatusNote('');
+        setNextStatus('REVIEWED');
+      } catch (loadError) {
+        setPageError(loadError instanceof Error ? loadError.message : 'Failed to load application');
+      }
+    };
+
+    void loadFullApplication();
+  }, [applicationId, canViewPage]);
+
+  useEffect(() => {
+    if (!candidatePreviewApplication) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeCandidatePreview();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [candidatePreviewApplication]);
+
   const handleFilterChange = (field: keyof ApplicationFilters, value: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -214,16 +347,13 @@ export const ApplicationsPage = () => {
     }));
   };
 
-  const handleSelectApplication = async (applicationId: string) => {
-    setPageError(null);
+  const handleSelectApplication = (applicationId: string) => {
+    navigate(`/app/applications/${applicationId}`);
+  };
 
-    try {
-      await Promise.all([loadApplication(applicationId), loadTimeline(applicationId)]);
-      setStatusNote('');
-      setNextStatus('REVIEWED');
-    } catch (loadError) {
-      setPageError(loadError instanceof Error ? loadError.message : 'Failed to load application');
-    }
+  const handleBackToList = () => {
+    clearSelection();
+    navigate('/app/applications');
   };
 
   const handleWithdraw = async (applicationId: string) => {
@@ -277,6 +407,16 @@ export const ApplicationsPage = () => {
       setDownloadingFileId(null);
     }
   };
+
+  const previewCandidate = candidatePreviewApplication?.candidate || null;
+  const previewProfile = previewCandidate?.profile || null;
+  const previewSkills = candidatePreviewApplication ? getCandidateSkills(candidatePreviewApplication) : [];
+  const previewSkillLevels = candidatePreviewApplication
+    ? getCandidateSkillLevels(candidatePreviewApplication)
+    : [];
+  const previewPreferredEmploymentTypes = toStringArray(previewProfile?.preferredEmploymentTypes);
+  const previewPreferredWorkFormats = toStringArray(previewProfile?.preferredWorkFormats);
+  const isSelectedDetailLoaded = !applicationId || selectedApplication?.id === applicationId;
 
   if (!canViewPage) {
     return (
@@ -557,7 +697,7 @@ export const ApplicationsPage = () => {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+        {!isDetailPage && (
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -602,7 +742,7 @@ export const ApplicationsPage = () => {
                     <button
                       key={application.id}
                       type="button"
-                      onClick={() => void handleSelectApplication(application.id)}
+                      onClick={() => handleSelectApplication(application.id)}
                       className="w-full rounded-[24px] border p-5 text-left transition-all"
                       style={{
                         borderColor: isSelected ? '#333A2F' : 'rgba(51, 58, 47, 0.08)',
@@ -655,6 +795,19 @@ export const ApplicationsPage = () => {
                       )}
 
                       <div className="mt-4 flex flex-wrap gap-3">
+                        {!isCandidate && application.candidate && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openCandidatePreview(application);
+                            }}
+                          >
+                            <UserRound className="h-4 w-4" />
+                            View candidate
+                          </Button>
+                        )}
                         {application.chatId && (
                           <Link to={`/app/chat?chatId=${application.chatId}`}>
                             <Button
@@ -687,18 +840,33 @@ export const ApplicationsPage = () => {
               </div>
             )}
           </section>
+        )}
 
-          <aside className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
-            {!selectedApplication ? (
+        {isDetailPage && (
+          <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <Button variant="outline" onClick={handleBackToList}>
+                Back to list
+              </Button>
+              <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                Full application view
+              </p>
+            </div>
+
+            {!isSelectedDetailLoaded || (isLoading && !selectedApplication) ? (
+              <div className="rounded-[24px] border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                Loading application details...
+              </div>
+            ) : !selectedApplication ? (
               <div className="rounded-[24px] border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
                   <CheckCircle2 className="h-6 w-6" style={{ color: '#333A2F' }} />
                 </div>
                 <h2 className="font-heading mb-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
-                  Open any application
+                  Application not found
                 </h2>
                 <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                  Details, timeline events, and status actions will appear here.
+                  This application is unavailable or no longer in your access scope.
                 </p>
               </div>
             ) : (
@@ -755,6 +923,16 @@ export const ApplicationsPage = () => {
                         </Button>
                       </div>
                     )}
+                    <div className="mt-4">
+                      <Button
+                        variant="hero"
+                        size="sm"
+                        onClick={() => openCandidatePreview(selectedApplication)}
+                      >
+                        <UserRound className="h-4 w-4" />
+                        Open full candidate profile
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -869,9 +1047,191 @@ export const ApplicationsPage = () => {
                 </div>
               </div>
             )}
-          </aside>
-        </div>
+          </section>
+        )}
       </main>
+
+      {candidatePreviewApplication && previewCandidate && (
+        <div
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-[#1F251D]/45 p-0 sm:items-center sm:p-6"
+          onClick={closeCandidatePreview}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Candidate profile"
+            className="max-h-[92vh] w-full overflow-hidden rounded-t-[28px] border border-black/5 bg-white sm:max-w-4xl sm:rounded-[28px]"
+            style={cardStyle}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-black/5 px-5 py-4 sm:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Candidate profile
+                </p>
+                <h3 className="mt-1 text-xl font-bold sm:text-2xl" style={{ color: '#333A2F' }}>
+                  {getCandidateName(candidatePreviewApplication)}
+                </h3>
+                <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                  {previewCandidate.email || '—'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCandidatePreview}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 text-[#333A2F] transition hover:bg-[#F3F5EA]"
+                aria-label="Close candidate profile"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-92px)] overflow-y-auto p-5 sm:p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    Contacts
+                  </p>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
+                    <div>{previewCandidate.phone || 'No phone'}</div>
+                    <div>
+                      {previewProfile?.city || '—'}
+                      {previewProfile?.country ? `, ${previewProfile.country}` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    Career
+                  </p>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
+                    <div>Desired role: {previewProfile?.desiredRole || '—'}</div>
+                    <div>Experience: {previewProfile?.experience || '—'}</div>
+                    <div>Education: {previewProfile?.educationLevel || '—'}</div>
+                    <div>Desired salary: {previewProfile?.desiredSalary || '—'}</div>
+                    <div>Availability: {previewProfile?.availability || '—'}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    Preferences
+                  </p>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
+                    <div>Open to work: {formatFlag(previewProfile?.openToWork)}</div>
+                    <div>Remote ready: {formatFlag(previewProfile?.remoteReady)}</div>
+                    <div>Relocation ready: {formatFlag(previewProfile?.relocationReady)}</div>
+                  </div>
+                  {previewPreferredEmploymentTypes.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {previewPreferredEmploymentTypes.map((entry) => (
+                        <span
+                          key={entry}
+                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+                          style={{ color: '#333A2F' }}
+                        >
+                          {formatToken(entry)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {previewPreferredWorkFormats.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {previewPreferredWorkFormats.map((entry) => (
+                        <span
+                          key={entry}
+                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+                          style={{ color: '#333A2F' }}
+                        >
+                          {formatToken(entry)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    Skills and levels
+                  </p>
+                  {previewSkills.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {previewSkills.map((skill) => {
+                        const levelMatch = previewSkillLevels.find(
+                          (entry) => entry.skill.toLowerCase() === skill.toLowerCase(),
+                        );
+
+                        return (
+                          <span
+                            key={skill}
+                            className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+                            style={{ color: '#333A2F' }}
+                          >
+                            {skill}
+                            {levelMatch ? ` · ${formatToken(levelMatch.level)}` : ''}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                      Skills are not specified.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {previewProfile?.about && (
+                <div className="mt-4 rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    About candidate
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6" style={{ color: '#333A2F' }}>
+                    {previewProfile.about}
+                  </p>
+                </div>
+              )}
+
+              {previewProfile?.resumes?.length ? (
+                <div className="mt-4 rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                    Resume files
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {previewProfile.resumes.map((resume) => (
+                      <div
+                        key={resume.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/10 bg-white px-3 py-2"
+                      >
+                        <div className="text-sm" style={{ color: '#333A2F' }}>
+                          {resume.title || 'Resume'}
+                          {resume.isPrimary ? ' · Primary' : ''}
+                        </div>
+                        {resume.fileId ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={downloadingFileId === resume.fileId}
+                            onClick={() => void handleOpenResume(resume.fileId || '')}
+                          >
+                            <Download className="h-4 w-4" />
+                            {downloadingFileId === resume.fileId ? 'Opening...' : 'Open'}
+                          </Button>
+                        ) : (
+                          <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                            No file attached
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
