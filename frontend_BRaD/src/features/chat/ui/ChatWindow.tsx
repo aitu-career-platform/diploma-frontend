@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { ArrowLeft, Send, X } from 'lucide-react';
 import { Button, Input } from '@shared/ui';
 import { useMessageStore, type ChatDetails, type ChatMessage } from '@entities/message';
 import { useUserStore } from '@entities/user';
@@ -126,11 +126,15 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-[#1F2B18]">{participantName}</p>
           <p className="truncate text-xs text-[#5F7354]">{chat.vacancy?.title || 'Application chat'}</p>
-          <p className="mt-1 text-[11px] text-[#7A8D6E]">{messages.length} messages in this thread</p>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-[#607456] transition-colors hover:text-[#2B3B23]">
-            <X className="h-5 w-5" />
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-full p-1 text-[#607456] transition-colors hover:bg-[#EEF4DE] hover:text-[#2B3B23]"
+            aria-label="Back to chat list"
+          >
+            {embedded ? <ArrowLeft className="h-5 w-5 lg:hidden" /> : null}
+            {embedded ? <X className="hidden h-5 w-5 lg:block" /> : <X className="h-5 w-5" />}
           </button>
         )}
       </div>
@@ -194,7 +198,6 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
 
       <div className="border-t border-[#2B3B23]/10 bg-white px-4 py-3">
         {submitError && <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
-        <p className="mb-2 text-[11px] text-[#738667]">Press Enter to send, Shift+Enter for a new line.</p>
         <div className="flex gap-2">
           <Input
             value={message}

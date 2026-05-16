@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   Bell,
   Briefcase,
+  CheckCheck,
   ClipboardList,
   GripHorizontal,
   LayoutDashboard,
@@ -42,6 +43,8 @@ const getString = (value: unknown): string => {
 
 const CHAT_MODAL_WIDTH = 420;
 const CHAT_MODAL_HEIGHT = 620;
+const NOTIFICATIONS_MODAL_WIDTH = 380;
+const NOTIFICATIONS_MODAL_HEIGHT = 560;
 
 const formatChatTime = (value?: string | null): string => {
   if (!value) {
@@ -61,9 +64,36 @@ const formatChatTime = (value?: string | null): string => {
   });
 };
 
+const formatNotificationTime = (value?: string | null): string => {
+  if (!value) {
+    return '—';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  return date.toLocaleString([], {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export const AppHeader = () => {
   const { currentUser, currentProfile, isAuthenticated, logout } = useUserStore();
-  const { meta, loadNotifications } = useNotificationsStore();
+  const {
+    items: notifications,
+    meta,
+    isLoading: isLoadingNotifications,
+    isMutating: isMutatingNotifications,
+    error: notificationsError,
+    loadNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotificationsStore();
   const {
     chats,
     detailsById,
@@ -90,6 +120,8 @@ export const AppHeader = () => {
     y: 108,
   });
   const [isDraggingChatModal, setIsDraggingChatModal] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [notificationsModalError, setNotificationsModalError] = useState<string | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
 
   const isHr = isHrRole(currentUser?.role);
@@ -142,6 +174,7 @@ export const AppHeader = () => {
     if (!isAuthenticated) {
       disconnectStream();
       setIsChatModalOpen(false);
+      setIsNotificationsModalOpen(false);
       return;
     }
 
@@ -182,13 +215,14 @@ export const AppHeader = () => {
   }, [isAuthenticated, isChatModalOpen]);
 
   useEffect(() => {
-    if (!isChatModalOpen) {
+    if (!isChatModalOpen && !isNotificationsModalOpen) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsChatModalOpen(false);
+        setIsNotificationsModalOpen(false);
       }
     };
 
@@ -196,7 +230,7 @@ export const AppHeader = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isChatModalOpen]);
+  }, [isChatModalOpen, isNotificationsModalOpen]);
 
   useEffect(() => {
     if (!isDraggingChatModal) {
@@ -287,6 +321,7 @@ export const AppHeader = () => {
 
     const nextOpen = !isChatModalOpen;
     setIsChatModalOpen(nextOpen);
+    setIsNotificationsModalOpen(false);
     setChatModalError(null);
     setMobileMenuOpen(false);
 
@@ -298,6 +333,75 @@ export const AppHeader = () => {
       await listChats({ limit: 50, offset: 0 });
     } catch (error) {
       setChatModalError(error instanceof Error ? error.message : 'Failed to load chats');
+    }
+  };
+
+  const getNotificationHref = (notification: { type?: string; payload?: Record<string, unknown> }) => {
+    const payload = notification.payload || {};
+    const vacancyId = typeof payload.vacancyId === 'string' ? payload.vacancyId : '';
+
+    if (notification.type === 'VACANCY_INVITE') {
+      return vacancyId ? `/app/jobs/${vacancyId}` : '/app/profile#notifications';
+    }
+
+    if (notification.type === 'NEW_APPLICATION') {
+      return '/app/applications';
+    }
+
+    return '/app/profile#notifications';
+  };
+
+  const handleToggleNotificationsModal = async () => {
+    if (!isAuthenticated) {
+      navigate('/app/login');
+      return;
+    }
+
+    if (window.innerWidth < 1024) {
+      navigate('/app/profile#notifications');
+      setMobileMenuOpen(false);
+      return;
+    }
+
+    const nextOpen = !isNotificationsModalOpen;
+    setIsNotificationsModalOpen(nextOpen);
+    setIsChatModalOpen(false);
+    setNotificationsModalError(null);
+    setMobileMenuOpen(false);
+
+    if (!nextOpen) {
+      return;
+    }
+
+    try {
+      await loadNotifications({ limit: 20, offset: 0 });
+    } catch (error) {
+      setNotificationsModalError(
+        error instanceof Error ? error.message : 'Failed to load notifications',
+      );
+    }
+  };
+
+  const handleOpenNotification = async (notificationId: string, href: string) => {
+    try {
+      await markAsRead(notificationId);
+    } catch {
+      // no-op: allow navigation even if mark-read fails
+    }
+
+    setIsNotificationsModalOpen(false);
+    navigate(href);
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    setNotificationsModalError(null);
+    try {
+      await markAllAsRead();
+      await loadNotifications({ limit: 20, offset: 0 });
+    } catch (error) {
+      setNotificationsModalError(
+        error instanceof Error ? error.message : 'Failed to mark notifications',
+      );
     }
   };
 
@@ -381,8 +485,9 @@ export const AppHeader = () => {
         <div className="ml-auto flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Link
-                to="/app/profile#notifications"
+              <button
+                type="button"
+                onClick={() => void handleToggleNotificationsModal()}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/15 bg-white/80 text-[#2B3B23] transition-colors hover:bg-[#ECF2DB]"
                 title="Notifications"
               >
@@ -392,7 +497,7 @@ export const AppHeader = () => {
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
               <button
                 type="button"
@@ -526,6 +631,109 @@ export const AppHeader = () => {
               </>
             )}
           </nav>
+        </div>
+      )}
+
+      {isAuthenticated && isNotificationsModalOpen && (
+        <div className="pointer-events-none fixed inset-0 z-[72] hidden lg:block">
+          <div className="pointer-events-auto fixed inset-0 bg-[rgba(18,27,14,0.18)]" onClick={() => setIsNotificationsModalOpen(false)} />
+          <div
+            className="pointer-events-auto fixed"
+            style={{
+              width: `${NOTIFICATIONS_MODAL_WIDTH}px`,
+              height: `${NOTIFICATIONS_MODAL_HEIGHT}px`,
+              right: '18px',
+              top: '92px',
+            }}
+          >
+            <div className="flex h-full flex-col overflow-hidden rounded-[20px] border border-[#2B3B23]/15 bg-[#F9FCF1] shadow-[0_28px_80px_rgba(24,35,19,0.3)]">
+              <div className="flex items-center justify-between gap-2 border-b border-[#2B3B23]/10 bg-[linear-gradient(135deg,#203D2B_0%,#2E5F41_70%,#3A7652_100%)] px-4 py-3 text-white">
+                <div>
+                  <p className="text-sm font-semibold">Notifications</p>
+                  <p className="text-[11px] text-white/80">Unread: {meta.unread}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void loadNotifications({ limit: 20, offset: 0 })}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    title="Refresh notifications"
+                  >
+                    <RefreshCcw className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsNotificationsModalOpen(false)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    title="Close"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-b border-[#2B3B23]/10 bg-[#F1F6E7] px-4 py-2.5">
+                <button
+                  type="button"
+                  onClick={() => void handleMarkAllNotificationsRead()}
+                  disabled={isMutatingNotifications || meta.unread === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#2B6A4D]/25 bg-white px-3 py-1.5 text-xs font-semibold text-[#23402D] transition-colors hover:bg-[#F5FAEF] disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  Mark all as read
+                </button>
+              </div>
+
+              {(notificationsModalError || notificationsError) && (
+                <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                  {notificationsModalError || notificationsError}
+                </div>
+              )}
+
+              <div className="min-h-0 flex-1 overflow-y-auto bg-white p-3">
+                {isLoadingNotifications ? (
+                  <p className="rounded-lg bg-[#F5F9EE] px-3 py-2 text-xs text-[#5E7253]">Loading notifications...</p>
+                ) : notifications.length === 0 ? (
+                  <div className="flex h-full items-center justify-center px-5 text-center">
+                    <div>
+                      <Bell className="mx-auto h-8 w-8 text-[#5E7253]" />
+                      <p className="mt-2 text-sm font-medium text-[#2B3B23]">No notifications yet</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.map((notification) => {
+                      const href = getNotificationHref(notification);
+                      const isUnread = !notification.readAt;
+
+                      return (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => void handleOpenNotification(notification.id, href)}
+                          className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
+                            isUnread
+                              ? 'border-[#2B6A4D]/25 bg-[#EEF6E2] hover:bg-[#E7F1D7]'
+                              : 'border-[#9FB08A]/25 bg-white hover:bg-[#F6FAED]'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="line-clamp-2 text-xs font-semibold text-[#23301D]">
+                              {notification.title || 'Notification'}
+                            </p>
+                            {isUnread && <span className="mt-1 h-2 w-2 rounded-full bg-[#1E6648]" />}
+                          </div>
+                          <p className="mt-1 text-[10px] text-[#798C6D]">
+                            {formatNotificationTime(notification.createdAt)}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

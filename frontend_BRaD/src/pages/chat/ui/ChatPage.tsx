@@ -75,13 +75,6 @@ export const ChatPage = () => {
     void bootstrap();
   }, [isAuthenticated, listChats, loadChat, loadChatByApplication, searchParams, setActiveChat]);
 
-  useEffect(() => {
-    if (!selectedChatId && chats[0]) {
-      setSelectedChatId(chats[0].id);
-      setActiveChat(chats[0].id);
-    }
-  }, [chats, selectedChatId, setActiveChat]);
-
   const selectedChat = useMemo(() => {
     if (!selectedChatId) {
       return null;
@@ -120,6 +113,12 @@ export const ChatPage = () => {
     }
   };
 
+  const handleBackToList = () => {
+    setSelectedChatId(null);
+    setActiveChat(null);
+    setSearchParams({});
+  };
+
   if (!isAuthenticated || !currentUser) {
     return (
       <div className="min-h-screen app-shell app-page">
@@ -143,41 +142,15 @@ export const ChatPage = () => {
     <div className="min-h-screen app-shell app-page">
       <AppHeader />
       <main className="app-page-main">
-        <section className="app-section-card app-grid-backdrop relative overflow-hidden p-6 sm:p-7">
-          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="app-title text-3xl sm:text-4xl">Messages</h1>
-              <p className="app-text-muted mt-2 text-sm sm:text-base">
-                Realtime candidate and HR conversations linked to applications.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="app-chip">Stream: {streamStatus}</span>
-              <span className="app-chip">Chats: {meta.total}</span>
-              <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
-                <RefreshCcw className="h-4 w-4" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="app-kpi-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 1</p>
-            <p className="mt-1 text-sm font-semibold text-[#21301B]">Select dialog</p>
-            <p className="mt-1 text-xs text-[#5D7052]">Choose candidate or HR chat from the left list.</p>
-          </div>
-          <div className="app-kpi-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 2</p>
-            <p className="mt-1 text-sm font-semibold text-[#21301B]">Read latest context</p>
-            <p className="mt-1 text-xs text-[#5D7052]">Application events and recent messages stay in one thread.</p>
-          </div>
-          <div className="app-kpi-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Step 3</p>
-            <p className="mt-1 text-sm font-semibold text-[#21301B]">Reply quickly</p>
-            <p className="mt-1 text-xs text-[#5D7052]">Press Enter to send and keep the process moving.</p>
+        <section className="mb-4 flex items-center justify-between gap-2">
+          <h1 className="app-title text-2xl sm:text-3xl">Messages</h1>
+          <div className="flex items-center gap-2">
+            <span className="app-chip hidden sm:inline-flex">Stream: {streamStatus}</span>
+            <span className="app-chip hidden sm:inline-flex">Chats: {meta.total}</span>
+            <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
           </div>
         </section>
 
@@ -187,8 +160,8 @@ export const ChatPage = () => {
           </div>
         )}
 
-        <section className="mt-5 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6">
-          <div className="app-section-card p-4">
+        <section className="mt-3 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6">
+          <div className={`${selectedChat ? 'hidden lg:block' : 'block'} app-section-card p-4`}>
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="app-title text-lg">Conversations</h2>
               <span className="rounded-full bg-[#EBF1DE] px-2.5 py-1 text-[11px] font-semibold text-[#2B3B23]">
@@ -230,7 +203,7 @@ export const ChatPage = () => {
                 <p className="app-text-muted mt-2 text-sm">No conversations match your search</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
                 {visibleChats.map((chat) => {
                   const other = getOtherParticipant(chat);
                   const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
@@ -276,10 +249,10 @@ export const ChatPage = () => {
             )}
           </div>
 
-          <div>
+          <div className={`${selectedChat ? 'block' : 'hidden lg:block'}`}>
             {selectedChat ? (
-              <div className="app-section-card h-[620px] overflow-hidden">
-                <ChatWindow chat={selectedChat} embedded />
+              <div className="app-section-card h-[calc(100dvh-170px)] overflow-hidden lg:h-[620px]">
+                <ChatWindow chat={selectedChat} embedded onClose={handleBackToList} />
               </div>
             ) : (
               <div className="app-section-card flex h-[620px] items-center justify-center p-6 text-center">

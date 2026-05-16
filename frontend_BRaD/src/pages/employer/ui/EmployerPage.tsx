@@ -3,7 +3,11 @@ import { Briefcase, Edit, Heart, Plus, Send, Trash2, Users } from 'lucide-react'
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import { isEmployerRole, useUserStore } from '@entities/user';
-import { useVacancyStore, type Vacancy, type VacancyWorkflowStep } from '@entities/vacancy';
+import {
+  useVacancyStore,
+  type Vacancy,
+  type VacancyWorkflowStep,
+} from '@entities/vacancy';
 import { useFavoritesStore } from '@entities/favorite';
 import { useInviteStore } from '@entities/invite';
 
@@ -101,15 +105,15 @@ const emptyWizardData: VacancyWizardData = {
   },
 };
 
-const vacancySteps: Array<{ id: VacancyWorkflowStep; label: string; hint: string }> = [
-  { id: 'basic', label: '1. Basic', hint: 'Title, specialization, experience' },
-  { id: 'conditions', label: '2. Conditions', hint: 'Employment and format' },
-  { id: 'schedule', label: '3. Schedule', hint: 'Days and working hours' },
-  { id: 'address', label: '4. Address', hint: 'City and work address' },
-  { id: 'compensation', label: '5. Compensation', hint: 'Salary and tax mode' },
-  { id: 'description', label: '6. Description', hint: 'Short role summary' },
-  { id: 'skills', label: '7. Skills', hint: 'Stack and key skills' },
-  { id: 'languages', label: '8. Languages', hint: 'Required languages' },
+const workflowStepOrder: VacancyWorkflowStep[] = [
+  'basic',
+  'conditions',
+  'schedule',
+  'address',
+  'compensation',
+  'description',
+  'skills',
+  'languages',
 ];
 
 const educationLevelOptions = [
@@ -121,6 +125,96 @@ const educationLevelOptions = [
   'PHD',
 ];
 
+const skillLevelOptions = [
+  { value: 'BEGINNER', label: 'Beginner' },
+  { value: 'INTERMEDIATE', label: 'Intermediate' },
+  { value: 'ADVANCED', label: 'Advanced' },
+];
+
+const skillBucketConfig = {
+  requiredSkillsText: {
+    label: 'Required skills',
+    placeholder: 'Type or choose required skill',
+    hint: 'Must-have skills for the role',
+    accent: '#245338',
+    surface: '#ECF5DE',
+  },
+  optionalSkillsText: {
+    label: 'Optional skills',
+    placeholder: 'Type or choose optional skill',
+    hint: 'Good to have, but not mandatory',
+    accent: '#6B4F10',
+    surface: '#FFF8E4',
+  },
+  niceToHaveSkillsText: {
+    label: 'Nice to have',
+    placeholder: 'Type or choose bonus skill',
+    hint: 'Extra advantage skills',
+    accent: '#264A78',
+    surface: '#EAF3FF',
+  },
+} as const;
+
+type SkillBucketField = keyof typeof skillBucketConfig;
+
+const hhInspiredPopularSkills = [
+  'JavaScript',
+  'TypeScript',
+  'React',
+  'Vue.js',
+  'Angular',
+  'Next.js',
+  'Node.js',
+  'Express',
+  'NestJS',
+  'Python',
+  'Django',
+  'FastAPI',
+  'Java',
+  'Spring Boot',
+  'Kotlin',
+  'C#',
+  '.NET',
+  'Go',
+  'PHP',
+  'Laravel',
+  'Ruby on Rails',
+  'PostgreSQL',
+  'MySQL',
+  'MongoDB',
+  'Redis',
+  'Kafka',
+  'RabbitMQ',
+  'GraphQL',
+  'REST API',
+  'Microservices',
+  'Docker',
+  'Kubernetes',
+  'CI/CD',
+  'Git',
+  'Linux',
+  'AWS',
+  'Azure',
+  'Google Cloud',
+  'Terraform',
+  'Ansible',
+  'Figma',
+  'UI/UX',
+  'Product Analytics',
+  'SQL',
+  'Power BI',
+  'Tableau',
+  'Data Analysis',
+  'Machine Learning',
+  'PyTorch',
+  'TensorFlow',
+  'Communication',
+  'English',
+  'Scrum',
+  'Agile',
+  'Team Leadership',
+];
+
 const cloneEmptyWizardData = (): VacancyWizardData => {
   return JSON.parse(JSON.stringify(emptyWizardData)) as VacancyWizardData;
 };
@@ -130,6 +224,29 @@ const listFromText = (value: string): string[] => {
     .split(/[\n,]/g)
     .map((item) => item.trim())
     .filter(Boolean);
+};
+
+const normalizeSkill = (value: string): string => {
+  return value.replace(/\s+/g, ' ').trim();
+};
+
+const uniqueSkillList = (skills: string[]): string[] => {
+  const seen = new Set<string>();
+
+  return skills.filter((skill) => {
+    const normalized = normalizeSkill(skill);
+    if (!normalized) {
+      return false;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
 };
 
 const cleanPayload = (payload: Record<string, unknown>): Record<string, unknown> => {
@@ -171,6 +288,29 @@ const toggleArrayValue = (current: string[], value: string): string[] => {
   }
 
   return [...current, value];
+};
+
+const addArrayValue = (current: string[], value: string): string[] => {
+  if (!value || current.includes(value)) {
+    return current;
+  }
+
+  return [...current, value];
+};
+
+const formatWorkHourLabel = (value: string, fallbackLabel?: string): string => {
+  const label = fallbackLabel || value;
+  const hMatch = /^H(\d{1,2})$/i.exec(label.trim());
+  if (!hMatch) {
+    return label;
+  }
+
+  const hours = Number(hMatch[1]);
+  if (!Number.isFinite(hours) || hours <= 0) {
+    return label;
+  }
+
+  return `${hours} hours/day`;
 };
 
 const mapFromSkillLevelsText = (value: string): Record<string, string> => {
@@ -424,18 +564,19 @@ export const EmployerPage = () => {
   } = useInviteStore();
 
   const [showWizard, setShowWizard] = useState(false);
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [wizardError, setWizardError] = useState<string | null>(null);
   const [wizardSuccess, setWizardSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<VacancyWizardData>(() => cloneEmptyWizardData());
+  const [skillDrafts, setSkillDrafts] = useState<Record<SkillBucketField, string>>({
+    requiredSkillsText: '',
+    optionalSkillsText: '',
+    niceToHaveSkillsText: '',
+  });
   const [selectedVacancyId, setSelectedVacancyId] = useState('');
   const [inviteMessage, setInviteMessage] = useState(
     'Ваш опыт подходит под вакансию. Будем рады обсудить детали на интервью.',
   );
   const [interviewAt, setInterviewAt] = useState('');
-
-  const activeStep = vacancySteps[activeStepIndex];
-  const isLastStep = activeStepIndex === vacancySteps.length - 1;
 
   useEffect(() => {
     void loadDictionaries();
@@ -485,6 +626,19 @@ export const EmployerPage = () => {
     return map;
   }, [dictionaries.cities]);
 
+  const allSkillOptions = useMemo(() => {
+    const merged = [
+      ...dictionaries.skillHints.map((skill) => skill.label),
+      ...hhInspiredPopularSkills,
+    ];
+
+    return uniqueSkillList(merged)
+      .map((item) => normalizeSkill(item))
+      .sort((a, b) => a.localeCompare(b));
+  }, [dictionaries.skillHints]);
+
+  const languageOptions = dictionaries.languages;
+
   const updateField = (
     step: keyof VacancyWizardData,
     field: string,
@@ -499,13 +653,69 @@ export const EmployerPage = () => {
     }));
   };
 
+  const readSkillBucket = (field: SkillBucketField): string[] => {
+    return uniqueSkillList(listFromText(formData.skills[field]).map((item) => normalizeSkill(item)));
+  };
+
+  const writeSkillBucket = (field: SkillBucketField, next: string[]) => {
+    updateField('skills', field, uniqueSkillList(next).join(', '));
+  };
+
+  const addSkillToBucket = (field: SkillBucketField, rawSkill: string) => {
+    const skill = normalizeSkill(rawSkill);
+    if (!skill) {
+      return;
+    }
+
+    const current = readSkillBucket(field);
+    if (current.some((entry) => entry.toLowerCase() === skill.toLowerCase())) {
+      return;
+    }
+
+    writeSkillBucket(field, [...current, skill]);
+  };
+
+  const removeSkillFromBucket = (field: SkillBucketField, skillToRemove: string) => {
+    const next = readSkillBucket(field).filter(
+      (skill) => skill.toLowerCase() !== skillToRemove.toLowerCase(),
+    );
+    writeSkillBucket(field, next);
+  };
+
+  const commitSkillDraft = (field: SkillBucketField) => {
+    const draft = skillDrafts[field];
+    if (!draft.trim()) {
+      return;
+    }
+
+    addSkillToBucket(field, draft);
+    setSkillDrafts((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  const setRequiredSkillLevel = (skill: string, level: string) => {
+    const key = skill.toLowerCase();
+    const current = mapFromSkillLevelsText(formData.skills.requiredSkillLevelsText);
+
+    if (!level) {
+      delete current[key];
+    } else {
+      current[key] = level;
+    }
+
+    updateField('skills', 'requiredSkillLevelsText', mapToSkillLevelsText(current));
+  };
+
   const handleCreate = () => {
     clearCurrent();
     setFormData(cloneEmptyWizardData());
+    setSkillDrafts({
+      requiredSkillsText: '',
+      optionalSkillsText: '',
+      niceToHaveSkillsText: '',
+    });
     setShowWizard(true);
-    setActiveStepIndex(0);
     setWizardError(null);
-    setWizardSuccess('Fill step 1 and click Save to create draft');
+    setWizardSuccess('Fill any fields you need and save when ready');
     if (!isDictionariesLoading && dictionaries.cities.length === 0) {
       void loadDictionaries();
     }
@@ -518,7 +728,6 @@ export const EmployerPage = () => {
     try {
       await loadVacancy(vacancyId);
       setShowWizard(true);
-      setActiveStepIndex(0);
     } catch (loadingError) {
       setWizardError(
         loadingError instanceof Error ? loadingError.message : 'Failed to open vacancy',
@@ -528,63 +737,52 @@ export const EmployerPage = () => {
 
   const handleClose = () => {
     setShowWizard(false);
-    setActiveStepIndex(0);
     setWizardError(null);
     setWizardSuccess(null);
+    setSkillDrafts({
+      requiredSkillsText: '',
+      optionalSkillsText: '',
+      niceToHaveSkillsText: '',
+    });
     clearCurrent();
   };
 
-  const saveCurrentStep = async (moveNext: boolean) => {
-    if (!activeStep) {
-      return;
-    }
-
+  const handleSaveVacancy = async () => {
     setWizardError(null);
     setWizardSuccess(null);
 
     try {
-      if (activeStep.id !== 'basic' && !currentVacancyId) {
-        setActiveStepIndex(0);
-        throw new Error('Complete and save Basic step first to create draft');
-      }
-
-      if (activeStep.id === 'basic' && !currentVacancyId) {
-        if (dictionaries.cities.length === 0 && !isDictionariesLoading) {
-          await loadDictionaries();
-        }
-
-        if (formData.basic.title.trim().length < 2) {
-          throw new Error('Title must be at least 2 characters');
-        }
-
+      if (!currentVacancyId) {
         await createDraft({
-          title: formData.basic.title.trim(),
+          title: formData.basic.title.trim() || 'Untitled vacancy',
           specializationIds: formData.basic.specializationIds,
           experienceLevel: formData.basic.experienceLevel || undefined,
           hiringPlan: toNumberOrUndefined(formData.basic.hiringPlan),
         });
+      }
 
-        setWizardSuccess('Draft created and basic step saved');
-
-        if (moveNext && !isLastStep) {
-          setActiveStepIndex((prev) => prev + 1);
+      let savedSections = 0;
+      for (const step of workflowStepOrder) {
+        const payload = getStepPayload(step, formData);
+        if (Object.keys(payload).length === 0) {
+          continue;
         }
 
-        return;
+        await saveStep(step, payload);
+        savedSections += 1;
       }
 
-      const payload = getStepPayload(activeStep.id, formData);
-      await saveStep(activeStep.id, payload);
-      setWizardSuccess(`${activeStep.label} saved`);
-
-      if (moveNext && !isLastStep) {
-        setActiveStepIndex((prev) => prev + 1);
-      }
+      await loadMyVacancies();
+      setWizardSuccess(
+        savedSections > 0
+          ? `Vacancy saved. Updated sections: ${savedSections}`
+          : 'Draft saved. You can leave optional fields empty.',
+      );
     } catch (saveError) {
       setWizardError(
         saveError instanceof Error
           ? saveError.message
-          : `Failed to save ${activeStep.label}`,
+          : 'Failed to save vacancy',
       );
     }
   };
@@ -594,6 +792,14 @@ export const EmployerPage = () => {
     setWizardSuccess(null);
 
     try {
+      if (!currentVacancyId) {
+        await createDraft({
+          title: formData.basic.title.trim() || 'Untitled vacancy',
+          specializationIds: formData.basic.specializationIds,
+          experienceLevel: formData.basic.experienceLevel || undefined,
+          hiringPlan: toNumberOrUndefined(formData.basic.hiringPlan),
+        });
+      }
       await publishCurrent();
       setWizardSuccess('Vacancy published successfully');
       await loadMyVacancies();
@@ -734,73 +940,56 @@ export const EmployerPage = () => {
         )}
 
         {showWizard && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-6" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FBF5 100%)' }}>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
-                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                  Vacancy Wizard
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: '#1F2A1A' }}>
+                  Vacancy Builder
                 </h2>
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  Draft ID: {currentVacancy?.id || 'will be created on step 1'}
+                <p className="text-sm mt-1" style={{ color: 'rgba(31, 42, 26, 0.65)' }}>
+                  One page form. Fill fields in any order. Salary and other blocks are optional.
+                </p>
+                <p className="text-xs mt-2" style={{ color: 'rgba(31, 42, 26, 0.55)' }}>
+                  Draft ID: {currentVacancy?.id || 'will be created after first save'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-4 py-2 rounded-lg border-2 text-sm font-medium"
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
-              >
-                Close wizard
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="hero"
+                  onClick={() => void handleSaveVacancy()}
+                  disabled={isSaving}
+                  style={{ backgroundColor: '#204B35', color: 'white' }}
+                >
+                  Save vacancy
+                </Button>
+                <Button
+                  type="button"
+                  variant="hero"
+                  onClick={() => void handlePublish()}
+                  disabled={isSaving}
+                  style={{ backgroundColor: '#166534', color: 'white' }}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Publish
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2 rounded-lg border-2 text-sm font-medium"
+                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
-            <div className="grid gap-2 md:grid-cols-4 lg:grid-cols-8 mb-6">
-              {vacancySteps.map((step, index) => {
-                const isActive = index === activeStepIndex;
-                const isLocked = !currentVacancyId && index > 0;
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => {
-                      if (isLocked) {
-                        setWizardError('Create draft on Basic step first');
-                        return;
-                      }
-                      setWizardError(null);
-                      setActiveStepIndex(index);
-                    }}
-                    className="text-left rounded-xl border px-3 py-2 transition-all"
-                    style={
-                      isActive
-                        ? {
-                            borderColor: '#333A2F',
-                            backgroundColor: '#333A2F',
-                            color: '#ffffff',
-                          }
-                        : {
-                            borderColor: 'rgba(51, 58, 47, 0.2)',
-                            backgroundColor: '#ffffff',
-                            color: '#333A2F',
-                            opacity: isLocked ? 0.5 : 1,
-                            cursor: isLocked ? 'not-allowed' : 'pointer',
-                          }
-                    }
-                  >
-                    <div className="text-xs font-semibold">{step.label}</div>
-                    <div className="text-[11px] opacity-80 mt-1">{step.hint}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="space-y-4">
-              {activeStep.id === 'basic' && (
-                <>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Basic</h3>
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Vacancy title
-                    </label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Vacancy title</label>
                     <Input
                       value={formData.basic.title}
                       onChange={(event) => updateField('basic', 'title', event.target.value)}
@@ -809,25 +998,39 @@ export const EmployerPage = () => {
                       style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                     />
                   </div>
-
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Experience level</label>
+                      <select
+                        value={formData.basic.experienceLevel}
+                        onChange={(event) => updateField('basic', 'experienceLevel', event.target.value)}
+                        className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      >
+                        <option value="">Not specified</option>
+                        {dictionaries.experienceLevels.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Hiring plan</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={formData.basic.hiringPlan}
+                        onChange={(event) => updateField('basic', 'hiringPlan', event.target.value)}
+                        className="h-12"
+                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Specializations
-                    </label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Specializations</label>
                     {dictionaries.specializations.length === 0 ? (
-                      <div className="space-y-2">
-                        <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                          {isDictionariesLoading
-                            ? 'Loading specializations...'
-                            : 'Specializations are optional. You can create a vacancy without them.'}
-                        </p>
-                        {!isDictionariesLoading && (
-                          <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                            If backend later returns specialization dictionaries, they will appear here for optional tagging.
-                            {error ? ` Backend note: ${error}` : ''}
-                          </p>
-                        )}
-                      </div>
+                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        {isDictionariesLoading ? 'Loading specializations...' : 'Optional field. You can skip it.'}
+                      </p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {dictionaries.specializations.map((option) => {
@@ -838,16 +1041,12 @@ export const EmployerPage = () => {
                               type="button"
                               className="px-3 py-1 rounded-lg text-xs border"
                               style={{
-                                borderColor: selected ? '#333A2F' : 'rgba(51, 58, 47, 0.2)',
-                                backgroundColor: selected ? '#333A2F' : '#ffffff',
+                                borderColor: selected ? '#204B35' : 'rgba(51, 58, 47, 0.2)',
+                                backgroundColor: selected ? '#204B35' : '#ffffff',
                                 color: selected ? '#ffffff' : '#333A2F',
                               }}
                               onClick={() =>
-                                updateField(
-                                  'basic',
-                                  'specializationIds',
-                                  toggleArrayValue(formData.basic.specializationIds, option.value),
-                                )
+                                updateField('basic', 'specializationIds', toggleArrayValue(formData.basic.specializationIds, option.value))
                               }
                             >
                               {option.label}
@@ -857,98 +1056,44 @@ export const EmployerPage = () => {
                       </div>
                     )}
                   </div>
+                </div>
+              </section>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Experience level
-                      </label>
-                      <select
-                        value={formData.basic.experienceLevel}
-                        onChange={(event) =>
-                          updateField('basic', 'experienceLevel', event.target.value)
-                        }
-                        className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
-                      >
-                        <option value="">Select level</option>
-                        {dictionaries.experienceLevels.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Hiring plan
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={formData.basic.hiringPlan}
-                        onChange={(event) =>
-                          updateField('basic', 'hiringPlan', event.target.value)
-                        }
-                        className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {activeStep.id === 'conditions' && (
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Conditions</h3>
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Worker kind
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Worker kind</label>
                       <select
                         value={formData.conditions.workerKind}
-                        onChange={(event) =>
-                          updateField('conditions', 'workerKind', event.target.value)
-                        }
+                        onChange={(event) => updateField('conditions', 'workerKind', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
-                        <option value="">Select worker kind</option>
+                        <option value="">Not specified</option>
                         {dictionaries.workerKinds.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Employment type
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Employment type</label>
                       <select
                         value={formData.conditions.employmentType}
-                        onChange={(event) =>
-                          updateField('conditions', 'employmentType', event.target.value)
-                        }
+                        onChange={(event) => updateField('conditions', 'employmentType', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
-                        <option value="">Select type</option>
+                        <option value="">Not specified</option>
                         {dictionaries.employmentTypes.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Work formats
-                    </label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Work formats</label>
                     <div className="flex flex-wrap gap-2">
                       {dictionaries.workFormats.map((option) => {
                         const selected = formData.conditions.workFormats.includes(option.value);
@@ -958,16 +1103,12 @@ export const EmployerPage = () => {
                             type="button"
                             className="px-3 py-1 rounded-lg text-xs border"
                             style={{
-                              borderColor: selected ? '#333A2F' : 'rgba(51, 58, 47, 0.2)',
-                              backgroundColor: selected ? '#333A2F' : '#ffffff',
+                              borderColor: selected ? '#204B35' : 'rgba(51, 58, 47, 0.2)',
+                              backgroundColor: selected ? '#204B35' : '#ffffff',
                               color: selected ? '#ffffff' : '#333A2F',
                             }}
                             onClick={() =>
-                              updateField(
-                                'conditions',
-                                'workFormats',
-                                toggleArrayValue(formData.conditions.workFormats, option.value),
-                              )
+                              updateField('conditions', 'workFormats', toggleArrayValue(formData.conditions.workFormats, option.value))
                             }
                           >
                             {option.label}
@@ -977,521 +1118,471 @@ export const EmployerPage = () => {
                     </div>
                   </div>
                 </div>
-              )}
+              </section>
 
-              {activeStep.id === 'schedule' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Schedules
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {dictionaries.schedules.map((option) => {
-                        const selected = formData.schedule.schedules.includes(option.value);
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            className="px-3 py-1 rounded-lg text-xs border"
-                            style={{
-                              borderColor: selected ? '#333A2F' : 'rgba(51, 58, 47, 0.2)',
-                              backgroundColor: selected ? '#333A2F' : '#ffffff',
-                              color: selected ? '#ffffff' : '#333A2F',
-                            }}
-                            onClick={() =>
-                              updateField(
-                                'schedule',
-                                'schedules',
-                                toggleArrayValue(formData.schedule.schedules, option.value),
-                              )
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
+              <section className="rounded-2xl border bg-white p-5 xl:col-span-2" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Schedule</h3>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <section className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F6F8F1' }}>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <label className="block text-sm font-semibold" style={{ color: '#2D4A37' }}>Schedules</label>
+                      {formData.schedule.schedules.length > 0 && (
+                        <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'schedules', [])}>Clear</button>
+                      )}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Work hours
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {dictionaries.workHours.map((option) => {
-                        const selected = formData.schedule.workHours.includes(option.value);
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            className="px-3 py-1 rounded-lg text-xs border"
-                            style={{
-                              borderColor: selected ? '#333A2F' : 'rgba(51, 58, 47, 0.2)',
-                              backgroundColor: selected ? '#333A2F' : '#ffffff',
-                              color: selected ? '#ffffff' : '#333A2F',
-                            }}
-                            onClick={() =>
-                              updateField(
-                                'schedule',
-                                'workHours',
-                                toggleArrayValue(formData.schedule.workHours, option.value),
-                              )
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeStep.id === 'address' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Publication city
-                    </label>
                     <select
-                      value={formData.address.publicationCityId}
-                      onChange={(event) =>
-                        updateField('address', 'publicationCityId', event.target.value)
-                      }
-                      className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      value=""
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (!value) return;
+                        updateField('schedule', 'schedules', addArrayValue(formData.schedule.schedules, value));
+                      }}
+                      className="flex h-11 w-full rounded-xl border px-3 py-2 text-sm mb-3"
+                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
                     >
-                      <option value="">Select city</option>
-                      {dictionaries.cities.map((option) => (
+                      <option value="">Choose schedule type</option>
+                      {dictionaries.schedules.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.schedule.schedules.length === 0 && <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No schedules selected.</span>}
+                      {formData.schedule.schedules.map((value) => {
+                        const label = dictionaries.schedules.find((item) => item.value === value)?.label || value;
+                        return (
+                          <button
+                            key={`schedule-${value}`}
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                            style={{ backgroundColor: '#ffffff', color: '#2D4A37', border: '1px solid rgba(45, 74, 55, 0.2)' }}
+                            onClick={() => updateField('schedule', 'schedules', formData.schedule.schedules.filter((item) => item !== value))}
+                          >
+                            {label}
+                            <span aria-hidden>×</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F6F8F1' }}>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <label className="block text-sm font-semibold" style={{ color: '#2D4A37' }}>Work hours</label>
+                      {formData.schedule.workHours.length > 0 && (
+                        <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'workHours', [])}>Clear</button>
+                      )}
+                    </div>
+                    <select
+                      value=""
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (!value) return;
+                        updateField('schedule', 'workHours', addArrayValue(formData.schedule.workHours, value));
+                      }}
+                      className="flex h-11 w-full rounded-xl border px-3 py-2 text-sm mb-3"
+                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                    >
+                      <option value="">Choose work hours</option>
+                      {dictionaries.workHours.map((option) => (
                         <option key={option.value} value={option.value}>
-                          {option.label}
+                          {formatWorkHourLabel(option.value, option.label)}
                         </option>
                       ))}
                     </select>
-                  </div>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.schedule.workHours.length === 0 && <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No work hours selected.</span>}
+                      {formData.schedule.workHours.map((value) => {
+                        const option = dictionaries.workHours.find((item) => item.value === value);
+                        const label = formatWorkHourLabel(value, option?.label || value);
+                        return (
+                          <button
+                            key={`work-hours-${value}`}
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                            style={{ backgroundColor: '#ffffff', color: '#2D4A37', border: '1px solid rgba(45, 74, 55, 0.2)' }}
+                            onClick={() => updateField('schedule', 'workHours', formData.schedule.workHours.filter((item) => item !== value))}
+                          >
+                            {label}
+                            <span aria-hidden>×</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+              </section>
 
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Address</h3>
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Work address
-                    </label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Publication city</label>
+                    <select
+                      value={formData.address.publicationCityId}
+                      onChange={(event) => updateField('address', 'publicationCityId', event.target.value)}
+                      className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
+                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                    >
+                      <option value="">Not specified</option>
+                      {dictionaries.cities.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Work address</label>
                     <Input
                       value={formData.address.workAddress}
-                      onChange={(event) =>
-                        updateField('address', 'workAddress', event.target.value)
-                      }
+                      onChange={(event) => updateField('address', 'workAddress', event.target.value)}
                       placeholder="Abylai Khan Ave 123"
                       className="h-12"
                       style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                     />
                   </div>
-
                   <label className="inline-flex items-center gap-2 text-sm" style={{ color: '#333A2F' }}>
                     <input
                       type="checkbox"
                       checked={formData.address.hideWorkAddress}
-                      onChange={(event) =>
-                        updateField('address', 'hideWorkAddress', event.target.checked)
-                      }
+                      onChange={(event) => updateField('address', 'hideWorkAddress', event.target.checked)}
                     />
                     Hide exact address in public vacancy
                   </label>
                 </div>
-              )}
+              </section>
 
-              {activeStep.id === 'compensation' && (
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Compensation (optional)</h3>
+                <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  You can leave salary fields empty.
+                </p>
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Salary from
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary from</label>
                       <Input
                         type="number"
                         value={formData.compensation.salaryFrom}
-                        onChange={(event) =>
-                          updateField('compensation', 'salaryFrom', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'salaryFrom', event.target.value)}
                         className="h-12"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Salary to
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary to</label>
                       <Input
                         type="number"
                         value={formData.compensation.salaryTo}
-                        onChange={(event) =>
-                          updateField('compensation', 'salaryTo', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'salaryTo', event.target.value)}
                         className="h-12"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Currency
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Currency</label>
                       <select
                         value={formData.compensation.currency}
-                        onChange={(event) =>
-                          updateField('compensation', 'currency', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'currency', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
                         {dictionaries.currencies.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
                   </div>
-
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Salary period
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary period</label>
                       <select
                         value={formData.compensation.salaryPeriod}
-                        onChange={(event) =>
-                          updateField('compensation', 'salaryPeriod', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'salaryPeriod', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
-                        <option value="">Select period</option>
+                        <option value="">Not specified</option>
                         {dictionaries.salaryPeriods.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Tax mode
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Tax mode</label>
                       <select
                         value={formData.compensation.salaryTaxMode}
-                        onChange={(event) =>
-                          updateField('compensation', 'salaryTaxMode', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'salaryTaxMode', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
-                        <option value="">Select tax mode</option>
+                        <option value="">Not specified</option>
                         {dictionaries.salaryTaxModes.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Payout frequency
-                      </label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Payout frequency</label>
                       <select
                         value={formData.compensation.payoutFrequency}
-                        onChange={(event) =>
-                          updateField('compensation', 'payoutFrequency', event.target.value)
-                        }
+                        onChange={(event) => updateField('compensation', 'payoutFrequency', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                       >
-                        <option value="">Select frequency</option>
+                        <option value="">Not specified</option>
                         {dictionaries.payoutFrequencies.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
                   </div>
                 </div>
-              )}
+              </section>
+            </div>
 
-              {activeStep.id === 'description' && (
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Description</h3>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Vacancy description (max 200 chars)</label>
+              <Textarea
+                rows={5}
+                maxLength={200}
+                value={formData.description.description}
+                onChange={(event) => updateField('description', 'description', event.target.value)}
+                placeholder="Describe role in up to 200 chars"
+                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+              />
+              <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                {formData.description.description.length}/200
+              </p>
+            </section>
+
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Skills</h3>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Legacy skills (compatibility)</label>
+                <Textarea
+                  rows={4}
+                  value={formData.skills.skillsText}
+                  onChange={(event) => updateField('skills', 'skillsText', event.target.value)}
+                  placeholder="React, TypeScript, REST API"
+                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3 mt-4">
+                {(Object.keys(skillBucketConfig) as SkillBucketField[]).map((field) => {
+                  const config = skillBucketConfig[field];
+                  const selectedSkills = readSkillBucket(field);
+                  const selectedSet = new Set(selectedSkills.map((skill) => skill.toLowerCase()));
+                  const availableOptions = allSkillOptions.filter((skill) => !selectedSet.has(skill.toLowerCase()));
+                  const searchValue = skillDrafts[field].trim().toLowerCase();
+                  const filteredOptions = searchValue
+                    ? availableOptions.filter((skill) => skill.toLowerCase().includes(searchValue)).slice(0, 14)
+                    : availableOptions.slice(0, 14);
+
+                  return (
+                    <div key={field} className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: config.surface }}>
+                      <label className="block text-sm font-semibold mb-1" style={{ color: config.accent }}>{config.label}</label>
+                      <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{config.hint}</p>
+
+                      <div className="flex gap-2 mb-3">
+                        <Input
+                          value={skillDrafts[field]}
+                          onChange={(event) => setSkillDrafts((prev) => ({ ...prev, [field]: event.target.value }))}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              commitSkillDraft(field);
+                            }
+                          }}
+                          placeholder={config.placeholder}
+                          className="h-11"
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                        />
+                        <Button type="button" variant="outline" onClick={() => commitSkillDraft(field)} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}>
+                          Add
+                        </Button>
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="mb-1 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                          Skill list
+                        </div>
+                        <div className="max-h-36 overflow-y-auto rounded-xl border p-2" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#ffffff' }}>
+                          {filteredOptions.length === 0 ? (
+                            <div className="px-2 py-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                              Nothing found. Type custom skill and click Add.
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {filteredOptions.map((skill) => (
+                                <button
+                                  key={`${field}-search-${skill}`}
+                                  type="button"
+                                  className="rounded-full border px-2.5 py-1 text-xs"
+                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D4A37', backgroundColor: '#F9FBF7' }}
+                                  onClick={() => addSkillToBucket(field, skill)}
+                                >
+                                  {skill}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedSkills.length === 0 ? (
+                        <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No skills selected yet.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSkills.map((skill) => (
+                            <button
+                              key={`${field}-chip-${skill}`}
+                              type="button"
+                              onClick={() => removeSkillFromBucket(field, skill)}
+                              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                              style={{ backgroundColor: '#ffffff', color: config.accent, border: '1px solid rgba(51, 58, 47, 0.15)' }}
+                              title="Remove skill"
+                            >
+                              {skill}
+                              <span aria-hidden>×</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3 mt-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                    Vacancy description (max 200 chars)
-                  </label>
-                  <Textarea
-                    rows={5}
-                    maxLength={200}
-                    value={formData.description.description}
-                    onChange={(event) =>
-                      updateField('description', 'description', event.target.value)
-                    }
-                    placeholder="Describe role in up to 200 chars"
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Required education level</label>
+                  <select
+                    value={formData.skills.requiredEducationLevel}
+                    onChange={(event) => updateField('skills', 'requiredEducationLevel', event.target.value)}
+                    className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                  >
+                    <option value="">No restriction</option>
+                    {educationLevelOptions.map((option) => (
+                      <option key={option} value={option}>{formatEnumLabel(option)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Min hours/week</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={formData.skills.minHoursPerWeek}
+                    onChange={(event) => updateField('skills', 'minHoursPerWeek', event.target.value)}
+                    className="h-12"
                     style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
                   />
-                  <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                    {formData.description.description.length}/200
-                  </p>
                 </div>
-              )}
-
-              {activeStep.id === 'skills' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Legacy skills (compatibility)
-                    </label>
-                    <Textarea
-                      rows={4}
-                      value={formData.skills.skillsText}
-                      onChange={(event) =>
-                        updateField('skills', 'skillsText', event.target.value)
-                      }
-                      placeholder="React, TypeScript, REST API"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                    />
-                    <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                      Optional legacy field. New matching uses buckets below.
-                    </p>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Required skills
-                      </label>
-                      <Textarea
-                        rows={5}
-                        value={formData.skills.requiredSkillsText}
-                        onChange={(event) =>
-                          updateField('skills', 'requiredSkillsText', event.target.value)
-                        }
-                        placeholder="Node.js, TypeScript, PostgreSQL"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Optional skills
-                      </label>
-                      <Textarea
-                        rows={5}
-                        value={formData.skills.optionalSkillsText}
-                        onChange={(event) =>
-                          updateField('skills', 'optionalSkillsText', event.target.value)
-                        }
-                        placeholder="Redis, Kafka"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Nice to have
-                      </label>
-                      <Textarea
-                        rows={5}
-                        value={formData.skills.niceToHaveSkillsText}
-                        onChange={(event) =>
-                          updateField('skills', 'niceToHaveSkillsText', event.target.value)
-                        }
-                        placeholder="GraphQL"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Required education level
-                      </label>
-                      <select
-                        value={formData.skills.requiredEducationLevel}
-                        onChange={(event) =>
-                          updateField('skills', 'requiredEducationLevel', event.target.value)
-                        }
-                        className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
-                      >
-                        <option value="">No restriction</option>
-                        {educationLevelOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {formatEnumLabel(option)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Min hours/week
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={formData.skills.minHoursPerWeek}
-                        onChange={(event) =>
-                          updateField('skills', 'minHoursPerWeek', event.target.value)
-                        }
-                        className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                        Max hours/week
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={formData.skills.maxHoursPerWeek}
-                        onChange={(event) =>
-                          updateField('skills', 'maxHoursPerWeek', event.target.value)
-                        }
-                        className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                      Required skill levels (one per line)
-                    </label>
-                    <Textarea
-                      rows={4}
-                      value={formData.skills.requiredSkillLevelsText}
-                      onChange={(event) =>
-                        updateField('skills', 'requiredSkillLevelsText', event.target.value)
-                      }
-                      placeholder={'node.js:INTERMEDIATE\ntypescript:ADVANCED'}
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                    />
-                    <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                      Allowed levels: BEGINNER, INTERMEDIATE, ADVANCED.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {dictionaries.skillHints.map((skill) => (
-                      <button
-                        key={skill.value}
-                        type="button"
-                        className="px-3 py-1 rounded-lg text-xs"
-                        style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
-                        onClick={() => {
-                          const current = formData.skills.requiredSkillsText;
-                          const currentList = listFromText(current);
-                          if (!currentList.includes(skill.label)) {
-                            updateField(
-                              'skills',
-                              'requiredSkillsText',
-                              [...currentList, skill.label].join(', '),
-                            );
-                          }
-                        }}
-                      >
-                        {skill.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {activeStep.id === 'languages' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                    Languages
-                  </label>
-                  {dictionaries.languages.length === 0 ? (
-                    <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                      No languages in dictionary.
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {dictionaries.languages.map((language) => {
-                        const selected = formData.languages.languageIds.includes(language.value);
-                        return (
-                          <button
-                            key={language.value}
-                            type="button"
-                            className="px-3 py-1 rounded-lg text-xs border"
-                            style={{
-                              borderColor: selected ? '#333A2F' : 'rgba(51, 58, 47, 0.2)',
-                              backgroundColor: selected ? '#333A2F' : '#ffffff',
-                              color: selected ? '#ffffff' : '#333A2F',
-                            }}
-                            onClick={() =>
-                              updateField(
-                                'languages',
-                                'languageIds',
-                                toggleArrayValue(formData.languages.languageIds, language.value),
-                              )
-                            }
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Max hours/week</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={formData.skills.maxHoursPerWeek}
+                    onChange={(event) => updateField('skills', 'maxHoursPerWeek', event.target.value)}
+                    className="h-12"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  Required skill levels
+                </label>
+                <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                  Choose level for each required skill.
+                </p>
+
+                {readSkillBucket('requiredSkillsText').length === 0 ? (
+                  <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', color: 'rgba(51, 58, 47, 0.7)' }}>
+                    Add required skills first, then set levels here.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {readSkillBucket('requiredSkillsText').map((skill) => {
+                      const skillKey = skill.toLowerCase();
+                      const currentLevel = mapFromSkillLevelsText(formData.skills.requiredSkillLevelsText)[skillKey] || '';
+
+                      return (
+                        <div
+                          key={`required-level-${skillKey}`}
+                          className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr,220px]"
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#FAFCF8' }}
+                        >
+                          <div className="text-sm font-medium self-center" style={{ color: '#2B3A30' }}>
+                            {skill}
+                          </div>
+                          <select
+                            value={currentLevel}
+                            onChange={(event) => setRequiredSkillLevel(skill, event.target.value)}
+                            className="flex h-11 w-full rounded-lg border px-3 py-2 text-sm"
+                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
                           >
-                            {language.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                            <option value="">Not specified</option>
+                            {skillLevelOptions.map((levelOption) => (
+                              <option key={`${skillKey}-${levelOption.value}`} value={levelOption.value}>
+                                {levelOption.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Languages</h3>
+              {languageOptions.length === 0 ? (
+                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>No languages in dictionary.</p>
+              ) : (
+                <div className="space-y-3">
+                  <select
+                    value=""
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (!value) return;
+                      updateField('languages', 'languageIds', toggleArrayValue(formData.languages.languageIds, value));
+                    }}
+                    className="w-full rounded-xl border px-4 py-3 text-sm"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                  >
+                    <option value="">Choose language</option>
+                    {languageOptions.map((language) => (
+                      <option key={language.value} value={language.value}>{language.label}</option>
+                    ))}
+                  </select>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.languages.languageIds.map((languageId) => {
+                      const option = languageOptions.find((entry) => entry.value === languageId);
+                      const label = option?.label || languageId;
+                      return (
+                        <button
+                          key={languageId}
+                          type="button"
+                          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                          style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
+                          onClick={() => updateField('languages', 'languageIds', formData.languages.languageIds.filter((id) => id !== languageId))}
+                        >
+                          {label}
+                          <span aria-hidden>×</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 mt-6">
-              <button
-                type="button"
-                className="px-4 py-2 rounded-lg border-2 text-sm font-medium"
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
-                onClick={() => setActiveStepIndex((prev) => Math.max(0, prev - 1))}
-                disabled={activeStepIndex === 0 || isSaving}
-              >
-                Back
-              </button>
-
-              <Button
-                type="button"
-                variant="hero"
-                onClick={() => void saveCurrentStep(false)}
-                disabled={isSaving}
-                style={{ backgroundColor: '#333A2F', color: 'white' }}
-              >
-                Save step
-              </Button>
-
-              {!isLastStep && (
-                <Button
-                  type="button"
-                  variant="hero"
-                  onClick={() => void saveCurrentStep(true)}
-                  disabled={isSaving}
-                  style={{ backgroundColor: '#1f2937', color: 'white' }}
-                >
-                  Save and next
-                </Button>
-              )}
-
-              {isLastStep && (
-                <Button
-                  type="button"
-                  variant="hero"
-                  onClick={() => void handlePublish()}
-                  disabled={isSaving}
-                  style={{ backgroundColor: '#166534', color: 'white' }}
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Publish vacancy
-                </Button>
-              )}
-            </div>
+            </section>
           </div>
         )}
 
@@ -1511,7 +1602,7 @@ export const EmployerPage = () => {
                 No vacancies yet
               </h3>
               <p className="mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                Start with a draft and go through all 8 steps before publishing.
+                Create a vacancy in one form and publish when ready.
               </p>
               <Button
                 onClick={handleCreate}

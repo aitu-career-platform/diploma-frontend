@@ -103,6 +103,38 @@ const preferredWorkFormatOptions = [
   { value: 'HYBRID', label: 'Hybrid' },
 ] as const;
 
+const candidateSkillLevelOptions = [
+  { value: 'BEGINNER', label: 'Beginner' },
+  { value: 'INTERMEDIATE', label: 'Intermediate' },
+  { value: 'ADVANCED', label: 'Advanced' },
+] as const;
+
+const candidateSkillSuggestions = [
+  'JavaScript',
+  'TypeScript',
+  'React',
+  'Next.js',
+  'Node.js',
+  'Python',
+  'Django',
+  'Java',
+  'Spring',
+  'SQL',
+  'PostgreSQL',
+  'MongoDB',
+  'Docker',
+  'Kubernetes',
+  'AWS',
+  'Git',
+  'REST API',
+  'GraphQL',
+  'Figma',
+  'UI/UX',
+  'Data Analysis',
+  'Communication',
+  'English',
+];
+
 const cardStyle = {
   backgroundColor: 'white',
   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
@@ -484,6 +516,47 @@ const listFromText = (value: string): string[] => {
     .filter(Boolean);
 };
 
+const normalizeSkill = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+const uniqueSkills = (skills: string[]): string[] => {
+  const seen = new Set<string>();
+  return skills.filter((skill) => {
+    const normalized = normalizeSkill(skill);
+    if (!normalized) {
+      return false;
+    }
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
+const toSkillLevelsRecord = (value: unknown): Record<string, string> => {
+  const source = getRecord(value);
+  if (!source) {
+    return {};
+  }
+
+  const result: Record<string, string> = {};
+  Object.entries(source).forEach(([rawSkill, rawLevel]) => {
+    if (typeof rawSkill !== 'string' || typeof rawLevel !== 'string') {
+      return;
+    }
+
+    const skill = rawSkill.trim().toLowerCase();
+    const level = rawLevel.trim().toUpperCase();
+    if (!skill || !['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(level)) {
+      return;
+    }
+    result[skill] = level;
+  });
+
+  return result;
+};
+
 const normalizePreferredList = (value: string): string[] => {
   return Array.from(new Set(listFromText(value).map((entry) => entry.toUpperCase())));
 };
@@ -581,6 +654,9 @@ export const ProfilePage = () => {
   const [complaintDetails, setComplaintDetails] = useState('');
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
   const [companyVerification, setCompanyVerification] = useState<CompanyVerificationMe | null>(null);
+  const [candidateSkills, setCandidateSkills] = useState<string[]>([]);
+  const [candidateSkillDraft, setCandidateSkillDraft] = useState('');
+  const [candidateSkillLevels, setCandidateSkillLevels] = useState<Record<string, string>>({});
   const resumeFileInputRef = useRef<HTMLInputElement | null>(null);
   const portfolioFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -934,6 +1010,45 @@ export const ProfilePage = () => {
         )
       : [];
   }, [profile]);
+  const savedCandidateSkills = useMemo(() => {
+    if (!Array.isArray(profile?.skills)) {
+      return [];
+    }
+
+    return uniqueSkills(
+      profile.skills.filter(
+        (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+      ),
+    ).map((entry) => normalizeSkill(entry));
+  }, [profile]);
+  const savedCandidateSkillLevels = useMemo(
+    () => toSkillLevelsRecord(profile?.skillLevels),
+    [profile],
+  );
+  const allSkillOptions = useMemo(
+    () =>
+      uniqueSkills([...candidateSkillSuggestions, ...savedCandidateSkills])
+        .map((entry) => normalizeSkill(entry))
+        .sort((a, b) => a.localeCompare(b)),
+    [savedCandidateSkills],
+  );
+  const skillSearchOptions = useMemo(() => {
+    const selected = new Set(candidateSkills.map((entry) => entry.toLowerCase()));
+    const available = allSkillOptions.filter((entry) => !selected.has(entry.toLowerCase()));
+    const query = candidateSkillDraft.trim().toLowerCase();
+
+    if (!query) {
+      return available.slice(0, 14);
+    }
+
+    return available.filter((entry) => entry.toLowerCase().includes(query)).slice(0, 14);
+  }, [allSkillOptions, candidateSkillDraft, candidateSkills]);
+
+  useEffect(() => {
+    setCandidateSkills(savedCandidateSkills);
+    setCandidateSkillLevels(savedCandidateSkillLevels);
+    setCandidateSkillDraft('');
+  }, [savedCandidateSkillLevels, savedCandidateSkills]);
 
   const togglePreferredOption = (field: PreferredFieldKey, value: string) => {
     const current = normalizePreferredList(
@@ -946,6 +1061,46 @@ export const ProfilePage = () => {
       : [...current, value];
 
     setValue(field, next.join(', '), { shouldDirty: true });
+  };
+
+  const addCandidateSkill = (rawValue: string) => {
+    const skill = normalizeSkill(rawValue);
+    if (!skill) {
+      return;
+    }
+
+    setCandidateSkills((prev) => {
+      if (prev.some((entry) => entry.toLowerCase() === skill.toLowerCase())) {
+        return prev;
+      }
+
+      return [...prev, skill];
+    });
+    setCandidateSkillDraft('');
+  };
+
+  const removeCandidateSkill = (skillToRemove: string) => {
+    setCandidateSkills((prev) =>
+      prev.filter((entry) => entry.toLowerCase() !== skillToRemove.toLowerCase()),
+    );
+    setCandidateSkillLevels((prev) => {
+      const next = { ...prev };
+      delete next[skillToRemove.toLowerCase()];
+      return next;
+    });
+  };
+
+  const setCandidateSkillLevel = (skill: string, level: string) => {
+    const key = skill.toLowerCase();
+    setCandidateSkillLevels((prev) => {
+      const next = { ...prev };
+      if (!level) {
+        delete next[key];
+      } else {
+        next[key] = level.toUpperCase();
+      }
+      return next;
+    });
   };
 
   const onSubmit = async (data: ProfileFormValues) => {
@@ -983,6 +1138,8 @@ export const ProfilePage = () => {
       payload.preferredWorkFormats = listFromText(data.preferredWorkFormatsText).map((entry) =>
         entry.toUpperCase(),
       );
+      payload.skills = uniqueSkills(candidateSkills).map((entry) => normalizeSkill(entry));
+      payload.skillLevels = candidateSkillLevels;
     }
 
     setError(null);
@@ -1609,7 +1766,16 @@ export const ProfilePage = () => {
                 </div>
               </div>
               <button
-                onClick={() => setIsEditing((prev) => !prev)}
+                onClick={() => {
+                  if (isEditing) {
+                    reset(buildInitialValues(profile));
+                    setCandidateSkills(savedCandidateSkills);
+                    setCandidateSkillLevels(savedCandidateSkillLevels);
+                    setCandidateSkillDraft('');
+                    setError(null);
+                  }
+                  setIsEditing((prev) => !prev);
+                }}
                 className="px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium border-2"
                 style={{
                   borderColor: 'rgba(51, 58, 47, 0.2)',
@@ -1918,6 +2084,120 @@ export const ProfilePage = () => {
                         <input type="hidden" {...register('preferredWorkFormatsText')} />
                       </div>
                     </div>
+
+                    <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF3' }}>
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="font-heading text-lg font-semibold" style={{ color: '#2F3B2A' }}>
+                          Skills & Levels
+                        </h3>
+                        {candidateSkills.length > 0 && (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold"
+                            style={{ color: '#4F5E46' }}
+                            onClick={() => {
+                              setCandidateSkills([]);
+                              setCandidateSkillLevels({});
+                            }}
+                          >
+                            Clear all
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mb-3">
+                        <Input
+                          value={candidateSkillDraft}
+                          onChange={(event) => setCandidateSkillDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              addCandidateSkill(candidateSkillDraft);
+                            }
+                          }}
+                          placeholder="Search skills or type your own"
+                          className="h-11"
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => addCandidateSkill(candidateSkillDraft)}
+                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+
+                      <div className="rounded-xl border p-3 mb-3" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#ffffff' }}>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6B7B62' }}>
+                          Suggestions
+                        </p>
+                        {skillSearchOptions.length === 0 ? (
+                          <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                            Nothing found. Add custom skill manually.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {skillSearchOptions.map((skill) => (
+                              <button
+                                key={`profile-skill-suggest-${skill}`}
+                                type="button"
+                                onClick={() => addCandidateSkill(skill)}
+                                className="rounded-full border px-2.5 py-1 text-xs font-medium"
+                                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FCF6', color: '#32422B' }}
+                              >
+                                {skill}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {candidateSkills.length === 0 ? (
+                        <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                          No skills selected yet.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {candidateSkills.map((skill) => {
+                            const level = candidateSkillLevels[skill.toLowerCase()] || '';
+                            return (
+                              <div
+                                key={`candidate-skill-${skill}`}
+                                className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr,220px,auto]"
+                                style={{ borderColor: 'rgba(51, 58, 47, 0.14)', backgroundColor: '#FFFFFF' }}
+                              >
+                                <div className="self-center text-sm font-medium" style={{ color: '#2D3A27' }}>
+                                  {skill}
+                                </div>
+                                <select
+                                  value={level}
+                                  onChange={(event) => setCandidateSkillLevel(skill, event.target.value)}
+                                  className="flex h-10 w-full rounded-lg border px-3 py-2 text-sm"
+                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                                >
+                                  <option value="">Level not set</option>
+                                  {candidateSkillLevelOptions.map((option) => (
+                                    <option key={`${skill}-${option.value}`} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => removeCandidateSkill(skill)}
+                                  className="inline-flex h-10 items-center justify-center rounded-lg border px-3 text-xs font-semibold"
+                                  style={{ borderColor: 'rgba(220, 38, 38, 0.25)', color: '#B91C1C', backgroundColor: '#fff' }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -2129,6 +2409,34 @@ export const ProfilePage = () => {
                               </div>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {savedCandidateSkills.length > 0 && (
+                        <div className="mt-5">
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                            Skills
+                          </p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {savedCandidateSkills.map((skill) => {
+                              const level = savedCandidateSkillLevels[skill.toLowerCase()];
+                              const levelLabel = candidateSkillLevelOptions.find((option) => option.value === level)?.label;
+                              return (
+                                <div
+                                  key={`candidate-skill-readonly-${skill}`}
+                                  className="rounded-xl border px-3 py-2"
+                                  style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: 'white' }}
+                                >
+                                  <p className="text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                                    {skill}
+                                  </p>
+                                  <p className="text-xs mt-0.5" style={{ color: '#66775E' }}>
+                                    {levelLabel || 'Level not set'}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </section>

@@ -260,6 +260,57 @@ const getIdString = (value: unknown): string => {
   return '';
 };
 
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return entry.trim();
+      }
+
+      if (isRecord(entry)) {
+        const label =
+          getString(entry.name) ||
+          getString(entry.label) ||
+          getString(entry.value);
+        return label.trim();
+      }
+
+      return '';
+    })
+    .filter(Boolean);
+};
+
+const normalizeSkillLevels = (value: unknown): Record<string, string> => {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const result: Record<string, string> = {};
+  for (const [rawSkill, rawLevel] of Object.entries(value)) {
+    if (typeof rawSkill !== 'string' || typeof rawLevel !== 'string') {
+      continue;
+    }
+
+    const skill = rawSkill.trim();
+    const level = rawLevel.trim().toUpperCase();
+    if (!skill || !level) {
+      continue;
+    }
+
+    if (!['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(level)) {
+      continue;
+    }
+
+    result[skill] = level;
+  }
+
+  return result;
+};
+
 const pickFirstDefined = (
   sources: Array<Record<string, unknown>>,
   keys: string[],
@@ -345,6 +396,13 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
         downloadUrl: url,
         url,
       }));
+  const normalizedSkills = toStringArray(candidateProfile.skills).length
+    ? toStringArray(candidateProfile.skills)
+    : toStringArray(candidateProfile.skillTexts).length
+      ? toStringArray(candidateProfile.skillTexts)
+      : toStringArray(candidateProfile.skill_tags);
+  const normalizedSkillLevels = normalizeSkillLevels(candidateProfile.skillLevels);
+  const fallbackRequiredSkillLevels = normalizeSkillLevels(candidateProfile.requiredSkillLevels);
 
   return {
     role: payload.role,
@@ -372,6 +430,11 @@ const normalizeProfilePayload = (payload: unknown): Record<string, unknown> | nu
     preferredWorkFormats: Array.isArray(candidateProfile.preferredWorkFormats)
       ? candidateProfile.preferredWorkFormats
       : [],
+    skills: normalizedSkills,
+    skillLevels:
+      Object.keys(normalizedSkillLevels).length > 0
+        ? normalizedSkillLevels
+        : fallbackRequiredSkillLevels,
     companyName: company.name || employerProfile.companyName,
     position: employerProfile.jobTitle,
     companyWebsite: company.website || employerProfile.companyWebsite,
@@ -671,6 +734,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
           educationLevel: (data as Record<string, unknown>).educationLevel,
           preferredEmploymentTypes: (data as Record<string, unknown>).preferredEmploymentTypes,
           preferredWorkFormats: (data as Record<string, unknown>).preferredWorkFormats,
+          skills: (data as Record<string, unknown>).skills,
+          skillLevels: (data as Record<string, unknown>).skillLevels,
         };
 
         const response = await api.patch('/profile/candidate/me', candidatePayload);
