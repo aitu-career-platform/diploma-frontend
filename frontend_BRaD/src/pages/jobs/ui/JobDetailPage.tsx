@@ -1,18 +1,33 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, DollarSign, Heart, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  MapPin,
+  Clock,
+  DollarSign,
+  Heart,
+  Sparkles,
+  ClipboardList,
+  MessageSquare,
+  CheckCircle2,
+} from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Textarea } from '@shared/ui';
 import { useJobStore } from '@entities/job';
 import { isCandidateRole, useUserStore } from '@entities/user';
-import { useEffect, useState } from 'react';
-import { useApplicationStore } from '@entities/application';
+import { useEffect, useMemo, useState } from 'react';
+import { useApplicationStore, type ApplicationStatus } from '@entities/application';
 import { useFavoritesStore } from '@entities/favorite';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { jobs, isLoading, loadJobs } = useJobStore();
+  const { jobs, isLoading: isJobsLoading, loadJobs } = useJobStore();
   const { currentUser, isAuthenticated } = useUserStore();
-  const { applyToVacancy, isMutating } = useApplicationStore();
+  const {
+    items: applications,
+    applyToVacancy,
+    listApplications,
+    isMutating: isApplying,
+  } = useApplicationStore();
   const {
     favoriteIds,
     countsByVacancyId,
@@ -25,6 +40,7 @@ export const JobDetailPage = () => {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
   const [latestApplicationId, setLatestApplicationId] = useState<string | null>(null);
+  const [latestApplicationChatId, setLatestApplicationChatId] = useState<string | null>(null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +61,42 @@ export const JobDetailPage = () => {
   const isCandidate = isAuthenticated && isCandidateRole(currentUser?.role);
   const isFavorite = job ? favoriteIds.has(job.id) : false;
   const favoritesCount = job ? countsByVacancyId[job.id] ?? job.favoritesCount ?? 0 : 0;
+  const activeApplicationStatuses: ApplicationStatus[] = ['SUBMITTED', 'REVIEWED', 'INTERVIEW', 'OFFER'];
+
+  useEffect(() => {
+    if (!job || !isCandidate || !currentUser) {
+      return;
+    }
+
+    void listApplications(currentUser.role, {
+      vacancyId: job.id,
+      limit: 50,
+      offset: 0,
+    });
+  }, [currentUser, isCandidate, job, listApplications]);
+
+  const existingApplication = useMemo(() => {
+    if (!job || !isCandidate) {
+      return null;
+    }
+
+    return (
+      applications.find(
+        (application) =>
+          application.vacancyId === job.id && activeApplicationStatuses.includes(application.status),
+      ) || null
+    );
+  }, [activeApplicationStatuses, applications, isCandidate, job]);
+
+  const actionApplication =
+    existingApplication ||
+    (latestApplicationId
+      ? {
+          id: latestApplicationId,
+          chatId: latestApplicationChatId,
+        }
+      : null);
+  const hasActiveApplication = Boolean(actionApplication);
 
   const handleApply = async () => {
     if (!job) {
@@ -57,8 +109,16 @@ export const JobDetailPage = () => {
     try {
       const application = await applyToVacancy(job.id, coverLetter);
       setLatestApplicationId(application.id);
+      setLatestApplicationChatId(application.chatId || null);
       setApplySuccess('Application submitted. You can track it on the Applications page.');
       setCoverLetter('');
+      if (currentUser) {
+        void listApplications(currentUser.role, {
+          vacancyId: job.id,
+          limit: 50,
+          offset: 0,
+        });
+      }
     } catch (error) {
       setApplyError(error instanceof Error ? error.message : 'Failed to submit application');
     }
@@ -78,7 +138,7 @@ export const JobDetailPage = () => {
     }
   };
 
-  if (!job && isLoading) {
+  if (!job && isJobsLoading) {
     return (
       <div className="min-h-screen app-shell app-page">
         <AppHeader />
@@ -198,33 +258,60 @@ export const JobDetailPage = () => {
                     {isFavorite ? 'Saved in favorites' : 'Save to favorites'}
                   </Button>
 
-                  <Textarea
-                    value={coverLetter}
-                    onChange={(event) => setCoverLetter(event.target.value)}
-                    placeholder="Optional cover letter"
-                    maxLength={4000}
-                    className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
-                  />
+                  {!hasActiveApplication && (
+                    <>
+                      <Textarea
+                        value={coverLetter}
+                        onChange={(event) => setCoverLetter(event.target.value)}
+                        placeholder="Optional cover letter"
+                        maxLength={4000}
+                        className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
+                      />
 
-                  <Button variant="hero" size="lg" className="w-full" onClick={() => void handleApply()} disabled={isMutating}>
-                    {isMutating ? 'Submitting...' : 'Apply now'}
-                  </Button>
+                      <Button
+                        variant="hero"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => void handleApply()}
+                        disabled={isApplying}
+                      >
+                        {isApplying ? 'Submitting...' : 'Apply now'}
+                      </Button>
+                    </>
+                  )}
 
                   {applyError && (
                     <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{applyError}</div>
                   )}
 
-                  {applySuccess && (
-                    <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                      {applySuccess} <Link to="/app/applications" className="underline">Open applications</Link>
-                      {latestApplicationId && (
-                        <>
-                          {' · '}
-                          <Link to={`/app/chat?applicationId=${latestApplicationId}`} className="underline">
+                  {hasActiveApplication && (
+                    <div className="rounded-xl border border-emerald-300/45 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                      <div className="inline-flex items-center gap-2 font-semibold">
+                        <CheckCircle2 className="h-4 w-4" />
+                        You already have an active application for this vacancy
+                      </div>
+                      {applySuccess && <p className="mt-1 text-xs text-emerald-800/85">{applySuccess}</p>}
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <Link to={`/app/applications/${actionApplication?.id || ''}`} className="block">
+                          <Button variant="hero" size="sm" className="w-full">
+                            <ClipboardList className="h-4 w-4" />
+                            Open application
+                          </Button>
+                        </Link>
+                        <Link
+                          to={
+                            actionApplication?.chatId
+                              ? `/app/chat?chatId=${actionApplication.chatId}`
+                              : `/app/chat?applicationId=${actionApplication?.id || ''}`
+                          }
+                          className="block"
+                        >
+                          <Button variant="outline" size="sm" className="w-full">
+                            <MessageSquare className="h-4 w-4" />
                             Open chat
-                          </Link>
-                        </>
-                      )}
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   )}
 
@@ -232,9 +319,11 @@ export const JobDetailPage = () => {
                     <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{favoriteError}</div>
                   )}
 
-                  <div className="rounded-xl border border-[#2B3B23]/10 bg-[#F4F8EA] px-3 py-2 text-xs leading-5 text-[#4A5E3D]">
-                    Chat opens automatically after you submit an application.
-                  </div>
+                  {!hasActiveApplication && (
+                    <div className="rounded-xl border border-[#2B3B23]/10 bg-[#F4F8EA] px-3 py-2 text-xs leading-5 text-[#4A5E3D]">
+                      Chat opens automatically after you submit an application.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
