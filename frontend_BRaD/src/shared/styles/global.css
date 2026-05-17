@@ -6,60 +6,58 @@
 
 @layer base {
   :root {
-    --background: 75 40% 96%;
-    --foreground: 112 20% 15%;
+    --background: 0 0% 100%;
+    --foreground: 132 18% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 112 20% 15%;
+    --card-foreground: 132 18% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 112 20% 15%;
-    --primary: 112 22% 18%;
+    --popover-foreground: 132 18% 12%;
+    --primary: 146 43% 29%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 72 33% 92%;
-    --secondary-foreground: 112 22% 18%;
-    --muted: 72 25% 90%;
-    --muted-foreground: 113 11% 36%;
-    --accent: 154 56% 27%;
+    --secondary: 120 20% 96%;
+    --secondary-foreground: 132 18% 12%;
+    --muted: 120 14% 95%;
+    --muted-foreground: 130 7% 42%;
+    --accent: 146 43% 29%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 72 20% 82%;
-    --input: 72 20% 82%;
-    --ring: 154 56% 27%;
-    --radius: 1rem;
+    --border: 120 10% 84%;
+    --input: 120 10% 84%;
+    --ring: 146 43% 29%;
+    --radius: 1.125rem;
 
-    --hero-gradient: linear-gradient(135deg, #1f2b18 0%, #2f4f36 45%, #295f4e 100%);
-    --hero-text-gradient: linear-gradient(135deg, #1f2b18 0%, #295f4e 100%);
-    --card-shadow: 0 12px 30px rgba(29, 48, 20, 0.08);
-    --card-shadow-hover: 0 18px 42px rgba(29, 48, 20, 0.14);
-    --glow: 0 0 70px rgba(52, 120, 86, 0.2);
+    --hero-gradient: linear-gradient(180deg, #2b6a4d 0%, #24583f 100%);
+    --hero-text-gradient: linear-gradient(180deg, #2b6a4d 0%, #24583f 100%);
+    --card-shadow: 0 1px 0 rgba(20, 31, 23, 0.04), 0 18px 38px rgba(20, 31, 23, 0.05);
+    --card-shadow-hover: 0 1px 0 rgba(20, 31, 23, 0.05), 0 22px 44px rgba(20, 31, 23, 0.07);
+    --glow: 0 0 0 rgba(0, 0, 0, 0);
     --font-heading: 'Sora', 'Segoe UI', sans-serif;
     --font-body: 'Manrope', 'Segoe UI', sans-serif;
-    --app-bg:
-      radial-gradient(circle at 7% 5%, rgba(198, 217, 173, 0.42) 0, transparent 35%),
-      radial-gradient(circle at 92% 10%, rgba(173, 206, 203, 0.34) 0, transparent 40%),
-      linear-gradient(180deg, #f7faef 0%, #eef3df 52%, #eaf0dc 100%);
+    --app-bg: #ffffff;
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 210 20% 98%;
-    --card: 220 25% 12%;
-    --card-foreground: 210 20% 98%;
-    --popover: 220 25% 12%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 175 84% 42%;
+    --background: 145 18% 10%;
+    --foreground: 140 18% 92%;
+    --card: 145 14% 14%;
+    --card-foreground: 140 18% 92%;
+    --popover: 145 14% 14%;
+    --popover-foreground: 140 18% 92%;
+    --primary: 146 43% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 220 20% 18%;
-    --muted-foreground: 210 15% 60%;
-    --accent: 15 90% 55%;
+    --secondary: 145 12% 18%;
+    --secondary-foreground: 140 18% 92%;
+    --muted: 145 12% 18%;
+    --muted-foreground: 140 10% 65%;
+    --accent: 146 43% 38%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 175 84% 42%;
+    --border: 145 10% 24%;
+    --input: 145 10% 24%;
+    --ring: 146 43% 38%;
+    --app-bg: #0f1511;
   }
 }
 
@@ -83,9 +81,8 @@
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #25311f;
+    color: #1d261f;
     background: var(--app-bg);
-    background-attachment: fixed;
   }
 
   #root {
@@ -172,13 +169,12 @@
   .app-shell {
     position: relative;
     background: var(--app-bg);
-    background-attachment: fixed;
-    color: #25311f;
+    color: #1d261f;
   }
 
   .app-page-main {
     width: 100%;
-    max-width: 1320px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 1.5rem 1rem 2.5rem;
   }
@@ -190,16 +186,17 @@
   }
 
   .app-section-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(37, 49, 31, 0.08);
-    border-radius: 1.25rem;
+    background: #ffffff;
+    border: 1px solid rgba(26, 35, 28, 0.08);
+    border-radius: 1.4rem;
     box-shadow: var(--card-shadow);
   }
 
   .app-kpi-card {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 248, 231, 0.95) 100%);
-    border: 1px solid rgba(37, 49, 31, 0.1);
-    border-radius: 1rem;
+    background: #ffffff;
+    border: 1px solid rgba(26, 35, 28, 0.08);
+    border-radius: 1.15rem;
+    box-shadow: 0 1px 0 rgba(20, 31, 23, 0.03);
   }
 
   .app-chip {
@@ -207,13 +204,13 @@
     align-items: center;
     gap: 0.35rem;
     border-radius: 9999px;
-    border: 1px solid rgba(37, 49, 31, 0.14);
-    background: rgba(255, 255, 255, 0.8);
-    color: rgba(37, 49, 31, 0.8);
-    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(43, 106, 77, 0.14);
+    background: #f6faf7;
+    color: #375444;
+    padding: 0.35rem 0.75rem;
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -222,17 +219,7 @@
   }
 
   .app-grid-backdrop::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background-image:
-      linear-gradient(rgba(31, 43, 24, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(31, 43, 24, 0.05) 1px, transparent 1px);
-    background-size: 22px 22px;
-    mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), transparent 80%);
-    opacity: 0.2;
+    display: none;
   }
 
   .app-lift {
@@ -240,19 +227,19 @@
   }
 
   .app-lift:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: var(--card-shadow-hover);
-    border-color: rgba(37, 49, 31, 0.18);
+    border-color: rgba(43, 106, 77, 0.18);
   }
 
   .app-title {
-    color: #1f2b18;
+    color: #162018;
     font-weight: 800;
     letter-spacing: -0.03em;
   }
 
   .app-text-muted {
-    color: rgba(37, 49, 31, 0.68);
+    color: #5e6c61;
   }
 
   /* App pages padding for fixed header */
@@ -264,5 +251,31 @@
     .app-page {
       padding-top: 5.5rem;
     }
+  }
+
+  .dark .app-section-card {
+    background: #161d18;
+    border-color: rgba(224, 235, 226, 0.08);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  }
+
+  .dark .app-kpi-card {
+    background: #18211b;
+    border-color: rgba(224, 235, 226, 0.08);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .dark .app-chip {
+    background: #1b241e;
+    border-color: rgba(173, 206, 183, 0.16);
+    color: #b7c8bc;
+  }
+
+  .dark .app-title {
+    color: #eff5f0;
+  }
+
+  .dark .app-text-muted {
+    color: #95a59a;
   }
 }

@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { X, CheckCircle } from 'lucide-react';
-import { Button, Input } from '@shared/ui';
+import { Button, Input, PreferencesControls } from '@shared/ui';
 import { useUserStore } from '@entities/user';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 const resetPasswordSchema = z
   .object({
@@ -24,6 +25,7 @@ export const ResetPasswordPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { resetPassword } = useUserStore();
+  const { t } = useUISettings();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
@@ -62,8 +64,8 @@ export const ResetPasswordPage = () => {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="app-title text-2xl">Password updated</h2>
-            <p className="app-text-muted mt-2">Redirecting to login...</p>
+            <h2 className="app-title text-2xl dark:text-[#F0F6F1]">{t('auth.reset.successTitle')}</h2>
+            <p className="app-text-muted mt-2">{t('auth.reset.successDescription')}</p>
           </div>
         </div>
       </div>
@@ -73,6 +75,9 @@ export const ResetPasswordPage = () => {
   return (
     <div className="min-h-screen app-shell flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end">
+          <PreferencesControls compact />
+        </div>
         <Link to="/app" className="mb-1 inline-flex items-center gap-3">
           <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-24 w-auto object-contain" />
         </Link>
@@ -81,17 +86,17 @@ export const ResetPasswordPage = () => {
           <Link to="/app/login" className="absolute right-4 top-4 text-[#607456] transition-colors hover:text-[#2B3B23]">
             <X className="h-5 w-5" />
           </Link>
-          <h2 className="app-title text-3xl">Set new password</h2>
+          <h2 className="app-title text-3xl dark:text-[#F0F6F1]">{t('auth.reset.title')}</h2>
           <p className="app-text-muted mb-6 mt-1 text-sm sm:text-base">
-            Enter the code sent to <strong>{email}</strong> and choose a new password.
+            {t('auth.reset.description', { email })}
           </p>
 
           {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label htmlFor="code" className="mb-2 block text-sm font-semibold text-[#22301B]">
-                Reset code
+              <label htmlFor="code" className="mb-2 block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.reset.code')}
               </label>
               <Input
                 id="code"
@@ -105,8 +110,8 @@ export const ResetPasswordPage = () => {
             </div>
 
             <div>
-              <label htmlFor="newPassword" className="mb-2 block text-sm font-semibold text-[#22301B]">
-                New password
+              <label htmlFor="newPassword" className="mb-2 block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.reset.newPassword')}
               </label>
               <Input
                 id="newPassword"
@@ -119,8 +124,8 @@ export const ResetPasswordPage = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-[#22301B]">
-                Confirm new password
+              <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.reset.confirmPassword')}
               </label>
               <Input
                 id="confirmPassword"
@@ -135,17 +140,17 @@ export const ResetPasswordPage = () => {
             </div>
 
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Reset password'}
+              {isSubmitting ? t('auth.reset.submitting') : t('auth.reset.submit')}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#5E7253]">
+          <div className="mt-6 text-center text-sm text-[#5E7253] dark:text-[#A2B0A6]">
             <Link to="/app/forgot-password" className="font-semibold text-[#2B6A4D] hover:underline">
-              Resend code
+              {t('auth.reset.resendCode')}
             </Link>
-            {' or '}
+            {` ${t('auth.reset.or')} `}
             <Link to="/app/login" className="font-semibold text-[#2B6A4D] hover:underline">
-              Back to login
+              {t('auth.forgot.backToLogin')}
             </Link>
           </div>
         </div>

@@ -12,9 +12,11 @@ import {
 import { AppHeader } from '@widgets/app-header';
 import { Button } from '@shared/ui';
 import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 export const AppPage = () => {
   const { isAuthenticated, currentUser } = useUserStore();
+  const { t } = useUISettings();
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
 
@@ -22,20 +24,20 @@ export const AppPage = () => {
     {
       to: '/app/jobs',
       icon: Search,
-      title: 'Explore jobs',
-      description: 'Use filters, compare roles, open details and apply in one flow.',
+      title: t('app.quick.exploreJobs.title'),
+      description: t('app.quick.exploreJobs.description'),
     },
     {
       to: '/app/applications',
       icon: ClipboardList,
-      title: 'Track applications',
-      description: 'See status timeline, updates, and move faster through hiring stages.',
+      title: t('app.quick.trackApplications.title'),
+      description: t('app.quick.trackApplications.description'),
     },
     {
       to: '/app/profile',
       icon: Users,
-      title: 'Update profile',
-      description: 'Keep CV, links, and personal details ready before HR reaches out.',
+      title: t('app.quick.updateProfile.title'),
+      description: t('app.quick.updateProfile.description'),
     },
   ];
 
@@ -43,8 +45,8 @@ export const AppPage = () => {
     quickActions.push({
       to: '/app/employer',
       icon: Briefcase,
-      title: 'Manage vacancies',
-      description: 'Create vacancies step by step and invite candidates directly from shortlist.',
+      title: t('app.quick.manageVacancies.title'),
+      description: t('app.quick.manageVacancies.description'),
     });
   }
 
@@ -52,8 +54,8 @@ export const AppPage = () => {
     quickActions.push({
       to: '/app/admin',
       icon: Shield,
-      title: 'Operations panel',
-      description: 'Moderate users, control vacancy states, and keep platform healthy.',
+      title: t('app.quick.operations.title'),
+      description: t('app.quick.operations.description'),
     });
   }
 
@@ -61,8 +63,8 @@ export const AppPage = () => {
     quickActions.push({
       to: '/app/chat',
       icon: MessageSquare,
-      title: 'Open messages',
-      description: 'Continue candidate-HR conversations linked to active applications.',
+      title: t('app.quick.messages.title'),
+      description: t('app.quick.messages.description'),
     });
   }
 
@@ -76,30 +78,30 @@ export const AppPage = () => {
             <div className="max-w-3xl">
               <span className="app-chip mb-4">
                 <Sparkles className="h-3.5 w-3.5" />
-                Main Workspace
+                {t('app.badge')}
               </span>
 
               <h1 className="app-title text-3xl sm:text-4xl lg:text-5xl">
-                Work faster, with a cleaner flow.
+                {t('app.title')}
               </h1>
 
               <p className="app-text-muted mt-4 max-w-2xl text-base sm:text-lg">
-                Main BRaD workspace is now centered around simple actions: find opportunities, track progress, and communicate without jumping between unclear screens.
+                {t('app.description')}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">Workspace</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">Candidate + HR</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.workspaceLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.workspaceValue')}</p>
               </div>
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">Navigation</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">Role-based</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.navigationLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.navigationValue')}</p>
               </div>
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">Chat</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">Realtime</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.chatLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.chatValue')}</p>
               </div>
             </div>
           </div>
@@ -107,9 +109,9 @@ export const AppPage = () => {
 
         <section className="mt-6">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="app-title text-2xl sm:text-3xl">Quick actions</h2>
+            <h2 className="app-title text-2xl sm:text-3xl">{t('app.quickActions')}</h2>
             <Link to="/app/jobs" className="app-text-muted text-sm font-semibold hover:underline">
-              Open vacancies
+              {t('app.openVacancies')}
             </Link>
           </div>
 
@@ -125,7 +127,7 @@ export const AppPage = () => {
                   <h3 className="app-title text-lg">{action.title}</h3>
                   <p className="app-text-muted mt-2 text-sm leading-6">{action.description}</p>
                   <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#2B6A4D]">
-                    Open
+                    {t('app.open')}
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 </Link>
@@ -137,20 +139,20 @@ export const AppPage = () => {
         {!isAuthenticated && (
           <section className="mt-6 app-section-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
             <div>
-              <h3 className="app-title text-xl">Sign in to unlock full workflow</h3>
+              <h3 className="app-title text-xl">{t('app.signInTitle')}</h3>
               <p className="app-text-muted mt-2 text-sm sm:text-base">
-                Applications, profile editing, invites, and messaging become available after login.
+                {t('app.signInDescription')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link to="/app/login">
                 <Button variant="outline" size="lg">
-                  Sign In
+                  {t('nav.signIn')}
                 </Button>
               </Link>
               <Link to="/app/register">
                 <Button variant="hero" size="lg">
-                  Create Account
+                  {t('nav.createAccount')}
                 </Button>
               </Link>
             </div>

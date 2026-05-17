@@ -41,6 +41,7 @@ export const JobDetailPage = () => {
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
   const [latestApplicationId, setLatestApplicationId] = useState<string | null>(null);
   const [latestApplicationChatId, setLatestApplicationChatId] = useState<string | null>(null);
+  const [duplicateApplicationDetected, setDuplicateApplicationDetected] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,7 +97,7 @@ export const JobDetailPage = () => {
           chatId: latestApplicationChatId,
         }
       : null);
-  const hasActiveApplication = Boolean(actionApplication);
+  const hasActiveApplication = Boolean(actionApplication) || duplicateApplicationDetected;
 
   const handleApply = async () => {
     if (!job) {
@@ -105,6 +106,7 @@ export const JobDetailPage = () => {
 
     setApplyError(null);
     setApplySuccess(null);
+    setDuplicateApplicationDetected(false);
 
     try {
       const application = await applyToVacancy(job.id, coverLetter);
@@ -120,7 +122,25 @@ export const JobDetailPage = () => {
         });
       }
     } catch (error) {
-      setApplyError(error instanceof Error ? error.message : 'Failed to submit application');
+      const message = error instanceof Error ? error.message : 'Failed to submit application';
+
+      if (message.toLowerCase().includes('active application already exists')) {
+        setDuplicateApplicationDetected(true);
+        setApplyError(null);
+        setApplySuccess('You already applied to this vacancy.');
+
+        if (currentUser) {
+          void listApplications(currentUser.role, {
+            vacancyId: job.id,
+            limit: 50,
+            offset: 0,
+          });
+        }
+
+        return;
+      }
+
+      setApplyError(message);
     }
   };
 
@@ -259,26 +279,25 @@ export const JobDetailPage = () => {
                   </Button>
 
                   {!hasActiveApplication && (
-                    <>
-                      <Textarea
-                        value={coverLetter}
-                        onChange={(event) => setCoverLetter(event.target.value)}
-                        placeholder="Optional cover letter"
-                        maxLength={4000}
-                        className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
-                      />
-
-                      <Button
-                        variant="hero"
-                        size="lg"
-                        className="w-full"
-                        onClick={() => void handleApply()}
-                        disabled={isApplying}
-                      >
-                        {isApplying ? 'Submitting...' : 'Apply now'}
-                      </Button>
-                    </>
+                    <Textarea
+                      value={coverLetter}
+                      onChange={(event) => setCoverLetter(event.target.value)}
+                      placeholder="Optional cover letter"
+                      maxLength={4000}
+                      className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
+                    />
                   )}
+
+                  <Button
+                    variant={hasActiveApplication ? 'secondary' : 'hero'}
+                    size="lg"
+                    className="w-full"
+                    onClick={!hasActiveApplication ? () => void handleApply() : undefined}
+                    disabled={isApplying || hasActiveApplication}
+                  >
+                    {hasActiveApplication && <CheckCircle2 className="h-4 w-4" />}
+                    {isApplying ? 'Submitting...' : hasActiveApplication ? 'Applied' : 'Apply now'}
+                  </Button>
 
                   {applyError && (
                     <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{applyError}</div>
@@ -291,27 +310,29 @@ export const JobDetailPage = () => {
                         You already have an active application for this vacancy
                       </div>
                       {applySuccess && <p className="mt-1 text-xs text-emerald-800/85">{applySuccess}</p>}
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <Link to={`/app/applications/${actionApplication?.id || ''}`} className="block">
-                          <Button variant="hero" size="sm" className="w-full">
-                            <ClipboardList className="h-4 w-4" />
-                            Open application
-                          </Button>
-                        </Link>
-                        <Link
-                          to={
-                            actionApplication?.chatId
-                              ? `/app/chat?chatId=${actionApplication.chatId}`
-                              : `/app/chat?applicationId=${actionApplication?.id || ''}`
-                          }
-                          className="block"
-                        >
-                          <Button variant="outline" size="sm" className="w-full">
-                            <MessageSquare className="h-4 w-4" />
-                            Open chat
-                          </Button>
-                        </Link>
-                      </div>
+                      {actionApplication?.id && (
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <Link to={`/app/applications/${actionApplication.id}`} className="block">
+                            <Button variant="hero" size="sm" className="w-full">
+                              <ClipboardList className="h-4 w-4" />
+                              Open application
+                            </Button>
+                          </Link>
+                          <Link
+                            to={
+                              actionApplication.chatId
+                                ? `/app/chat?chatId=${actionApplication.chatId}`
+                                : `/app/chat?applicationId=${actionApplication.id}`
+                            }
+                            className="block"
+                          >
+                            <Button variant="outline" size="sm" className="w-full">
+                              <MessageSquare className="h-4 w-4" />
+                              Open chat
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   )}
 

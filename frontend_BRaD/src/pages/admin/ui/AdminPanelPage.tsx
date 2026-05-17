@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Archive, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
+import { Archive, BarChart3, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input } from '@shared/ui';
 import api, { getApiErrorMessage } from '@shared/lib/api';
+import { useUISettings } from '@shared/lib/ui-settings';
 import {
   complianceApi,
   type CompanyVerificationQueueItem,
@@ -147,9 +148,10 @@ const parseVacanciesPayload = (payload: unknown): ManagedVacancy[] => {
 };
 
 export const AdminPanelPage = () => {
+  const { t } = useUISettings();
   const { currentUser, isAuthenticated } = useUserStore();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'vacancies' | 'compliance'>('users');
+  const [activeTab, setActiveTab] = useState<'statistics' | 'operations'>('statistics');
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [vacancies, setVacancies] = useState<ManagedVacancy[]>([]);
   const [kycQueue, setKycQueue] = useState<CompanyVerificationQueueItem[]>([]);
@@ -193,6 +195,19 @@ export const AdminPanelPage = () => {
 
   const isAdmin = isAdminRole(currentUser?.role);
   const canViewPage = isAuthenticated && isAdmin;
+  const openComplianceItems = kycQueue.length + complaintsQueue.length + deleteRequestsQueue.length;
+  const userRoleSummary = userRoleOptions.map((role) => ({
+    role,
+    count: users.filter((user) => user.role === role).length,
+  }));
+  const userStatusSummary = (['ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED'] as BackendUserStatus[]).map((status) => ({
+    status,
+    count: users.filter((user) => user.status === status).length,
+  }));
+  const vacancyStatusSummary = (['DRAFT', 'PUBLISHED', 'ARCHIVED', 'CLOSED'] as BackendVacancyStatus[]).map((status) => ({
+    status,
+    count: vacancies.filter((vacancy) => vacancy.status === status).length,
+  }));
 
   const loadUsers = async (nextFilters = userFilters) => {
     if (!canViewPage) {
@@ -335,16 +350,16 @@ export const AdminPanelPage = () => {
     }
 
     void loadUsers();
+    void loadVacancies();
   }, [canViewPage]);
 
   useEffect(() => {
-    if (!canViewPage || activeTab !== 'compliance') {
+    if (!canViewPage) {
       return;
     }
 
     void loadCompliance();
   }, [
-    activeTab,
     canViewPage,
     complaintStatusFilter,
     deleteRequestStatusFilter,
@@ -514,10 +529,10 @@ export const AdminPanelPage = () => {
         <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
             <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: '#333A2F' }}>
-              Operations panel is limited to admins
+              {t('admin.accessTitle')}
             </h1>
             <p className="mb-6 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              This section uses protected backend endpoints for user moderation and vacancy state changes.
+              {t('admin.accessDescription')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link to="/app/login">
@@ -541,25 +556,24 @@ export const AdminPanelPage = () => {
           className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
-            background:
-              'linear-gradient(140deg, rgba(51,58,47,0.08) 0%, rgba(255,255,255,0.97) 40%, rgba(222,231,198,0.45) 100%)',
+            background: '#FFFFFF',
           }}
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: '#333A2F' }}>
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Admin mode
+                {t('admin.badge')}
               </div>
               <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: '#333A2F' }}>
-                Operations panel
+                {t('admin.title')}
               </h1>
               <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                Moderate users, switch roles, ban or unban accounts, and control vacancy lifecycle with archive, soft delete, and restore actions.
+                {t('admin.description')}
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
                   Users
@@ -576,27 +590,150 @@ export const AdminPanelPage = () => {
                   {vacancies.length}
                 </div>
               </div>
+              <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Compliance
+                </div>
+                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                  {openComplianceItems}
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="mb-6 flex flex-wrap gap-3">
-          <Button variant={activeTab === 'users' ? 'hero' : 'outline'} onClick={() => setActiveTab('users')}>
+          <Button variant={activeTab === 'statistics' ? 'hero' : 'outline'} onClick={() => setActiveTab('statistics')}>
+            <BarChart3 className="h-4 w-4" />
+            {t('admin.statistics')}
+          </Button>
+          <Button variant={activeTab === 'operations' ? 'hero' : 'outline'} onClick={() => setActiveTab('operations')}>
             <UserCog className="h-4 w-4" />
-            Users
-          </Button>
-          <Button variant={activeTab === 'vacancies' ? 'hero' : 'outline'} onClick={() => setActiveTab('vacancies')}>
-            <Archive className="h-4 w-4" />
-            Vacancies
-          </Button>
-          <Button variant={activeTab === 'compliance' ? 'hero' : 'outline'} onClick={() => setActiveTab('compliance')}>
-            <AlertTriangle className="h-4 w-4" />
-            Compliance
+            {t('admin.operations')}
           </Button>
         </section>
 
-        {activeTab === 'users' && (
+        {activeTab === 'statistics' && (
+          <section className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Users loaded
+                </div>
+                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{users.length}</div>
+                <p className="mt-2 text-sm text-[#5D6F50]">Current dataset from the user moderation feed.</p>
+              </div>
+              <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Vacancies loaded
+                </div>
+                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{vacancies.length}</div>
+                <p className="mt-2 text-sm text-[#5D6F50]">Visible vacancies in the current moderation snapshot.</p>
+              </div>
+              <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  KYC queue
+                </div>
+                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{kycQueue.length}</div>
+                <p className="mt-2 text-sm text-[#5D6F50]">Items for status {formatEnum(kycStatusFilter)}.</p>
+              </div>
+              <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Complaints
+                </div>
+                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{complaintsQueue.length}</div>
+                <p className="mt-2 text-sm text-[#5D6F50]">Cases for status {formatEnum(complaintStatusFilter)}.</p>
+              </div>
+              <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                  Delete requests
+                </div>
+                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{deleteRequestsQueue.length}</div>
+                <p className="mt-2 text-sm text-[#5D6F50]">Requests for status {formatEnum(deleteRequestStatusFilter)}.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-3">
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">Users snapshot</h2>
+                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                    {usersTotal} total
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {userRoleSummary.map((item) => (
+                    <div key={item.role} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
+                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.role)}</span>
+                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">User status</h2>
+                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                    moderation
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {userStatusSummary.map((item) => (
+                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
+                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.status)}</span>
+                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">Vacancy status</h2>
+                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                    lifecycle
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {vacancyStatusSummary.map((item) => (
+                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
+                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.status)}</span>
+                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'operations' && (
+          <section className="space-y-6">
+            <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.operations')}</h2>
+                  <p className="mt-2 text-sm text-[#5D6F50]">
+                    {t('admin.description')}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#F9FAF3] px-4 py-3 text-sm font-medium text-[#33412D]">
+                  Active queue: {openComplianceItems} items
+                </div>
+              </div>
+            </div>
+
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.userManagement')}</h3>
+                <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.userManagementDescription')}</p>
+              </div>
+              <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                {users.length} loaded
+              </span>
+            </div>
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_120px_auto]">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
@@ -792,10 +929,17 @@ export const AdminPanelPage = () => {
               </div>
             )}
           </section>
-        )}
 
-        {activeTab === 'vacancies' && (
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.vacancyOperations')}</h3>
+                <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.vacancyOperationsDescription')}</p>
+              </div>
+              <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                {vacancies.length} loaded
+              </span>
+            </div>
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
@@ -920,11 +1064,18 @@ export const AdminPanelPage = () => {
               </div>
             )}
           </section>
-        )}
 
-        {activeTab === 'compliance' && (
           <section className="space-y-6">
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.complianceOperations')}</h3>
+                  <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.complianceOperationsDescription')}</p>
+                </div>
+                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  {openComplianceItems} items
+                </span>
+              </div>
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
@@ -1279,6 +1430,7 @@ export const AdminPanelPage = () => {
                 </div>
               )}
             </div>
+          </section>
           </section>
         )}
       </main>

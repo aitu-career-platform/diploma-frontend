@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Edit, Heart, Plus, Send, Trash2, Users } from 'lucide-react';
+import { Briefcase, Edit, Heart, Plus, Search, Send, Trash2, Users } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
+import { useUISettings } from '@shared/lib/ui-settings';
 import { isEmployerRole, useUserStore } from '@entities/user';
 import {
   useVacancyStore,
@@ -532,6 +533,7 @@ const formatPercent = (value?: number): string => {
 };
 
 export const EmployerPage = () => {
+  const { t } = useUISettings();
   const { currentUser } = useUserStore();
   const { countsByVacancyId, loadFavoritesCount } = useFavoritesStore();
   const {
@@ -573,6 +575,7 @@ export const EmployerPage = () => {
     niceToHaveSkillsText: '',
   });
   const [selectedVacancyId, setSelectedVacancyId] = useState('');
+  const [vacancySearch, setVacancySearch] = useState('');
   const [inviteMessage, setInviteMessage] = useState(
     'Ваш опыт подходит под вакансию. Будем рады обсудить детали на интервью.',
   );
@@ -605,8 +608,54 @@ export const EmployerPage = () => {
       return;
     }
 
+    if (vacancySearch.trim()) {
+      return;
+    }
+
     setSelectedVacancyId((current) => current || sortedVacancies[0].id);
-  }, [sortedVacancies]);
+  }, [sortedVacancies, vacancySearch]);
+
+  const matchingVacancies = useMemo(() => {
+    const needle = vacancySearch.trim().toLowerCase();
+
+    if (!needle) {
+      return sortedVacancies;
+    }
+
+    return sortedVacancies.filter((vacancy) => {
+      const searchIndex = [
+        vacancy.title,
+        vacancy.description || '',
+        vacancy.skills.join(' '),
+        vacancy.requiredSkills.join(' '),
+        vacancy.optionalSkills.join(' '),
+        vacancy.niceToHaveSkills.join(' '),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return searchIndex.includes(needle);
+    });
+  }, [sortedVacancies, vacancySearch]);
+
+  useEffect(() => {
+    if (!vacancySearch.trim()) {
+      return;
+    }
+
+    if (!matchingVacancies.length) {
+      setSelectedVacancyId('');
+      return;
+    }
+
+    setSelectedVacancyId((current) => {
+      if (current && matchingVacancies.some((vacancy) => vacancy.id === current)) {
+        return current;
+      }
+
+      return matchingVacancies[0].id;
+    });
+  }, [matchingVacancies, vacancySearch]);
 
   useEffect(() => {
     if (!sortedVacancies.length) {
@@ -849,6 +898,19 @@ export const EmployerPage = () => {
     }
   };
 
+  const handleSelectMatchingVacancy = (vacancyId: string, shouldRefresh = false) => {
+    setSelectedVacancyId(vacancyId);
+
+    const selectedVacancy = sortedVacancies.find((vacancy) => vacancy.id === vacancyId);
+    if (selectedVacancy) {
+      setVacancySearch(selectedVacancy.title);
+    }
+
+    if (shouldRefresh) {
+      void handleRefreshMatching(vacancyId);
+    }
+  };
+
   const handleSendInvite = async (candidateId: string) => {
     if (!selectedVacancyId) {
       setWizardError('Choose a vacancy first');
@@ -883,10 +945,10 @@ export const EmployerPage = () => {
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
             <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>
-              Access Denied
+              {t('employer.accessDenied')}
             </h1>
             <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              This page is available only for HR and employer accounts.
+              {t('employer.accessDescription')}
             </p>
           </div>
         </main>
@@ -901,10 +963,10 @@ export const EmployerPage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#333A2F' }}>
-              HR Dashboard
+              {t('employer.title')}
             </h1>
             <p className="text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Create vacancies with step-by-step workflow and publish when all sections are complete.
+              {t('employer.description')}
             </p>
           </div>
           <Button
@@ -915,7 +977,7 @@ export const EmployerPage = () => {
             style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create Vacancy
+            {t('employer.createVacancy')}
           </Button>
         </div>
 
@@ -940,7 +1002,7 @@ export const EmployerPage = () => {
         )}
 
         {showWizard && (
-          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FBF5 100%)' }}>
+          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', background: '#FFFFFF' }}>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: '#1F2A1A' }}>
@@ -1588,7 +1650,7 @@ export const EmployerPage = () => {
 
         <div className="space-y-4">
           <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-            Your Vacancies
+            {t('employer.yourVacancies')}
           </h2>
 
           {isLoading ? (
@@ -1599,17 +1661,17 @@ export const EmployerPage = () => {
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
               <Briefcase className="w-16 h-16 mx-auto mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }} />
               <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
-                No vacancies yet
+                {t('employer.noVacancies')}
               </h3>
               <p className="mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                Create a vacancy in one form and publish when ready.
+                {t('employer.noVacanciesDescription')}
               </p>
               <Button
                 onClick={handleCreate}
                 variant="hero"
                 style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
               >
-                Create first vacancy
+                {t('employer.createFirstVacancy')}
               </Button>
             </div>
           ) : (
@@ -1662,12 +1724,11 @@ export const EmployerPage = () => {
                       <button
                         className="px-3 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium"
                         onClick={() => {
-                          setSelectedVacancyId(vacancy.id);
-                          void handleRefreshMatching(vacancy.id);
+                          handleSelectMatchingVacancy(vacancy.id, true);
                         }}
                         style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'transparent' }}
                       >
-                        Find candidates
+                        {t('employer.findCandidates')}
                       </button>
                       <button
                         className="p-2 rounded-lg border-2 transition-all duration-200"
@@ -1697,10 +1758,10 @@ export const EmployerPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                  Candidate Matching
+                  {t('employer.searchUsersTitle')}
                 </h2>
                 <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-                  Suggestions from `/invites/suggest-candidates` with score and existing invite state.
+                  {t('employer.searchUsersDescription')}
                 </p>
               </div>
               <Button
@@ -1709,11 +1770,68 @@ export const EmployerPage = () => {
                 disabled={invitesLoading || !selectedVacancyId}
                 style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
               >
-                Refresh matches
+                {t('employer.refreshMatches')}
               </Button>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[0.9fr,1.1fr] mb-6">
+            <div className="grid gap-4 lg:grid-cols-[1fr,1fr] mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  {t('employer.searchByVacancy')}
+                </label>
+                <div className="relative">
+                  <Input
+                    value={vacancySearch}
+                    onChange={(event) => setVacancySearch(event.target.value)}
+                    placeholder={t('employer.searchByVacancyPlaceholder')}
+                    className="h-12 pl-11"
+                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                  />
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#607456]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  {t('employer.interviewDate')}
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={interviewAt}
+                  onChange={(event) => setInterviewAt(event.target.value)}
+                  className="h-12"
+                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                />
+              </div>
+            </div>
+
+            {vacancySearch.trim() && (
+              <div className="mb-6 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <p className="text-sm font-medium text-[#33412D]">
+                    {matchingVacancies.length > 0
+                      ? t('employer.vacanciesMatched', { count: matchingVacancies.length })
+                      : t('employer.vacanciesMatchedEmpty')}
+                  </p>
+                  {matchingVacancies.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {matchingVacancies.slice(0, 6).map((vacancy) => (
+                        <button
+                          key={`search-${vacancy.id}`}
+                          type="button"
+                          onClick={() => handleSelectMatchingVacancy(vacancy.id, true)}
+                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-[#33412D] transition-colors hover:bg-[#ECF5DE]"
+                        >
+                          {vacancy.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-[0.9fr,auto] mb-6">
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
                   Vacancy
@@ -1724,8 +1842,8 @@ export const EmployerPage = () => {
                   className="w-full rounded-xl border px-4 py-3 text-sm"
                   style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
                 >
-                  <option value="">Choose vacancy</option>
-                  {sortedVacancies.map((vacancy) => (
+                  <option value="">{t('employer.chooseVacancy')}</option>
+                  {matchingVacancies.map((vacancy) => (
                     <option key={vacancy.id} value={vacancy.id}>
                       {vacancy.title}
                     </option>
@@ -1733,17 +1851,16 @@ export const EmployerPage = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
-                  Interview date and time
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={interviewAt}
-                  onChange={(event) => setInterviewAt(event.target.value)}
+              <div className="flex items-end">
+                <Button
+                  variant="hero"
                   className="h-12"
-                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
-                />
+                  onClick={() => void handleRefreshMatching()}
+                  disabled={invitesLoading || !selectedVacancyId}
+                  style={{ backgroundColor: '#333A2F', color: 'white' }}
+                >
+                  {t('employer.searchUsers')}
+                </Button>
               </div>
             </div>
 

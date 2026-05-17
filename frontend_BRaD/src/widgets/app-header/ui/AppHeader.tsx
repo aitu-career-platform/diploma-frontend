@@ -22,14 +22,16 @@ import { useNotificationsStore } from '@entities/notification';
 import { useMessageStore } from '@entities/message';
 import { useMediaStore } from '@entities/media';
 import { ChatWindow } from '@features/chat';
+import { PreferencesControls } from '@shared/ui';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 const navLinkBase =
-  'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all duration-200';
+  'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all duration-200';
 
 const navLinkState = ({ isActive }: { isActive: boolean }) =>
   isActive
-    ? `${navLinkBase} bg-primary text-white shadow-md`
-    : `${navLinkBase} text-[#2B3B23] hover:bg-[#E7EED6]`;
+    ? `${navLinkBase} border-[#BFD2C2] bg-[#F3F7F4] text-[#183223]`
+    : `${navLinkBase} border-transparent text-[#324338] hover:border-[#E2E9E3] hover:bg-[#F8FAF8]`;
 
 const getRecord = (value: unknown): Record<string, unknown> | null => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -84,6 +86,7 @@ const formatNotificationTime = (value?: string | null): string => {
 
 export const AppHeader = () => {
   const { currentUser, currentProfile, isAuthenticated, logout } = useUserStore();
+  const { t } = useUISettings();
   const {
     items: notifications,
     meta,
@@ -442,29 +445,29 @@ export const AppHeader = () => {
 
   const navItems = useMemo(() => {
     const items = [
-      { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/app/jobs', label: 'Jobs', icon: Briefcase },
+      { to: '/app', label: t('nav.dashboard'), icon: LayoutDashboard },
+      { to: '/app/jobs', label: t('nav.jobs'), icon: Briefcase },
     ];
 
     if (isAuthenticated) {
-      items.push({ to: '/app/applications', label: 'Applications', icon: ClipboardList });
-      items.push({ to: '/app/profile', label: 'Profile', icon: Users });
+      items.push({ to: '/app/applications', label: t('nav.applications'), icon: ClipboardList });
+      items.push({ to: '/app/profile', label: t('nav.profile'), icon: Users });
     }
 
     if (isHr) {
-      items.push({ to: '/app/employer', label: 'Employer', icon: Briefcase });
+      items.push({ to: '/app/employer', label: t('nav.employer'), icon: Briefcase });
     }
 
     if (isAdmin) {
-      items.push({ to: '/app/admin', label: 'Operations', icon: Shield });
+      items.push({ to: '/app/admin', label: t('nav.operations'), icon: Shield });
     }
 
     return items;
-  }, [isAdmin, isAuthenticated, isHr]);
+  }, [isAdmin, isAuthenticated, isHr, t]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4">
-      <div className="mx-auto flex w-full max-w-[1320px] items-center gap-2 rounded-2xl border border-[#2B3B23]/15 bg-[#F9FCEE]/85 px-3 py-2 shadow-[0_14px_34px_rgba(26,39,18,0.14)] backdrop-blur-xl sm:gap-3 sm:px-4">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2 rounded-[20px] border border-[#E3E9E4] bg-white px-3 py-2.5 shadow-[0_12px_30px_rgba(16,24,18,0.06)] sm:gap-3 sm:px-4">
         <Link to="/app" className="shrink-0">
           <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-12 w-auto sm:h-14" />
         </Link>
@@ -483,12 +486,13 @@ export const AppHeader = () => {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <PreferencesControls compact className="hidden xl:flex" />
           {isAuthenticated ? (
             <>
               <button
                 type="button"
                 onClick={() => void handleToggleNotificationsModal()}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/15 bg-white/80 text-[#2B3B23] transition-colors hover:bg-[#ECF2DB]"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                 title="Notifications"
               >
                 <Bell className="h-4 w-4" />
@@ -502,7 +506,7 @@ export const AppHeader = () => {
               <button
                 type="button"
                 onClick={() => void handleToggleChatModal()}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/15 bg-white/80 text-[#2B3B23] transition-colors hover:bg-[#ECF2DB]"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                 title="Messages"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -515,7 +519,7 @@ export const AppHeader = () => {
 
               <Link
                 to="/app/profile"
-                className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#2B3B23]/15 bg-white/80 sm:block"
+                className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#E3E9E4] bg-white sm:block"
               >
                 {avatarSrc ? (
                   <img src={avatarSrc} alt={currentUser?.name || 'User'} className="h-full w-full object-cover" />
@@ -528,32 +532,32 @@ export const AppHeader = () => {
 
               <button
                 onClick={() => void handleLogout()}
-                className="hidden items-center gap-2 rounded-xl border border-[#2B3B23]/15 bg-white/90 px-3 py-2 text-sm font-semibold text-[#2B3B23] transition-colors hover:bg-[#ECF2DB] md:inline-flex"
+                className="hidden items-center gap-2 rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B] transition-colors hover:bg-[#F5F8F5] md:inline-flex"
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                {t('nav.logout')}
               </button>
             </>
           ) : (
             <>
               <Link
                 to="/app/login"
-                className="hidden rounded-xl border border-[#2B3B23]/20 bg-white/90 px-3 py-2 text-sm font-semibold text-[#2B3B23] transition-colors hover:bg-[#ECF2DB] sm:inline-flex"
+                className="hidden rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B] transition-colors hover:bg-[#F5F8F5] sm:inline-flex"
               >
-                Sign In
+                {t('nav.signIn')}
               </Link>
               <Link
                 to="/app/register"
-                className="hidden rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 sm:inline-flex"
+                className="hidden rounded-xl bg-[#2B6A4D] px-3 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(43,106,77,0.18)] transition-colors hover:bg-[#24583F] sm:inline-flex"
               >
-                Create Account
+                {t('nav.createAccount')}
               </Link>
             </>
           )}
 
           <button
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B3B23]/20 bg-white/80 text-[#2B3B23] lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] lg:hidden"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -562,8 +566,9 @@ export const AppHeader = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="mx-auto mt-3 w-full max-w-[1320px] rounded-2xl border border-[#2B3B23]/15 bg-[#FAFDEE] p-4 shadow-[0_18px_34px_rgba(26,39,18,0.14)] lg:hidden">
+        <div className="mx-auto mt-3 w-full max-w-[1280px] rounded-[20px] border border-[#E3E9E4] bg-white p-4 shadow-[0_18px_34px_rgba(16,24,18,0.06)] lg:hidden">
           <nav className="flex flex-col gap-2">
+            <PreferencesControls className="mb-2 w-full justify-between" />
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -589,7 +594,7 @@ export const AppHeader = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Bell className="h-4 w-4" />
-                  Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
+                  {t('nav.notifications')} {unreadCount > 0 ? `(${unreadCount})` : ''}
                 </NavLink>
 
                 <NavLink
@@ -598,7 +603,7 @@ export const AppHeader = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <MessageSquare className="h-4 w-4" />
-                  Messages {unreadChatCount > 0 ? `(${unreadChatCount})` : ''}
+                  {t('nav.messages')} {unreadChatCount > 0 ? `(${unreadChatCount})` : ''}
                 </NavLink>
 
                 <button
@@ -606,10 +611,10 @@ export const AppHeader = () => {
                     void handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#2B3B23] hover:bg-[#E7EED6]"
+                  className="inline-flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-[#324338] hover:border-[#E2E9E3] hover:bg-[#F8FAF8]"
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {t('nav.logout')}
                 </button>
               </>
             ) : (
@@ -617,16 +622,16 @@ export const AppHeader = () => {
                 <Link
                   to="/app/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-[#2B3B23]/20 bg-white px-3 py-2 text-sm font-semibold text-[#2B3B23]"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B]"
                 >
-                  Sign In
+                  {t('nav.signIn')}
                 </Link>
                 <Link
                   to="/app/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#2B6A4D] px-3 py-2 text-sm font-semibold text-white"
                 >
-                  Create Account
+                  {t('nav.createAccount')}
                 </Link>
               </>
             )}
@@ -636,7 +641,7 @@ export const AppHeader = () => {
 
       {isAuthenticated && isNotificationsModalOpen && (
         <div className="pointer-events-none fixed inset-0 z-[72] hidden lg:block">
-          <div className="pointer-events-auto fixed inset-0 bg-[rgba(18,27,14,0.18)]" onClick={() => setIsNotificationsModalOpen(false)} />
+          <div className="pointer-events-auto fixed inset-0 bg-[rgba(16,24,18,0.08)]" onClick={() => setIsNotificationsModalOpen(false)} />
           <div
             className="pointer-events-auto fixed"
             style={{
@@ -646,17 +651,17 @@ export const AppHeader = () => {
               top: '92px',
             }}
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-[20px] border border-[#2B3B23]/15 bg-[#F9FCF1] shadow-[0_28px_80px_rgba(24,35,19,0.3)]">
-              <div className="flex items-center justify-between gap-2 border-b border-[#2B3B23]/10 bg-[linear-gradient(135deg,#203D2B_0%,#2E5F41_70%,#3A7652_100%)] px-4 py-3 text-white">
+            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
+              <div className="flex items-center justify-between gap-2 border-b border-[#EEF2EE] bg-white px-4 py-3 text-[#18231C]">
                 <div>
                   <p className="text-sm font-semibold">Notifications</p>
-                  <p className="text-[11px] text-white/80">Unread: {meta.unread}</p>
+                  <p className="text-[11px] text-[#6B776E]">Unread: {meta.unread}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => void loadNotifications({ limit: 20, offset: 0 })}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                     title="Refresh notifications"
                   >
                     <RefreshCcw className="h-3.5 w-3.5" />
@@ -664,7 +669,7 @@ export const AppHeader = () => {
                   <button
                     type="button"
                     onClick={() => setIsNotificationsModalOpen(false)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                     title="Close"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -672,12 +677,12 @@ export const AppHeader = () => {
                 </div>
               </div>
 
-              <div className="border-b border-[#2B3B23]/10 bg-[#F1F6E7] px-4 py-2.5">
+              <div className="border-b border-[#EEF2EE] bg-[#FAFCFA] px-4 py-2.5">
                 <button
                   type="button"
                   onClick={() => void handleMarkAllNotificationsRead()}
                   disabled={isMutatingNotifications || meta.unread === 0}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#2B6A4D]/25 bg-white px-3 py-1.5 text-xs font-semibold text-[#23402D] transition-colors hover:bg-[#F5FAEF] disabled:cursor-not-allowed disabled:opacity-55"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#D6DED7] bg-white px-3 py-1.5 text-xs font-semibold text-[#23402D] transition-colors hover:bg-[#F5F8F5] disabled:cursor-not-allowed disabled:opacity-55"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
                   Mark all as read
@@ -692,7 +697,7 @@ export const AppHeader = () => {
 
               <div className="min-h-0 flex-1 overflow-y-auto bg-white p-3">
                 {isLoadingNotifications ? (
-                  <p className="rounded-lg bg-[#F5F9EE] px-3 py-2 text-xs text-[#5E7253]">Loading notifications...</p>
+                  <p className="rounded-lg bg-[#F7F9F7] px-3 py-2 text-xs text-[#5E7253]">Loading notifications...</p>
                 ) : notifications.length === 0 ? (
                   <div className="flex h-full items-center justify-center px-5 text-center">
                     <div>
@@ -713,8 +718,8 @@ export const AppHeader = () => {
                           onClick={() => void handleOpenNotification(notification.id, href)}
                           className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
                             isUnread
-                              ? 'border-[#2B6A4D]/25 bg-[#EEF6E2] hover:bg-[#E7F1D7]'
-                              : 'border-[#9FB08A]/25 bg-white hover:bg-[#F6FAED]'
+                              ? 'border-[#C9D9CC] bg-[#F4F8F5] hover:bg-[#EDF4EF]'
+                              : 'border-[#E3E9E4] bg-white hover:bg-[#F8FAF8]'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -748,23 +753,23 @@ export const AppHeader = () => {
               top: `${chatModalPosition.y}px`,
             }}
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#2B3B23]/15 bg-[#F9FCF1] shadow-[0_30px_80px_rgba(24,35,19,0.28)]">
+            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
               <div
                 onMouseDown={handleChatModalDragStart}
-                className={`flex items-center justify-between gap-2 border-b border-[#2B3B23]/10 bg-[linear-gradient(135deg,#214B31_0%,#2E6A47_70%,#3B7D56_100%)] px-3 py-2 text-white ${isDraggingChatModal ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`flex items-center justify-between gap-2 border-b border-[#EEF2EE] bg-white px-3 py-2 text-[#18231C] ${isDraggingChatModal ? 'cursor-grabbing' : 'cursor-grab'}`}
               >
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-semibold">
-                    <GripHorizontal className="h-4 w-4 text-white/85" />
+                    <GripHorizontal className="h-4 w-4 text-[#7A867D]" />
                     Messages
                   </p>
-                  <p className="mt-0.5 text-[11px] text-white/80">Drag this window. Esc closes it.</p>
+                  <p className="mt-0.5 text-[11px] text-[#6B776E]">Drag this window. Esc closes it.</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => void listChats({ limit: 50, offset: 0 })}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                     title="Refresh chats"
                   >
                     <RefreshCcw className="h-3.5 w-3.5" />
@@ -775,7 +780,7 @@ export const AppHeader = () => {
                       setIsChatModalOpen(false);
                       navigate('/app/chat');
                     }}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                     title="Open full page"
                   >
                     <MessageSquare className="h-3.5 w-3.5" />
@@ -783,7 +788,7 @@ export const AppHeader = () => {
                   <button
                     type="button"
                     onClick={() => setIsChatModalOpen(false)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
                     title="Close"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -791,7 +796,7 @@ export const AppHeader = () => {
                 </div>
               </div>
 
-              <div className="border-b border-[#2B3B23]/10 bg-[#F1F6E7] p-3">
+              <div className="border-b border-[#EEF2EE] bg-[#FAFCFA] p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#506544]">Conversations</p>
                   <span className="rounded-full bg-[#DFE9D0] px-2 py-0.5 text-[11px] font-semibold text-[#294327]">

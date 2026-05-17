@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { Button, Input } from '@shared/ui';
+import { Button, Input, PreferencesControls } from '@shared/ui';
 import { useUserStore } from '@entities/user';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -17,6 +18,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const { login } = useUserStore();
+  const { t } = useUISettings();
   const navigate = useNavigate();
 
   const {
@@ -40,6 +42,9 @@ export const LoginPage = () => {
   return (
     <div className="min-h-screen app-shell flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end">
+          <PreferencesControls compact />
+        </div>
         <Link to="/app" className="mb-1 inline-flex items-center gap-3">
           <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-24 w-auto object-contain" />
         </Link>
@@ -49,15 +54,15 @@ export const LoginPage = () => {
             <X className="h-5 w-5" />
           </Link>
 
-          <h2 className="app-title text-3xl">Welcome back</h2>
-          <p className="app-text-muted mb-6 mt-1">Sign in to continue in BRaD workspace.</p>
+          <h2 className="app-title text-3xl dark:text-[#F0F6F1]">{t('auth.login.title')}</h2>
+          <p className="app-text-muted mb-6 mt-1">{t('auth.login.description')}</p>
 
           {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#22301B]">
-                Email
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.login.email')}
               </label>
               <Input
                 id="email"
@@ -71,11 +76,11 @@ export const LoginPage = () => {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-semibold text-[#22301B]">
-                  Password
+                <label htmlFor="password" className="block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.login.password')}
                 </label>
-                <Link to="/app/forgot-password" className="text-sm font-semibold text-[#2B6A4D] hover:underline">
-                  Forgot password?
+                <Link to="/app/forgot-password" className="text-sm font-semibold text-[#2B6A4D] hover:underline dark:text-[#7CC69E]">
+                  {t('auth.login.forgotPassword')}
                 </Link>
               </div>
               <Input
@@ -89,18 +94,18 @@ export const LoginPage = () => {
             </div>
 
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <div className="mb-4 rounded-lg border border-[#2B3B23]/10 bg-[#F4F8EA] px-4 py-3 text-left text-sm text-[#4A5E3D]">
-              Admin login: admin@mail.ru / 123456
+              {t('auth.login.adminCredentials')}
             </div>
-            <p className="text-sm text-[#5E7253]">
-              Don't have an account?{' '}
+            <p className="text-sm text-[#5E7253] dark:text-[#A2B0A6]">
+              {t('auth.login.noAccount')}{' '}
               <Link to="/app/register" className="font-semibold text-[#2B6A4D] hover:underline">
-                Sign up
+                {t('auth.login.signUp')}
               </Link>
             </p>
           </div>

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
+import { useUISettings } from '@shared/lib/ui-settings';
 import {
   useApplicationStore,
   type Application,
@@ -183,6 +184,7 @@ const getCandidateSkillLevels = (application: Application): Array<{ skill: strin
 };
 
 export const ApplicationsPage = () => {
+  const { t } = useUISettings();
   const navigate = useNavigate();
   const { applicationId } = useParams<{ applicationId?: string }>();
   const { currentUser, isAuthenticated } = useUserStore();
@@ -226,15 +228,15 @@ export const ApplicationsPage = () => {
 
   const scopeLabel = useMemo(() => {
     if (isAdmin) {
-      return 'Admin mode';
+      return t('applications.scopeAdmin');
     }
 
     if (isHr) {
-      return 'HR mode';
+      return t('applications.scopeHr');
     }
 
-    return 'Candidate mode';
-  }, [isAdmin, isHr]);
+    return t('applications.scopeCandidate');
+  }, [isAdmin, isHr, t]);
 
   const activeFilters = useMemo(() => {
     const entries: Array<{ key: keyof ApplicationFilters; label: string; value: string }> = [];
@@ -425,17 +427,17 @@ export const ApplicationsPage = () => {
         <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
             <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: '#333A2F' }}>
-              Applications are available after sign in
+              {t('applications.accessTitle')}
             </h1>
             <p className="mb-6 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Candidates can manage their own applications. HR and admins can review and update application statuses.
+              {t('applications.accessDescription')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link to="/app/login">
-                <Button variant="hero">Sign In</Button>
+                <Button variant="hero">{t('applications.signIn')}</Button>
               </Link>
               <Link to="/app/jobs">
-                <Button variant="outline">Browse Jobs</Button>
+                <Button variant="outline">{t('applications.browseJobs')}</Button>
               </Link>
             </div>
           </div>
@@ -452,8 +454,7 @@ export const ApplicationsPage = () => {
           className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
-            background:
-              'linear-gradient(135deg, rgba(51,58,47,0.08) 0%, rgba(255,255,255,0.95) 45%, rgba(212,220,191,0.45) 100%)',
+            background: '#FFFFFF',
           }}
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -463,19 +464,19 @@ export const ApplicationsPage = () => {
                 {scopeLabel}
               </div>
               <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: '#333A2F' }}>
-                {isCandidate ? 'Track your applications' : 'Review candidate pipeline'}
+                {isCandidate ? t('applications.titleCandidate') : t('applications.titleTeam')}
               </h1>
               <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
                 {isCandidate
-                  ? 'See statuses, open timeline events, and withdraw active applications when needed.'
-                  : 'Filter applications by vacancy, candidate, dates, and keep the pipeline moving without leaving the frontend.'}
+                  ? t('applications.descriptionCandidate')
+                  : t('applications.descriptionTeam')}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                  Loaded
+                  {t('applications.loaded')}
                 </div>
                 <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
                   {items.length}
@@ -483,7 +484,7 @@ export const ApplicationsPage = () => {
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                  Total
+                  {t('applications.total')}
                 </div>
                 <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
                   {meta.total}
@@ -491,7 +492,7 @@ export const ApplicationsPage = () => {
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                  Page Size
+                  {t('applications.pageSize')}
                 </div>
                 <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
                   {meta.limit}
@@ -507,10 +508,10 @@ export const ApplicationsPage = () => {
               Step 1
             </p>
             <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
-              Apply filters
+              {t('applications.step1Title')}
             </p>
             <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Narrow by status, people, and time period.
+              {t('applications.step1Description')}
             </p>
           </div>
           <div className="rounded-2xl border border-black/5 bg-white p-4">
@@ -518,10 +519,10 @@ export const ApplicationsPage = () => {
               Step 2
             </p>
             <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
-              Open application
+              {t('applications.step2Title')}
             </p>
             <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Read cover letter, resume, and timeline in one pane.
+              {t('applications.step2Description')}
             </p>
           </div>
           <div className="rounded-2xl border border-black/5 bg-white p-4">
@@ -529,10 +530,10 @@ export const ApplicationsPage = () => {
               Step 3
             </p>
             <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
-              Decide next action
+              {t('applications.step3Title')}
             </p>
             <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
-              Update status or continue discussion in chat.
+              {t('applications.step3Description')}
             </p>
           </div>
         </section>
@@ -542,7 +543,7 @@ export const ApplicationsPage = () => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.58)' }}>
                 <Filter className="h-3.5 w-3.5" />
-                Active filters
+                {t('applications.activeFilters')}
               </div>
               <Button
                 variant="ghost"
@@ -552,7 +553,7 @@ export const ApplicationsPage = () => {
                   clearSelection();
                 }}
               >
-                Reset local filters
+                {t('applications.resetLocalFilters')}
               </Button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -575,14 +576,14 @@ export const ApplicationsPage = () => {
         <section className="mb-6 grid gap-4 rounded-[28px] border border-black/5 p-5 sm:grid-cols-2 xl:grid-cols-6" style={cardStyle}>
           <div className="xl:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-              Status
+              {t('applications.filter.status')}
             </label>
             <select
               value={filters.status || ''}
               onChange={(event) => handleFilterChange('status', event.target.value)}
               className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
             >
-              <option value="">All statuses</option>
+              <option value="">{t('applications.allStatuses')}</option>
               {applicationStatuses.map((status) => (
                 <option key={status} value={status}>
                   {formatStatus(status)}
@@ -594,7 +595,7 @@ export const ApplicationsPage = () => {
           {!isCandidate && (
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                Vacancy ID
+                {t('applications.filter.vacancyId')}
               </label>
               <Input
                 value={filters.vacancyId || ''}
@@ -608,7 +609,7 @@ export const ApplicationsPage = () => {
           {!isCandidate && (
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                Candidate ID
+                {t('applications.filter.candidateId')}
               </label>
               <Input
                 value={filters.candidateId || ''}
@@ -622,7 +623,7 @@ export const ApplicationsPage = () => {
           {isAdmin && (
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                HR User ID
+                {t('applications.filter.hrUserId')}
               </label>
               <Input
                 value={filters.hrUserId || ''}
@@ -636,7 +637,7 @@ export const ApplicationsPage = () => {
           {!isCandidate && (
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                Date From
+                {t('applications.filter.dateFrom')}
               </label>
               <Input
                 type="datetime-local"
@@ -653,7 +654,7 @@ export const ApplicationsPage = () => {
           {!isCandidate && (
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                Date To
+                {t('applications.filter.dateTo')}
               </label>
               <Input
                 type="datetime-local"
@@ -675,7 +676,7 @@ export const ApplicationsPage = () => {
               disabled={isLoading}
             >
               <RefreshCcw className="h-4 w-4" />
-              Refresh
+              {t('applications.refresh')}
             </Button>
             <Button
               onClick={() => {
@@ -686,7 +687,7 @@ export const ApplicationsPage = () => {
               variant="outline"
               className="h-11 rounded-xl"
             >
-              Reset
+              {t('applications.reset')}
             </Button>
           </div>
         </section>
@@ -702,34 +703,34 @@ export const ApplicationsPage = () => {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                  Application list
+                  {t('applications.listTitle')}
                 </h2>
                 <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                  {isCandidate ? 'Your submissions and their current statuses.' : 'Applications available in your access scope.'}
+                  {isCandidate ? t('applications.listDescriptionCandidate') : t('applications.listDescriptionTeam')}
                 </p>
               </div>
             </div>
 
             {isLoading ? (
               <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                Loading applications...
-              </div>
+                  {t('applications.loading')}
+                </div>
             ) : items.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
                   <FileText className="h-6 w-6" style={{ color: '#333A2F' }} />
                 </div>
                 <h3 className="mb-2 text-lg font-semibold" style={{ color: '#333A2F' }}>
-                  No applications found
+                  {t('applications.emptyTitle')}
                 </h3>
                 <p className="mx-auto mb-5 max-w-md text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
                   {isCandidate
-                    ? 'Apply to a published vacancy and it will appear here with full timeline history.'
-                    : 'Try adjusting filters or reload the page after new applications arrive.'}
+                    ? t('applications.emptyDescriptionCandidate')
+                    : t('applications.emptyDescriptionTeam')}
                 </p>
                 {isCandidate && (
                   <Link to="/app/jobs">
-                    <Button variant="hero">Browse jobs</Button>
+                    <Button variant="hero">{t('applications.browseJobs')}</Button>
                   </Link>
                 )}
               </div>

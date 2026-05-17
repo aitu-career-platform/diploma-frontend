@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { X, Mail } from 'lucide-react';
-import { Button, Input } from '@shared/ui';
+import { Button, Input, PreferencesControls } from '@shared/ui';
 import { useUserStore } from '@entities/user';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 const requestPasswordResetSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,6 +19,7 @@ export const RequestPasswordResetPage = () => {
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const { requestPasswordReset } = useUserStore();
+  const { t } = useUISettings();
   const navigate = useNavigate();
 
   const {
@@ -47,9 +49,9 @@ export const RequestPasswordResetPage = () => {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F0D8]">
               <Mail className="h-8 w-8 text-[#2B6A4D]" />
             </div>
-            <h2 className="app-title text-2xl">Check your email</h2>
+            <h2 className="app-title text-2xl dark:text-[#F0F6F1]">{t('auth.forgot.successTitle')}</h2>
             <p className="app-text-muted mb-6 mt-2 text-sm sm:text-base">
-              We sent a reset code to <strong>{email}</strong>
+              {t('auth.forgot.successDescription', { email })}
             </p>
             <Button
               onClick={() => navigate(`/app/reset-password?email=${encodeURIComponent(email)}`)}
@@ -57,11 +59,11 @@ export const RequestPasswordResetPage = () => {
               size="lg"
               className="w-full"
             >
-              Enter reset code
+              {t('auth.forgot.enterCode')}
             </Button>
             <div className="mt-4">
               <Link to="/app/login" className="text-sm font-semibold text-[#2B6A4D] hover:underline">
-                Back to login
+                {t('auth.forgot.backToLogin')}
               </Link>
             </div>
           </div>
@@ -73,6 +75,9 @@ export const RequestPasswordResetPage = () => {
   return (
     <div className="min-h-screen app-shell flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end">
+          <PreferencesControls compact />
+        </div>
         <Link to="/app" className="mb-1 inline-flex items-center gap-3">
           <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-24 w-auto object-contain" />
         </Link>
@@ -81,17 +86,17 @@ export const RequestPasswordResetPage = () => {
           <Link to="/app/login" className="absolute right-4 top-4 text-[#607456] transition-colors hover:text-[#2B3B23]">
             <X className="h-5 w-5" />
           </Link>
-          <h2 className="app-title text-3xl">Reset password</h2>
+          <h2 className="app-title text-3xl dark:text-[#F0F6F1]">{t('auth.forgot.title')}</h2>
           <p className="app-text-muted mb-6 mt-1">
-            Enter email and we will send a verification code.
+            {t('auth.forgot.description')}
           </p>
 
           {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#22301B]">
-                Email
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#22301B] dark:text-[#DCE8DF]">
+                {t('auth.register.email')}
               </label>
               <Input
                 id="email"
@@ -104,14 +109,14 @@ export const RequestPasswordResetPage = () => {
             </div>
 
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send reset code'}
+              {isSubmitting ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#5E7253]">
-            Remember your password?{' '}
+          <div className="mt-6 text-center text-sm text-[#5E7253] dark:text-[#A2B0A6]">
+            {t('auth.forgot.rememberPassword')}{' '}
             <Link to="/app/login" className="font-semibold text-[#2B6A4D] hover:underline">
-              Sign in
+              {t('auth.register.signIn')}
             </Link>
           </div>
         </div>
