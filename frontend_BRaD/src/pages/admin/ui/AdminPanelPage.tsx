@@ -147,6 +147,206 @@ const parseVacanciesPayload = (payload: unknown): ManagedVacancy[] => {
   return Array.isArray(data.items) ? data.items : [];
 };
 
+interface ChartDatum {
+  label: string;
+  value: number;
+  color: string;
+}
+
+const chartPalette = ['#0284c7', '#0d9488', '#f59e0b', '#dc2626', '#7c3aed', '#14b8a6'];
+
+const toChartData = <T extends { count: number }>(
+  items: T[],
+  getLabel: (item: T) => string,
+): ChartDatum[] => {
+  return items.map((item, index) => ({
+    label: getLabel(item),
+    value: item.count,
+    color: chartPalette[index % chartPalette.length],
+  }));
+};
+
+const formatShare = (value: number, total: number): string => {
+  if (total <= 0) {
+    return '0%';
+  }
+
+  return `${Math.round((value / total) * 100)}%`;
+};
+
+const buildConicGradient = (data: ChartDatum[]): string => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  if (total <= 0) {
+    return 'conic-gradient(#e2e8f0 0% 100%)';
+  }
+
+  let current = 0;
+  const stops = data.map((item) => {
+    const start = current;
+    current += (item.value / total) * 100;
+    return `${item.color} ${start}% ${current}%`;
+  });
+
+  return `conic-gradient(${stops.join(', ')})`;
+};
+
+const DonutDistributionChart = ({
+  data,
+  centerValue,
+  centerLabel,
+}: {
+  data: ChartDatum[];
+  centerValue: string;
+  centerLabel: string;
+}) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[200px_1fr] lg:items-center">
+      <div className="mx-auto">
+        <div
+          className="relative h-[180px] w-[180px] rounded-full p-5"
+          style={{
+            background: buildConicGradient(data),
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.65)',
+          }}
+        >
+          <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full border border-white/70 bg-white/85 text-center shadow-sm">
+            <div className="text-2xl font-bold text-[var(--surface-text-primary)]">{centerValue}</div>
+            <div className="text-xs uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{centerLabel}</div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {data.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-3 py-2.5"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-sm font-medium text-[var(--surface-text-primary)]">{item.label}</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-semibold text-[var(--surface-text-primary)]">{item.value}</div>
+              <div className="text-xs text-[var(--surface-text-soft)]">{formatShare(item.value, total)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const StackedDistributionBar = ({ data }: { data: ChartDatum[] }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex h-4 overflow-hidden rounded-full bg-slate-200/80">
+        {data.map((item) => (
+          <div
+            key={item.label}
+            style={{
+              width: total > 0 ? `${(item.value / total) * 100}%` : '0%',
+              backgroundColor: item.color,
+              transition: 'width 300ms ease',
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {data.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-3 py-2.5"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-sm text-[var(--surface-text-primary)]">{item.label}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-semibold text-[var(--surface-text-primary)]">{item.value}</span>
+              <span className="ml-2 text-xs text-[var(--surface-text-soft)]">{formatShare(item.value, total)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const HorizontalDistributionBars = ({ data }: { data: ChartDatum[] }) => {
+  const maxValue = Math.max(0, ...data.map((item) => item.value));
+
+  return (
+    <div className="space-y-3">
+      {data.map((item) => (
+        <div key={item.label} className="rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-[var(--surface-text-primary)]">{item.label}</span>
+            <span className="text-sm font-semibold text-[var(--surface-text-primary)]">{item.value}</span>
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/70">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: maxValue > 0 ? `${(item.value / maxValue) * 100}%` : '0%',
+                background: `linear-gradient(90deg, ${item.color} 0%, ${item.color}CC 100%)`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const VerticalColumnChart = ({
+  data,
+  title,
+  subtitle,
+}: {
+  data: ChartDatum[];
+  title: string;
+  subtitle: string;
+}) => {
+  const maxValue = Math.max(0, ...data.map((item) => item.value));
+
+  return (
+    <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{title}</h2>
+        <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+          {subtitle}
+        </span>
+      </div>
+
+      <div className="h-[260px] rounded-2xl border border-black/5 bg-gradient-to-b from-slate-50 to-white p-4">
+        <div className="flex h-full items-end gap-3 sm:gap-4">
+          {data.map((item) => (
+            <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+              <div className="text-xs font-semibold text-[var(--surface-text-primary)]">{item.value}</div>
+              <div className="relative flex h-[185px] w-full items-end rounded-xl bg-slate-100/80 px-1.5 pb-1.5">
+                <div
+                  className="w-full rounded-lg transition-all duration-500"
+                  style={{
+                    height: maxValue > 0 ? `${Math.max((item.value / maxValue) * 100, 6)}%` : '6%',
+                    background: `linear-gradient(180deg, ${item.color} 0%, ${item.color}DD 100%)`,
+                    boxShadow: `0 8px 16px -8px ${item.color}`,
+                  }}
+                />
+              </div>
+              <div className="line-clamp-2 text-center text-xs font-medium text-[var(--surface-text-muted)]">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AdminPanelPage = () => {
   const { t } = useUISettings();
   const { currentUser, isAuthenticated } = useUserStore();
@@ -208,6 +408,21 @@ export const AdminPanelPage = () => {
     status,
     count: vacancies.filter((vacancy) => vacancy.status === status).length,
   }));
+  const userRoleChartData = toChartData(userRoleSummary, (item) => formatEnum(item.role));
+  const userStatusChartData = toChartData(userStatusSummary, (item) => formatEnum(item.status));
+  const vacancyStatusChartData = toChartData(vacancyStatusSummary, (item) => formatEnum(item.status));
+  const complianceQueueChartData: ChartDatum[] = [
+    { label: 'KYC', value: kycQueue.length, color: '#0284c7' },
+    { label: 'Complaints', value: complaintsQueue.length, color: '#f97316' },
+    { label: 'Delete requests', value: deleteRequestsQueue.length, color: '#8b5cf6' },
+  ];
+  const moderationPulseChartData: ChartDatum[] = [
+    { label: 'Candidates', value: userRoleSummary.find((item) => item.role === 'CANDIDATE')?.count || 0, color: '#0284c7' },
+    { label: 'Employers', value: userRoleSummary.find((item) => item.role === 'EMPLOYER')?.count || 0, color: '#0d9488' },
+    { label: 'Admins', value: userRoleSummary.find((item) => item.role === 'ADMIN')?.count || 0, color: '#f59e0b' },
+    { label: 'Published vacancies', value: vacancyStatusSummary.find((item) => item.status === 'PUBLISHED')?.count || 0, color: '#22c55e' },
+    { label: 'Compliance open', value: openComplianceItems, color: '#ef4444' },
+  ];
 
   const loadUsers = async (nextFilters = userFilters) => {
     if (!canViewPage) {
@@ -653,56 +868,67 @@ export const AdminPanelPage = () => {
               </div>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-3">
-              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+            <VerticalColumnChart
+              data={moderationPulseChartData}
+              title="Moderation pulse"
+              subtitle="real-time snapshot"
+            />
+
+            <div className="grid gap-6 xl:grid-cols-12">
+              <div
+                className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5"
+                style={{
+                  ...cardStyle,
+                  background:
+                    'radial-gradient(120% 110% at 0% 0%, #f0f9ff 0%, #ecfeff 42%, #ffffff 100%)',
+                }}
+              >
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Users snapshot</h2>
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Users by role</h2>
                   <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                     {usersTotal} total
                   </span>
                 </div>
-                <div className="space-y-3">
-                  {userRoleSummary.map((item) => (
-                    <div key={item.role} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.role)}</span>
-                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
+                <DonutDistributionChart data={userRoleChartData} centerValue={`${users.length}`} centerLabel="loaded" />
               </div>
 
-              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+              <div
+                className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7"
+                style={{
+                  ...cardStyle,
+                  background:
+                    'radial-gradient(120% 110% at 100% 0%, #f8fafc 0%, #f8fafc 38%, #ffffff 100%)',
+                }}
+              >
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">User status</h2>
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">User status mix</h2>
                   <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                     moderation
                   </span>
                 </div>
-                <div className="space-y-3">
-                  {userStatusSummary.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.status)}</span>
-                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
+                <StackedDistributionBar data={userStatusChartData} />
               </div>
+            </div>
 
-              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+            <div className="grid gap-6 xl:grid-cols-12">
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Vacancy status</h2>
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Vacancy lifecycle</h2>
                   <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
-                    lifecycle
+                    pipeline
                   </span>
                 </div>
-                <div className="space-y-3">
-                  {vacancyStatusSummary.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.status)}</span>
-                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
-                    </div>
-                  ))}
+                <HorizontalDistributionBars data={vacancyStatusChartData} />
+              </div>
+
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5" style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Compliance workload</h2>
+                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+                    {openComplianceItems} open
+                  </span>
                 </div>
+                <HorizontalDistributionBars data={complianceQueueChartData} />
               </div>
             </div>
           </section>
