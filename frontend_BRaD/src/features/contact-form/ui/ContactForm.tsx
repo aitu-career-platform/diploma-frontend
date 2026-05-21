@@ -4,17 +4,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Send } from "lucide-react";
 import { Button, Input, Textarea } from "@shared/ui";
-
-const contactSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  message: z.string().min(1, "Message is required"),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { useUISettings } from "@shared/lib/ui-settings";
 
 export const ContactForm = () => {
+  const { t } = useUISettings();
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const contactSchema = z.object({
+    name: z.string().min(1, t("landing.contactForm.errors.nameRequired")),
+    email: z.string().email(t("landing.contactForm.errors.invalidEmail")),
+    message: z.string().min(1, t("landing.contactForm.errors.messageRequired")),
+  });
+
+  type ContactFormData = z.infer<typeof contactSchema>;
 
   const {
     register,
@@ -36,12 +38,12 @@ export const ContactForm = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="bg-card p-8 rounded-2xl shadow-card space-y-6">
       <div>
         <label htmlFor="name" className="block text-sm font-medium mb-2">
-          Your Name
+          {t("landing.contactForm.nameLabel")}
         </label>
         <Input
           id="name"
           {...register("name")}
-          placeholder="John Doe"
+          placeholder={t("landing.contactForm.namePlaceholder")}
           className="h-12"
         />
         {errors.name && (
@@ -51,13 +53,13 @@ export const ContactForm = () => {
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium mb-2">
-          Email Address
+          {t("landing.contactForm.emailLabel")}
         </label>
         <Input
           id="email"
           type="email"
           {...register("email")}
-          placeholder="john@example.com"
+          placeholder={t("landing.contactForm.emailPlaceholder")}
           className="h-12"
         />
         {errors.email && (
@@ -67,12 +69,12 @@ export const ContactForm = () => {
 
       <div>
         <label htmlFor="message" className="block text-sm font-medium mb-2">
-          Message
+          {t("landing.contactForm.messageLabel")}
         </label>
         <Textarea
           id="message"
           {...register("message")}
-          placeholder="How can we help you?"
+          placeholder={t("landing.contactForm.messagePlaceholder")}
           className="min-h-[120px] resize-none"
         />
         {errors.message && (
@@ -82,15 +84,14 @@ export const ContactForm = () => {
 
       {isSubmitted && (
         <div className="p-4 bg-primary/10 text-primary rounded-lg text-sm">
-          Message sent! We'll get back to you within 24 hours.
+          {t("landing.contactForm.success")}
         </div>
       )}
 
       <Button type="submit" variant="hero" size="lg" className="w-full">
-        Send Message
+        {t("landing.contactForm.submit")}
         <Send className="w-4 h-4" />
       </Button>
     </form>
   );
 };
-

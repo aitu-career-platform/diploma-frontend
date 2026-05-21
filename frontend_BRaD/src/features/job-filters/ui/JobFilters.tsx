@@ -72,7 +72,7 @@ export const JobFilters = () => {
             {filters.search && (
               <button
                 onClick={() => updateFilters({ search: undefined })}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
+                className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-[#111814] px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
               >
                 Search: {filters.search}
                 <X className="h-3.5 w-3.5" />
@@ -81,7 +81,7 @@ export const JobFilters = () => {
             {filters.location && (
               <button
                 onClick={() => updateFilters({ location: undefined })}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
+                className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-[#111814] px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
               >
                 Location: {filters.location}
                 <X className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export const JobFilters = () => {
             {filters.type && (
               <button
                 onClick={() => updateFilters({ type: undefined })}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
+                className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-[#111814] px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
               >
                 Type: {filters.type}
                 <X className="h-3.5 w-3.5" />
@@ -100,7 +100,7 @@ export const JobFilters = () => {
               <button
                 key={tag}
                 onClick={() => toggleTag(tag)}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
+                className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-[#111814] px-2.5 py-1 text-xs font-semibold text-[#2E3E26]"
               >
                 {tag}
                 <X className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export const JobFilters = () => {
               placeholder="Job title, company, skill"
               value={filters.search || ''}
               onChange={(e) => updateFilters({ search: e.target.value || undefined })}
-              className="h-11 rounded-xl border-[#9FB08A]/35 bg-white pl-10"
+              className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] pl-10"
             />
           </div>
         </div>
@@ -136,7 +136,7 @@ export const JobFilters = () => {
               placeholder="Remote, Berlin, Almaty"
               value={filters.location || ''}
               onChange={(e) => updateFilters({ location: e.target.value || undefined })}
-              className="h-11 rounded-xl border-[#9FB08A]/35 bg-white pl-10"
+              className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] pl-10"
             />
           </div>
         </div>
@@ -183,7 +183,7 @@ export const JobFilters = () => {
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                       isActive
                         ? 'bg-[#2B6A4D] text-white'
-                        : 'border border-[#9FB08A]/35 bg-white text-[#2D3D25] hover:bg-[#EEF5E0]'
+                        : 'border border-[#9FB08A]/35 bg-white dark:bg-[#111814] text-[#2D3D25] hover:bg-[#EEF5E0]'
                     }`}
                   >
                     {tag}

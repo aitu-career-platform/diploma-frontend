@@ -328,7 +328,7 @@ export const JobsPage = () => {
                           {company.tags.slice(0, 4).map((tag) => (
                             <span
                               key={`${company.name}-${tag}`}
-                              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#31422A]"
+                              className="rounded-full bg-white dark:bg-[#111814] px-3 py-1 text-xs font-medium text-[#31422A]"
                             >
                               {tag}
                             </span>
@@ -375,7 +375,7 @@ export const JobsPage = () => {
                                   {job.tags.slice(0, 5).map((tag) => (
                                     <span
                                       key={`${job.id}-${tag}`}
-                                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#31422A]"
+                                      className="rounded-full bg-white dark:bg-[#111814] px-3 py-1 text-xs font-medium text-[#31422A]"
                                     >
                                       {tag}
                                     </span>

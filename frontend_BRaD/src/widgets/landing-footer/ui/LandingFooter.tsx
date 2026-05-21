@@ -1,6 +1,9 @@
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingFooter = () => {
+  const { t } = useUISettings();
+
   return (
     <footer className="footer">
       <div className="container">
@@ -11,47 +14,47 @@ export const LandingFooter = () => {
               <img src="/images/logo/logo.png" alt="BRaD Logo" className="footer-logo-img" />
             </div>
             <p className="footer-description">
-              Connecting talent with opportunity through smart matching and virtual internships.
+              {t('landing.footer.description')}
             </p>
           </div>
 
           {/* For Candidates */}
           <div className="footer-column">
-            <h4 className="footer-heading">For Candidates</h4>
+            <h4 className="footer-heading">{t('landing.footer.candidates.title')}</h4>
             <ul className="footer-links">
-              <li><a href="#">Find Internships</a></li>
-              <li><a href="#">Browse Jobs</a></li>
-              <li><a href="#">Career Resources</a></li>
-              <li><a href="#">Success Stories</a></li>
+              <li><a href="#">{t('landing.footer.candidates.link1')}</a></li>
+              <li><a href="#">{t('landing.footer.candidates.link2')}</a></li>
+              <li><a href="#">{t('landing.footer.candidates.link3')}</a></li>
+              <li><a href="#">{t('landing.footer.candidates.link4')}</a></li>
             </ul>
           </div>
 
           {/* For Employers */}
           <div className="footer-column">
-            <h4 className="footer-heading">For Employers</h4>
+            <h4 className="footer-heading">{t('landing.footer.employers.title')}</h4>
             <ul className="footer-links">
-              <li><a href="#">Post Opportunities</a></li>
-              <li><a href="#">Find Talent</a></li>
-              <li><a href="#">Pricing</a></li>
-              <li><a href="#">Case Studies</a></li>
+              <li><a href="#">{t('landing.footer.employers.link1')}</a></li>
+              <li><a href="#">{t('landing.footer.employers.link2')}</a></li>
+              <li><a href="#">{t('landing.footer.employers.link3')}</a></li>
+              <li><a href="#">{t('landing.footer.employers.link4')}</a></li>
             </ul>
           </div>
 
           {/* Company */}
           <div className="footer-column">
-            <h4 className="footer-heading">Company</h4>
+            <h4 className="footer-heading">{t('landing.footer.company.title')}</h4>
             <ul className="footer-links">
-              <li><a href="#">About Us</a></li>
-              <li><a href="#">Contact</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">{t('landing.footer.company.link1')}</a></li>
+              <li><a href="#">{t('landing.footer.company.link2')}</a></li>
+              <li><a href="#">{t('landing.footer.company.link3')}</a></li>
+              <li><a href="#">{t('landing.footer.company.link4')}</a></li>
             </ul>
           </div>
         </div>
 
         {/* Footer Bottom */}
         <div className="footer-bottom">
-          <p className="copyright">© {new Date().getFullYear()} BRaD. All rights reserved.</p>
+          <p className="copyright">{t('landing.footer.copyright', { year: new Date().getFullYear() })}</p>
           
           <div className="social-links">
             <a href="#" className="social-link">
@@ -85,5 +88,4 @@ export const LandingFooter = () => {
     </footer>
   );
 };
-
 

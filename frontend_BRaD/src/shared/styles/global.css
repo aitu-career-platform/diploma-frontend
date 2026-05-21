@@ -35,6 +35,17 @@
     --font-heading: 'Sora', 'Segoe UI', sans-serif;
     --font-body: 'Manrope', 'Segoe UI', sans-serif;
     --app-bg: #ffffff;
+    --surface-base: #ffffff;
+    --surface-base-soft: rgba(255, 255, 255, 0.8);
+    --surface-subtle: #f7f8f1;
+    --surface-soft: #f9faf3;
+    --surface-chip: #ebeddf;
+    --surface-text-primary: #333a2f;
+    --surface-text-muted: rgba(51, 58, 47, 0.7);
+    --surface-text-soft: rgba(51, 58, 47, 0.55);
+    --surface-text-faint: rgba(51, 58, 47, 0.5);
+    --surface-border-soft: rgba(0, 0, 0, 0.08);
+    --surface-border-strong: rgba(0, 0, 0, 0.12);
   }
 
   .dark {
@@ -58,6 +69,17 @@
     --input: 145 10% 24%;
     --ring: 146 43% 38%;
     --app-bg: #0f1511;
+    --surface-base: #161d18;
+    --surface-base-soft: rgba(22, 29, 24, 0.86);
+    --surface-subtle: #1b241e;
+    --surface-soft: #212c24;
+    --surface-chip: #243128;
+    --surface-text-primary: #ecf3ee;
+    --surface-text-muted: rgba(231, 239, 232, 0.76);
+    --surface-text-soft: rgba(202, 216, 206, 0.78);
+    --surface-text-faint: rgba(184, 198, 188, 0.72);
+    --surface-border-soft: rgba(224, 235, 226, 0.1);
+    --surface-border-strong: rgba(224, 235, 226, 0.16);
   }
 }
 
@@ -277,5 +299,33 @@
 
   .dark .app-text-muted {
     color: #95a59a;
+  }
+
+  .dark .app-page .bg-white {
+    background-color: var(--surface-base);
+  }
+
+  .dark .app-page .bg-white\/80 {
+    background-color: var(--surface-base-soft);
+  }
+
+  .dark .app-page .border-black\/5 {
+    border-color: var(--surface-border-soft);
+  }
+
+  .dark .app-page .border-black\/10 {
+    border-color: var(--surface-border-strong);
+  }
+
+  .dark .app-page .text-\[\#333A2F\] {
+    color: var(--surface-text-primary);
+  }
+
+  .dark .app-page .text-\[\#33412D\] {
+    color: var(--surface-text-primary);
+  }
+
+  .dark .app-page .keep-white {
+    background-color: #ffffff;
   }
 }

@@ -103,7 +103,7 @@ export const RequestPasswordResetPage = () => {
                 type="email"
                 {...register('email')}
                 placeholder="you@example.com"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.email && <p className="mt-1 text-sm text-red-700">{errors.email.message}</p>}
             </div>

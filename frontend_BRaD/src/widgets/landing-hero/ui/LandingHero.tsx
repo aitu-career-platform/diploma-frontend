@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingHero = () => {
+  const { t } = useUISettings();
+
   return (
     <section className="hero">
       <div className="bg-decoration">
@@ -17,38 +20,38 @@ export const LandingHero = () => {
               <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
               </svg>
-              <span>Smart Career Matching Platform</span>
+              <span>{t('landing.hero.badge')}</span>
             </div>
 
-            <h1 className="hero-title">Your Perfect Career Match Starts Here</h1>
+            <h1 className="hero-title">{t('landing.hero.title')}</h1>
 
             <p className="hero-subtitle">
-              Connect talented students and junior specialists with forward-thinking employers through virtual internships and intelligent job matching.
+              {t('landing.hero.subtitle')}
             </p>
 
             <div className="cta-buttons">
               <Link to="/app" className="btn btn-primary">
-                Apply Now
+                {t('landing.hero.applyNow')}
                 <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </Link>
-              <button className="btn btn-secondary">Find Talent</button>
+              <button className="btn btn-secondary">{t('landing.hero.findTalent')}</button>
             </div>
 
             {/* Stats */}
             <div className="stats">
               <div className="stat-item">
                 <div className="stat-value">10K+</div>
-                <div className="stat-label">Students</div>
+                <div className="stat-label">{t('landing.hero.stats.students')}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-value">500+</div>
-                <div className="stat-label">Companies</div>
+                <div className="stat-label">{t('landing.hero.stats.companies')}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-value">94%</div>
-                <div className="stat-label">Match Rate</div>
+                <div className="stat-label">{t('landing.hero.stats.matchRate')}</div>
               </div>
             </div>
           </div>
@@ -63,8 +66,8 @@ export const LandingHero = () => {
                 <div className="match-card-content">
                   <div className="match-icon">✓</div>
                   <div>
-                    <div className="match-title">Perfect Match Found!</div>
-                    <div className="match-description">Sarah matched with TechCorp for UX Design Internship</div>
+                    <div className="match-title">{t('landing.hero.matchTitle')}</div>
+                    <div className="match-description">{t('landing.hero.matchDescription')}</div>
                   </div>
                 </div>
               </div>
@@ -77,4 +80,3 @@ export const LandingHero = () => {
     </section>
   );
 };
-

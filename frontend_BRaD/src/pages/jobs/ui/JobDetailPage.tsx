@@ -284,7 +284,7 @@ export const JobDetailPage = () => {
                       onChange={(event) => setCoverLetter(event.target.value)}
                       placeholder="Optional cover letter"
                       maxLength={4000}
-                      className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white"
+                      className="min-h-[120px] rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
                     />
                   )}
 

@@ -104,7 +104,7 @@ export const ResetPasswordPage = () => {
                 maxLength={6}
                 {...register('code')}
                 placeholder="000000"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white text-center text-xl tracking-[0.3em]"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] text-center text-xl tracking-[0.3em]"
               />
               {errors.code && <p className="mt-1 text-sm text-red-700">{errors.code.message}</p>}
             </div>
@@ -118,7 +118,7 @@ export const ResetPasswordPage = () => {
                 type="password"
                 {...register('newPassword')}
                 placeholder="••••••••"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.newPassword && <p className="mt-1 text-sm text-red-700">{errors.newPassword.message}</p>}
             </div>
@@ -132,7 +132,7 @@ export const ResetPasswordPage = () => {
                 type="password"
                 {...register('confirmPassword')}
                 placeholder="••••••••"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-700">{errors.confirmPassword.message}</p>

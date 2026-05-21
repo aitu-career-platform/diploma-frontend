@@ -30,8 +30,8 @@ const navLinkBase =
 
 const navLinkState = ({ isActive }: { isActive: boolean }) =>
   isActive
-    ? `${navLinkBase} border-[#BFD2C2] bg-[#F3F7F4] text-[#183223]`
-    : `${navLinkBase} border-transparent text-[#324338] hover:border-[#E2E9E3] hover:bg-[#F8FAF8]`;
+    ? `${navLinkBase} border-[#BFD2C2] bg-[#F3F7F4] text-[#183223] dark:border-[#395544] dark:bg-[#1D2A22] dark:text-[#EAF2EC]`
+    : `${navLinkBase} border-transparent text-[#324338] dark:text-[#C1D0C6] hover:border-[#E2E9E3] hover:bg-[#F8FAF8] dark:hover:bg-[#1B241E]`;
 
 const getRecord = (value: unknown): Record<string, unknown> | null => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -467,7 +467,7 @@ export const AppHeader = () => {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4">
-      <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2 rounded-[20px] border border-[#E3E9E4] bg-white px-3 py-2.5 shadow-[0_12px_30px_rgba(16,24,18,0.06)] sm:gap-3 sm:px-4">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2 rounded-[20px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2.5 shadow-[0_12px_30px_rgba(16,24,18,0.06)] sm:gap-3 sm:px-4">
         <Link to="/app" className="shrink-0">
           <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-12 w-auto sm:h-14" />
         </Link>
@@ -492,8 +492,8 @@ export const AppHeader = () => {
               <button
                 type="button"
                 onClick={() => void handleToggleNotificationsModal()}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                title="Notifications"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                title={t('header.notifications')}
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
@@ -506,8 +506,8 @@ export const AppHeader = () => {
               <button
                 type="button"
                 onClick={() => void handleToggleChatModal()}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                title="Messages"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                title={t('header.messages')}
               >
                 <MessageSquare className="h-4 w-4" />
                 {unreadChatCount > 0 && (
@@ -519,12 +519,12 @@ export const AppHeader = () => {
 
               <Link
                 to="/app/profile"
-                className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#E3E9E4] bg-white sm:block"
+                className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] sm:block"
               >
                 {avatarSrc ? (
                   <img src={avatarSrc} alt={currentUser?.name || 'User'} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[#2B3B23]">
+                  <div className="flex h-full w-full items-center justify-center text-[#2B3B23] dark:text-[#E7EFE8]">
                     <User className="h-4 w-4" />
                   </div>
                 )}
@@ -532,7 +532,7 @@ export const AppHeader = () => {
 
               <button
                 onClick={() => void handleLogout()}
-                className="hidden items-center gap-2 rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B] transition-colors hover:bg-[#F5F8F5] md:inline-flex"
+                className="hidden items-center gap-2 rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2 text-sm font-semibold text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821] md:inline-flex"
               >
                 <LogOut className="h-4 w-4" />
                 {t('nav.logout')}
@@ -542,7 +542,7 @@ export const AppHeader = () => {
             <>
               <Link
                 to="/app/login"
-                className="hidden rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B] transition-colors hover:bg-[#F5F8F5] sm:inline-flex"
+                className="hidden rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2 text-sm font-semibold text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821] sm:inline-flex"
               >
                 {t('nav.signIn')}
               </Link>
@@ -557,7 +557,7 @@ export const AppHeader = () => {
 
           <button
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white text-[#26362B] lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] lg:hidden"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -565,10 +565,13 @@ export const AppHeader = () => {
         </div>
       </div>
 
+      <div className="mx-auto mt-2 w-full max-w-[1280px] lg:hidden">
+        <PreferencesControls compact className="w-full justify-between" />
+      </div>
+
       {mobileMenuOpen && (
-        <div className="mx-auto mt-3 w-full max-w-[1280px] rounded-[20px] border border-[#E3E9E4] bg-white p-4 shadow-[0_18px_34px_rgba(16,24,18,0.06)] lg:hidden">
+        <div className="mx-auto mt-3 w-full max-w-[1280px] rounded-[20px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] p-4 shadow-[0_18px_34px_rgba(16,24,18,0.06)] lg:hidden">
           <nav className="flex flex-col gap-2">
-            <PreferencesControls className="mb-2 w-full justify-between" />
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -611,7 +614,7 @@ export const AppHeader = () => {
                     void handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-[#324338] hover:border-[#E2E9E3] hover:bg-[#F8FAF8]"
+                  className="inline-flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-[#324338] dark:text-[#C1D0C6] hover:border-[#E2E9E3] hover:bg-[#F8FAF8] dark:hover:bg-[#1B241E]"
                 >
                   <LogOut className="h-4 w-4" />
                   {t('nav.logout')}
@@ -622,7 +625,7 @@ export const AppHeader = () => {
                 <Link
                   to="/app/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-[#E3E9E4] bg-white px-3 py-2 text-sm font-semibold text-[#26362B]"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2 text-sm font-semibold text-[#26362B] dark:text-[#E7EFE8]"
                 >
                   {t('nav.signIn')}
                 </Link>
@@ -651,41 +654,41 @@ export const AppHeader = () => {
               top: '92px',
             }}
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
-              <div className="flex items-center justify-between gap-2 border-b border-[#EEF2EE] bg-white px-4 py-3 text-[#18231C]">
+            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
+              <div className="flex items-center justify-between gap-2 border-b border-[#EEF2EE] dark:border-[#28352C] bg-white dark:bg-[#161D18] px-4 py-3 text-[#18231C] dark:text-[#EAF2EC]">
                 <div>
-                  <p className="text-sm font-semibold">Notifications</p>
-                  <p className="text-[11px] text-[#6B776E]">Unread: {meta.unread}</p>
+                  <p className="text-sm font-semibold">{t('header.notifications')}</p>
+                  <p className="text-[11px] text-[#6B776E] dark:text-[#9AA89F]">{t('header.unread')}: {meta.unread}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => void loadNotifications({ limit: 20, offset: 0 })}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                    title="Refresh notifications"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                    title={t('header.refreshNotifications')}
                   >
                     <RefreshCcw className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsNotificationsModalOpen(false)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                    title="Close"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                    title={t('common.close')}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
-              <div className="border-b border-[#EEF2EE] bg-[#FAFCFA] px-4 py-2.5">
+              <div className="border-b border-[#EEF2EE] dark:border-[#28352C] bg-[#FAFCFA] dark:bg-[#18211B] px-4 py-2.5">
                 <button
                   type="button"
                   onClick={() => void handleMarkAllNotificationsRead()}
                   disabled={isMutatingNotifications || meta.unread === 0}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#D6DED7] bg-white px-3 py-1.5 text-xs font-semibold text-[#23402D] transition-colors hover:bg-[#F5F8F5] disabled:cursor-not-allowed disabled:opacity-55"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#D6DED7] bg-white px-3 py-1.5 text-xs font-semibold text-[#23402D] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821] disabled:cursor-not-allowed disabled:opacity-55"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
-                  Mark all as read
+                  {t('header.markAllRead')}
                 </button>
               </div>
 
@@ -695,14 +698,14 @@ export const AppHeader = () => {
                 </div>
               )}
 
-              <div className="min-h-0 flex-1 overflow-y-auto bg-white p-3">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-[#161D18] p-3">
                 {isLoadingNotifications ? (
-                  <p className="rounded-lg bg-[#F7F9F7] px-3 py-2 text-xs text-[#5E7253]">Loading notifications...</p>
+                  <p className="rounded-lg bg-[#F7F9F7] dark:bg-[#1A241D] px-3 py-2 text-xs text-[#5E7253] dark:text-[#9FB0A4]">{t('header.loadingNotifications')}</p>
                 ) : notifications.length === 0 ? (
                   <div className="flex h-full items-center justify-center px-5 text-center">
                     <div>
-                      <Bell className="mx-auto h-8 w-8 text-[#5E7253]" />
-                      <p className="mt-2 text-sm font-medium text-[#2B3B23]">No notifications yet</p>
+                      <Bell className="mx-auto h-8 w-8 text-[#5E7253] dark:text-[#9FB0A4]" />
+                      <p className="mt-2 text-sm font-medium text-[#2B3B23] dark:text-[#E7EFE8]">{t('header.noNotifications')}</p>
                     </div>
                   </div>
                 ) : (
@@ -718,17 +721,17 @@ export const AppHeader = () => {
                           onClick={() => void handleOpenNotification(notification.id, href)}
                           className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
                             isUnread
-                              ? 'border-[#C9D9CC] bg-[#F4F8F5] hover:bg-[#EDF4EF]'
-                              : 'border-[#E3E9E4] bg-white hover:bg-[#F8FAF8]'
+                              ? 'border-[#C9D9CC] dark:border-[#395544] bg-[#F4F8F5] dark:bg-[#1D2A22] hover:bg-[#EDF4EF] dark:hover:bg-[#223126]'
+                              : 'border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] hover:bg-[#F8FAF8] dark:hover:bg-[#1B241E]'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="line-clamp-2 text-xs font-semibold text-[#23301D]">
-                              {notification.title || 'Notification'}
+                            <p className="line-clamp-2 text-xs font-semibold text-[#23301D] dark:text-[#EAF2EC]">
+                              {notification.title || t('header.notification')}
                             </p>
                             {isUnread && <span className="mt-1 h-2 w-2 rounded-full bg-[#1E6648]" />}
                           </div>
-                          <p className="mt-1 text-[10px] text-[#798C6D]">
+                          <p className="mt-1 text-[10px] text-[#798C6D] dark:text-[#8FA398]">
                             {formatNotificationTime(notification.createdAt)}
                           </p>
                         </button>
@@ -753,24 +756,24 @@ export const AppHeader = () => {
               top: `${chatModalPosition.y}px`,
             }}
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
+            <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] shadow-[0_24px_60px_rgba(16,24,18,0.12)]">
               <div
                 onMouseDown={handleChatModalDragStart}
-                className={`flex items-center justify-between gap-2 border-b border-[#EEF2EE] bg-white px-3 py-2 text-[#18231C] ${isDraggingChatModal ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`flex items-center justify-between gap-2 border-b border-[#EEF2EE] dark:border-[#28352C] bg-white dark:bg-[#161D18] px-3 py-2 text-[#18231C] dark:text-[#EAF2EC] ${isDraggingChatModal ? 'cursor-grabbing' : 'cursor-grab'}`}
               >
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-semibold">
                     <GripHorizontal className="h-4 w-4 text-[#7A867D]" />
-                    Messages
+                    {t('header.messages')}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[#6B776E]">Drag this window. Esc closes it.</p>
+                  <p className="mt-0.5 text-[11px] text-[#6B776E] dark:text-[#9AA89F]">{t('header.dragHint')}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => void listChats({ limit: 50, offset: 0 })}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                    title="Refresh chats"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                    title={t('header.refreshChats')}
                   >
                     <RefreshCcw className="h-3.5 w-3.5" />
                   </button>
@@ -780,50 +783,50 @@ export const AppHeader = () => {
                       setIsChatModalOpen(false);
                       navigate('/app/chat');
                     }}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                    title="Open full page"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                    title={t('header.openFullPage')}
                   >
                     <MessageSquare className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsChatModalOpen(false)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white text-[#26362B] transition-colors hover:bg-[#F5F8F5]"
-                    title="Close"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
+                    title={t('common.close')}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
-              <div className="border-b border-[#EEF2EE] bg-[#FAFCFA] p-3">
+              <div className="border-b border-[#EEF2EE] dark:border-[#28352C] bg-[#FAFCFA] dark:bg-[#18211B] p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#506544]">Conversations</p>
-                  <span className="rounded-full bg-[#DFE9D0] px-2 py-0.5 text-[11px] font-semibold text-[#294327]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#506544] dark:text-[#9FB0A4]">{t('header.conversations')}</p>
+                  <span className="rounded-full bg-[#DFE9D0] dark:bg-[#2A3A2E] px-2 py-0.5 text-[11px] font-semibold text-[#294327] dark:text-[#CDE1D2]">
                     {visibleChats.length}/{chats.length}
                   </span>
                 </div>
 
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5E7253]" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5E7253] dark:text-[#9FB0A4]" />
                   <input
                     value={chatSearch}
                     onChange={(event) => setChatSearch(event.target.value)}
-                    placeholder="Search by name, email, vacancy"
-                    className="h-9 w-full rounded-xl border border-[#9FB08A]/35 bg-white pl-9 pr-3 text-sm text-[#20301B] outline-none transition-colors placeholder:text-[#7A8D6E] focus:border-[#2B6A4D]/45"
+                    placeholder={t('header.searchChats')}
+                    className="h-9 w-full rounded-xl border border-[#9FB08A]/35 bg-white dark:bg-[#111814] dark:border-[#314036] pl-9 pr-3 text-sm text-[#20301B] dark:text-[#E7EFE8] outline-none transition-colors placeholder:text-[#7A8D6E] dark:placeholder:text-[#93A097] focus:border-[#2B6A4D]/45 dark:focus:border-[#4A966E]/45"
                   />
                 </div>
 
                 <div className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1">
                   {isLoadingChatList ? (
-                    <p className="rounded-lg bg-white/80 px-3 py-2 text-xs text-[#5E7253]">Loading chats...</p>
+                    <p className="rounded-lg bg-white/80 px-3 py-2 text-xs text-[#5E7253] dark:text-[#9FB0A4]">{t('header.loadingChats')}</p>
                   ) : visibleChats.length === 0 ? (
-                    <p className="rounded-lg bg-white/80 px-3 py-2 text-xs text-[#5E7253]">No dialogs found.</p>
+                    <p className="rounded-lg bg-white/80 px-3 py-2 text-xs text-[#5E7253] dark:text-[#9FB0A4]">{t('header.noDialogs')}</p>
                   ) : (
                     visibleChats.map((chat) => {
                       const other = getOtherParticipant(chat);
                       const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
-                      const displayName = fullName || other?.email || 'Unknown user';
+                      const displayName = fullName || other?.email || t('header.unknownUser');
                       const selected = chat.id === selectedChatId;
 
                       return (
@@ -833,20 +836,20 @@ export const AppHeader = () => {
                           onClick={() => void handleSelectChat(chat.id)}
                           className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
                             selected
-                              ? 'border-[#2B6A4D]/35 bg-[#E8F3DE]'
-                              : 'border-[#9FB08A]/25 bg-white hover:bg-[#F6FAED]'
+                              ? 'border-[#2B6A4D]/35 bg-[#E8F3DE] dark:bg-[#223427]'
+                              : 'border-[#9FB08A]/25 bg-white hover:bg-[#F6FAED] dark:bg-[#1C2A20]'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="truncate text-xs font-semibold text-[#23301D]">{displayName}</p>
+                            <p className="truncate text-xs font-semibold text-[#23301D] dark:text-[#EAF2EC]">{displayName}</p>
                             {chat.unreadCount > 0 && (
                               <span className="rounded-full bg-[#D63D32] px-1.5 text-[10px] font-bold text-white">
                                 {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
                               </span>
                             )}
                           </div>
-                          <p className="mt-0.5 truncate text-[11px] text-[#5E7352]">{chat.vacancy?.title || 'Application chat'}</p>
-                          <p className="mt-0.5 text-[10px] text-[#798C6D]">
+                          <p className="mt-0.5 truncate text-[11px] text-[#5E7352] dark:text-[#9FB0A4]">{chat.vacancy?.title || t('header.applicationChat')}</p>
+                          <p className="mt-0.5 text-[10px] text-[#798C6D] dark:text-[#8FA398]">
                             {formatChatTime(chat.lastMessageAt || chat.application?.createdAt)}
                           </p>
                         </button>
@@ -862,16 +865,16 @@ export const AppHeader = () => {
                 </div>
               )}
 
-              <div className="min-h-0 flex-1 bg-white">
+              <div className="min-h-0 flex-1 bg-white dark:bg-[#161D18]">
                 {selectedChat ? (
                   <ChatWindow chat={selectedChat} embedded />
                 ) : (
                   <div className="flex h-full items-center justify-center px-5 text-center">
                     <div>
-                      <MessageSquare className="mx-auto h-8 w-8 text-[#5E7253]" />
-                      <p className="mt-2 text-sm font-medium text-[#2B3B23]">Select a conversation</p>
-                      <p className="mt-1 text-xs text-[#6B7E60]">
-                        New dialogs appear automatically after applications and invites.
+                      <MessageSquare className="mx-auto h-8 w-8 text-[#5E7253] dark:text-[#9FB0A4]" />
+                      <p className="mt-2 text-sm font-medium text-[#2B3B23] dark:text-[#E7EFE8]">{t('header.selectConversation')}</p>
+                      <p className="mt-1 text-xs text-[#6B7E60] dark:text-[#97AA9E]">
+                        {t('header.dialogsAppearHint')}
                       </p>
                     </div>
                   </div>

@@ -92,7 +92,7 @@ const deleteRequestStatusOptions: DeletionRequestStatus[] = [
 ];
 
 const cardStyle = {
-  backgroundColor: 'white',
+  backgroundColor: 'var(--surface-base)',
   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
 };
 
@@ -528,10 +528,10 @@ export const AdminPanelPage = () => {
         <AppHeader />
         <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
-            <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('admin.accessTitle')}
             </h1>
-            <p className="mb-6 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="mb-6 text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
               {t('admin.accessDescription')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -556,45 +556,45 @@ export const AdminPanelPage = () => {
           className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
-            background: '#FFFFFF',
+            background: 'var(--surface-base)',
           }}
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: '#333A2F' }}>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-primary)' }}>
                 <ShieldCheck className="h-3.5 w-3.5" />
                 {t('admin.badge')}
               </div>
-              <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: '#333A2F' }}>
+              <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: 'var(--surface-text-primary)' }}>
                 {t('admin.title')}
               </h1>
-              <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
                 {t('admin.description')}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Users
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {usersTotal}
                 </div>
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Vacancies
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {vacancies.length}
                 </div>
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Compliance
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {openComplianceItems}
                 </div>
               </div>
@@ -617,55 +617,55 @@ export const AdminPanelPage = () => {
           <section className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Users loaded
                 </div>
-                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{users.length}</div>
-                <p className="mt-2 text-sm text-[#5D6F50]">Current dataset from the user moderation feed.</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{users.length}</div>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Current dataset from the user moderation feed.</p>
               </div>
               <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Vacancies loaded
                 </div>
-                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{vacancies.length}</div>
-                <p className="mt-2 text-sm text-[#5D6F50]">Visible vacancies in the current moderation snapshot.</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{vacancies.length}</div>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Visible vacancies in the current moderation snapshot.</p>
               </div>
               <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
                   KYC queue
                 </div>
-                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{kycQueue.length}</div>
-                <p className="mt-2 text-sm text-[#5D6F50]">Items for status {formatEnum(kycStatusFilter)}.</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{kycQueue.length}</div>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Items for status {formatEnum(kycStatusFilter)}.</p>
               </div>
               <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Complaints
                 </div>
-                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{complaintsQueue.length}</div>
-                <p className="mt-2 text-sm text-[#5D6F50]">Cases for status {formatEnum(complaintStatusFilter)}.</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{complaintsQueue.length}</div>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Cases for status {formatEnum(complaintStatusFilter)}.</p>
               </div>
               <div className="rounded-[28px] border border-black/5 p-5" style={cardStyle}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Delete requests
                 </div>
-                <div className="mt-3 text-3xl font-bold text-[#333A2F]">{deleteRequestsQueue.length}</div>
-                <p className="mt-2 text-sm text-[#5D6F50]">Requests for status {formatEnum(deleteRequestStatusFilter)}.</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{deleteRequestsQueue.length}</div>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Requests for status {formatEnum(deleteRequestStatusFilter)}.</p>
               </div>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-3">
               <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">Users snapshot</h2>
-                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Users snapshot</h2>
+                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                     {usersTotal} total
                   </span>
                 </div>
                 <div className="space-y-3">
                   {userRoleSummary.map((item) => (
-                    <div key={item.role} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
-                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.role)}</span>
-                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    <div key={item.role} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.role)}</span>
+                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -673,16 +673,16 @@ export const AdminPanelPage = () => {
 
               <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">User status</h2>
-                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">User status</h2>
+                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                     moderation
                   </span>
                 </div>
                 <div className="space-y-3">
                   {userStatusSummary.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
-                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.status)}</span>
-                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.status)}</span>
+                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -690,16 +690,16 @@ export const AdminPanelPage = () => {
 
               <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">Vacancy status</h2>
-                  <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Vacancy status</h2>
+                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                     lifecycle
                   </span>
                 </div>
                 <div className="space-y-3">
                   {vacancyStatusSummary.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[#F9FAF3] px-4 py-3">
-                      <span className="text-sm font-medium text-[#33412D]">{formatEnum(item.status)}</span>
-                      <span className="text-lg font-bold text-[#333A2F]">{item.count}</span>
+                    <div key={item.status} className="flex items-center justify-between rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+                      <span className="text-sm font-medium text-[var(--surface-text-primary)]">{formatEnum(item.status)}</span>
+                      <span className="text-lg font-bold text-[var(--surface-text-primary)]">{item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -713,12 +713,12 @@ export const AdminPanelPage = () => {
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.operations')}</h2>
-                  <p className="mt-2 text-sm text-[#5D6F50]">
+                  <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{t('admin.operations')}</h2>
+                  <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
                     {t('admin.description')}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-[#F9FAF3] px-4 py-3 text-sm font-medium text-[#33412D]">
+                <div className="rounded-2xl bg-[var(--surface-soft)] px-4 py-3 text-sm font-medium text-[var(--surface-text-primary)]">
                   Active queue: {openComplianceItems} items
                 </div>
               </div>
@@ -727,22 +727,22 @@ export const AdminPanelPage = () => {
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.userManagement')}</h3>
-                <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.userManagementDescription')}</p>
+                <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{t('admin.userManagement')}</h3>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{t('admin.userManagementDescription')}</p>
               </div>
-              <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+              <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                 {users.length} loaded
               </span>
             </div>
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_120px_auto]">
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Role filter
                 </label>
                 <select
                   value={userFilters.role}
                   onChange={(event) => setUserFilters((prev) => ({ ...prev, role: event.target.value }))}
-                  className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                 >
                   <option value="">All roles</option>
                   {userRoleOptions.map((role) => (
@@ -753,13 +753,13 @@ export const AdminPanelPage = () => {
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Status filter
                 </label>
                 <select
                   value={userFilters.status}
                   onChange={(event) => setUserFilters((prev) => ({ ...prev, status: event.target.value }))}
-                  className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                 >
                   <option value="">All statuses</option>
                   {(['ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED'] as BackendUserStatus[]).map((status) => (
@@ -770,7 +770,7 @@ export const AdminPanelPage = () => {
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Limit
                 </label>
                 <Input
@@ -784,7 +784,7 @@ export const AdminPanelPage = () => {
                       limit: Number(event.target.value || 20),
                     }))
                   }
-                  className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                  className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
                 />
               </div>
               <div className="flex items-end gap-3">
@@ -802,39 +802,39 @@ export const AdminPanelPage = () => {
             )}
 
             {isUsersLoading ? (
-              <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+              <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                 Loading users...
               </div>
             ) : (
               <div className="space-y-4">
                 {users.map((user) => (
-                  <div key={user.id} className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-5">
+                  <div key={user.id} className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
+                          <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
                             {formatEnum(user.role)}
                           </span>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold" style={{ color: '#333A2F' }}>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {formatEnum(user.status)}
                           </span>
                         </div>
-                        <div className="text-xl font-bold" style={{ color: '#333A2F' }}>
+                        <div className="text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           {getUserName(user)}
                         </div>
-                        <div className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                        <div className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           {user.email}
                         </div>
-                        <div className="mt-2 break-all text-xs font-mono" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                        <div className="mt-2 break-all text-xs font-mono" style={{ color: 'var(--surface-text-soft)' }}>
                           {user.id}
                         </div>
                         {user.candidateProfile?.desiredRole && (
-                          <div className="mt-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          <div className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                             Desired role: {user.candidateProfile.desiredRole}
                           </div>
                         )}
                         {user.employerProfile?.companyName && (
-                          <div className="mt-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          <div className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                             Company: {user.employerProfile.companyName}
                           </div>
                         )}
@@ -922,7 +922,7 @@ export const AdminPanelPage = () => {
                 ))}
 
                 {!users.length && (
-                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                     No users found with current filters.
                   </div>
                 )}
@@ -933,16 +933,16 @@ export const AdminPanelPage = () => {
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.vacancyOperations')}</h3>
-                <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.vacancyOperationsDescription')}</p>
+                <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{t('admin.vacancyOperations')}</h3>
+                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{t('admin.vacancyOperationsDescription')}</p>
               </div>
-              <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+              <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                 {vacancies.length} loaded
               </span>
             </div>
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Vacancy status
                 </label>
                 <select
@@ -953,7 +953,7 @@ export const AdminPanelPage = () => {
                       status: event.target.value,
                     }))
                   }
-                  className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                 >
                   {vacancyStatusOptions.map((status) => (
                     <option key={status || 'all'} value={status}>
@@ -983,30 +983,30 @@ export const AdminPanelPage = () => {
             )}
 
             {isVacanciesLoading ? (
-              <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+              <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                 Loading vacancies...
               </div>
             ) : (
               <div className="space-y-4">
                 {vacancies.map((vacancy) => (
-                  <div key={vacancy.id} className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-5">
+                  <div key={vacancy.id} className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
+                          <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
                             {formatEnum(vacancy.status)}
                           </span>
                         </div>
-                        <div className="text-xl font-bold" style={{ color: '#333A2F' }}>
+                        <div className="text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           {vacancy.title}
                         </div>
-                        <div className="mt-2 break-all text-xs font-mono" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                        <div className="mt-2 break-all text-xs font-mono" style={{ color: 'var(--surface-text-soft)' }}>
                           {vacancy.id}
                         </div>
-                        <div className="mt-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <div className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           Updated: {formatDateTime(vacancy.updatedAt)}
                         </div>
-                        <div className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <div className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           Published: {formatDateTime(vacancy.publishedAt)}
                         </div>
                       </div>
@@ -1057,7 +1057,7 @@ export const AdminPanelPage = () => {
                 ))}
 
                 {!vacancies.length && (
-                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                     No vacancies found with current filters.
                   </div>
                 )}
@@ -1069,22 +1069,22 @@ export const AdminPanelPage = () => {
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-heading text-2xl font-bold text-[#333A2F]">{t('admin.complianceOperations')}</h3>
-                  <p className="mt-2 text-sm text-[#5D6F50]">{t('admin.complianceOperationsDescription')}</p>
+                  <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{t('admin.complianceOperations')}</h3>
+                  <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{t('admin.complianceOperationsDescription')}</p>
                 </div>
-                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                   {openComplianceItems} items
                 </span>
               </div>
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                     KYC status
                   </label>
                   <select
                     value={kycStatusFilter}
                     onChange={(event) => setKycStatusFilter(event.target.value as CompanyVerificationStatus)}
-                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                   >
                     {kycStatusOptions.map((status) => (
                       <option key={status} value={status}>
@@ -1095,13 +1095,13 @@ export const AdminPanelPage = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                     Complaints status
                   </label>
                   <select
                     value={complaintStatusFilter}
                     onChange={(event) => setComplaintStatusFilter(event.target.value as ComplaintStatus)}
-                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                   >
                     {complaintStatusOptions.map((status) => (
                       <option key={status} value={status}>
@@ -1112,13 +1112,13 @@ export const AdminPanelPage = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                     Delete requests
                   </label>
                   <select
                     value={deleteRequestStatusFilter}
                     onChange={(event) => setDeleteRequestStatusFilter(event.target.value as DeletionRequestStatus)}
-                    className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                   >
                     {deleteRequestStatusOptions.map((status) => (
                       <option key={status} value={status}>
@@ -1156,18 +1156,18 @@ export const AdminPanelPage = () => {
 
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">KYC Queue</h3>
-                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">KYC Queue</h3>
+                <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                   {kycQueue.length} items
                 </span>
               </div>
 
               {isComplianceLoading ? (
-                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   Loading compliance queue...
                 </div>
               ) : kycQueue.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   No KYC submissions for selected status.
                 </div>
               ) : (
@@ -1176,18 +1176,18 @@ export const AdminPanelPage = () => {
                     const draft = kycReviewDrafts[item.id] || { status: item.status, comment: '' };
 
                     return (
-                      <div key={item.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                      <div key={item.id} className="rounded-2xl border border-black/5 bg-[var(--surface-soft)] p-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                          <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
                             {formatEnum(item.status)}
                           </span>
-                          <span className="text-xs font-mono text-[#5D6F50]">{item.id}</span>
+                          <span className="text-xs font-mono text-[var(--surface-text-muted)]">{item.id}</span>
                         </div>
 
-                        <p className="mt-2 text-sm text-[#33412D]">
+                        <p className="mt-2 text-sm text-[var(--surface-text-primary)]">
                           Legal name: {item.legalName || item.companyName || 'Unknown company'}
                         </p>
-                        <p className="text-sm text-[#526347]">
+                        <p className="text-sm text-[var(--surface-text-soft)]">
                           BIN/IIN: {item.binIin || '—'} • Created: {formatDateTime(item.createdAt)}
                         </p>
 
@@ -1242,14 +1242,14 @@ export const AdminPanelPage = () => {
 
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">Complaints Queue</h3>
-                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Complaints Queue</h3>
+                <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                   {complaintsQueue.length} items
                 </span>
               </div>
 
               {complaintsQueue.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   No complaints for selected status.
                 </div>
               ) : (
@@ -1262,20 +1262,20 @@ export const AdminPanelPage = () => {
                     };
 
                     return (
-                      <div key={complaint.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                      <div key={complaint.id} className="rounded-2xl border border-black/5 bg-[var(--surface-soft)] p-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                          <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
                             {formatEnum(complaint.status)}
                           </span>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#33412D]">
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                             {formatEnum(complaint.targetType)}
                           </span>
-                          <span className="text-xs font-mono text-[#5D6F50]">{complaint.id}</span>
+                          <span className="text-xs font-mono text-[var(--surface-text-muted)]">{complaint.id}</span>
                         </div>
-                        <p className="mt-2 text-sm text-[#33412D]">Reason: {complaint.reason || 'No reason'}</p>
-                        <p className="text-sm text-[#526347]">Target ID: {complaint.targetId || '—'}</p>
+                        <p className="mt-2 text-sm text-[var(--surface-text-primary)]">Reason: {complaint.reason || 'No reason'}</p>
+                        <p className="text-sm text-[var(--surface-text-soft)]">Target ID: {complaint.targetId || '—'}</p>
                         {complaint.details && (
-                          <p className="text-sm text-[#526347]">Details: {complaint.details}</p>
+                          <p className="text-sm text-[var(--surface-text-soft)]">Details: {complaint.details}</p>
                         )}
 
                         <div className="mt-3 grid gap-3 md:grid-cols-[180px_180px_1fr_auto]">
@@ -1348,14 +1348,14 @@ export const AdminPanelPage = () => {
 
             <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-heading text-2xl font-bold text-[#333A2F]">Delete Requests Queue</h3>
-                <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold text-[#333A2F]">
+                <h3 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Delete Requests Queue</h3>
+                <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
                   {deleteRequestsQueue.length} items
                 </span>
               </div>
 
               {deleteRequestsQueue.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   No deletion requests for selected status.
                 </div>
               ) : (
@@ -1367,19 +1367,19 @@ export const AdminPanelPage = () => {
                     };
 
                     return (
-                      <div key={request.id} className="rounded-2xl border border-black/5 bg-[#F9FAF3] p-4">
+                      <div key={request.id} className="rounded-2xl border border-black/5 bg-[var(--surface-soft)] p-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                          <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
                             {formatEnum(request.status)}
                           </span>
-                          <span className="text-xs font-mono text-[#5D6F50]">{request.id}</span>
+                          <span className="text-xs font-mono text-[var(--surface-text-muted)]">{request.id}</span>
                         </div>
-                        <p className="mt-2 text-sm text-[#33412D]">
+                        <p className="mt-2 text-sm text-[var(--surface-text-primary)]">
                           User: {request.user?.email || request.user?.id || 'Unknown'}
                         </p>
-                        <p className="text-sm text-[#526347]">Created: {formatDateTime(request.createdAt)}</p>
+                        <p className="text-sm text-[var(--surface-text-soft)]">Created: {formatDateTime(request.createdAt)}</p>
                         {request.reason && (
-                          <p className="text-sm text-[#526347]">Reason: {request.reason}</p>
+                          <p className="text-sm text-[var(--surface-text-soft)]">Reason: {request.reason}</p>
                         )}
 
                         <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr_auto]">

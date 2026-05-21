@@ -1,12 +1,15 @@
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingBenefits = () => {
+  const { t } = useUISettings();
+
   return (
     <section className="benefits" id="benefits">
       <div className="container">
         <div className="section-header">
-          <h2 className="section-title">Benefits for Everyone</h2>
-          <p className="section-subtitle">Whether you're looking to start your career or find top talent, we've got you covered</p>
+          <h2 className="section-title">{t('landing.benefits.title')}</h2>
+          <p className="section-subtitle">{t('landing.benefits.subtitle')}</p>
         </div>
 
         {/* For Candidates */}
@@ -17,10 +20,10 @@ export const LandingBenefits = () => {
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                 <path d="M6 12v5c3 3 9 3 12 0v-5"/>
               </svg>
-              <span>For Students & Junior Specialists</span>
+              <span>{t('landing.benefits.candidates.badge')}</span>
             </div>
             
-            <h3 className="benefit-title">Launch Your Career with Confidence</h3>
+            <h3 className="benefit-title">{t('landing.benefits.candidates.title')}</h3>
             
             <div className="benefit-list">
               <div className="benefit-item">
@@ -28,35 +31,35 @@ export const LandingBenefits = () => {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Gain real-world experience through virtual internships</span>
+                <span>{t('landing.benefits.candidates.item1')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Access exclusive opportunities from verified companies</span>
+                <span>{t('landing.benefits.candidates.item2')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Build your professional network from day one</span>
+                <span>{t('landing.benefits.candidates.item3')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Develop in-demand skills with mentorship</span>
+                <span>{t('landing.benefits.candidates.item4')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Get matched based on your unique strengths</span>
+                <span>{t('landing.benefits.candidates.item5')}</span>
               </div>
             </div>
           </div>
@@ -80,10 +83,10 @@ export const LandingBenefits = () => {
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <path d="M9 22V12h6v10"/>
               </svg>
-              <span>For Employers</span>
+              <span>{t('landing.benefits.employers.badge')}</span>
             </div>
             
-            <h3 className="benefit-title">Find Your Next Great Hire</h3>
+            <h3 className="benefit-title">{t('landing.benefits.employers.title')}</h3>
             
             <div className="benefit-list">
               <div className="benefit-item">
@@ -91,37 +94,37 @@ export const LandingBenefits = () => {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Access pre-vetted, skilled junior talent</span>
+                <span>{t('landing.benefits.employers.item1')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Reduce hiring time with smart matching</span>
+                <span>{t('landing.benefits.employers.item2')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Try before you hire with virtual internships</span>
+                <span>{t('landing.benefits.employers.item3')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Build a diverse and inclusive team</span>
+                <span>{t('landing.benefits.employers.item4')}</span>
               </div>
               <div className="benefit-item">
                 <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <path d="M22 4L12 14.01l-3-3"/>
                 </svg>
-                <span>Scale your workforce flexibly</span>
-              </div>
+                <span>{t('landing.benefits.employers.item5')}</span>
             </div>
+          </div>
           </div>
         </div>
       </div>

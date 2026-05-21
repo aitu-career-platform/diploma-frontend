@@ -1,19 +1,22 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { ContactForm } from "@features/contact-form";
+import { useUISettings } from "@shared/lib/ui-settings";
 
 export const LandingContact = () => {
+  const { t } = useUISettings();
+
   return (
     <section id="contact" className="py-24 bg-secondary/30">
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <span className="inline-block text-primary font-semibold mb-4 uppercase tracking-wider text-sm">
-            Contact
+            {t('landing.contact.badge')}
           </span>
           <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6">
-            Get in <span className="text-gradient">Touch</span>
+            {t('landing.contact.titlePrefix')} <span className="text-gradient">{t('landing.contact.titleAccent')}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            {t('landing.contact.subtitle')}
           </p>
         </div>
 
@@ -25,7 +28,7 @@ export const LandingContact = () => {
                 <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-heading font-semibold text-lg mb-1">Email Us</h4>
+                <h4 className="font-heading font-semibold text-lg mb-1">{t('landing.contact.email')}</h4>
                 <p className="text-muted-foreground">hello@brad.com</p>
               </div>
             </div>
@@ -35,7 +38,7 @@ export const LandingContact = () => {
                 <Phone className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-heading font-semibold text-lg mb-1">Call Us</h4>
+                <h4 className="font-heading font-semibold text-lg mb-1">{t('landing.contact.call')}</h4>
                 <p className="text-muted-foreground">+1 (555) 123-4567</p>
               </div>
             </div>
@@ -45,7 +48,7 @@ export const LandingContact = () => {
                 <MapPin className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-heading font-semibold text-lg mb-1">Visit Us</h4>
+                <h4 className="font-heading font-semibold text-lg mb-1">{t('landing.contact.visit')}</h4>
                 <p className="text-muted-foreground">
                   123 Innovation Street<br />
                   San Francisco, CA 94105
@@ -61,4 +64,3 @@ export const LandingContact = () => {
     </section>
   );
 };
-

@@ -136,7 +136,7 @@ const candidateSkillSuggestions = [
 ];
 
 const cardStyle = {
-  backgroundColor: 'white',
+  backgroundColor: 'var(--surface-base)',
   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
 };
 
@@ -1727,7 +1727,7 @@ export const ProfilePage = () => {
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
-            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: 'var(--surface-text-primary)' }}>
               Please sign in
             </h1>
           </div>
@@ -1742,7 +1742,7 @@ export const ProfilePage = () => {
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
-            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: 'var(--surface-text-primary)' }}>
               Loading profile...
             </h1>
           </div>
@@ -1759,8 +1759,8 @@ export const ProfilePage = () => {
           <section className="app-section-card p-4 sm:p-5">
             <div className="flex flex-col gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">Profile Workspace</p>
-                <p className="mt-1 text-sm text-[#465A3B]">Everything is split into focused tabs instead of one long page.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Profile Workspace</p>
+                <p className="mt-1 text-sm text-[var(--surface-text-soft)]">Everything is split into focused tabs instead of one long page.</p>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -1788,8 +1788,8 @@ export const ProfilePage = () => {
                           {unreadTabCount > 9 ? '9+' : unreadTabCount}
                         </span>
                       )}
-                      <p className="text-sm font-semibold text-[#23311D]">{tab.label}</p>
-                      <p className="mt-1 text-xs text-[#566B4A]">{tab.description}</p>
+                      <p className="text-sm font-semibold text-[var(--surface-text-primary)]">{tab.label}</p>
+                      <p className="mt-1 text-xs text-[var(--surface-text-soft)]">{tab.description}</p>
                     </button>
                   );
                 })}
@@ -1804,15 +1804,15 @@ export const ProfilePage = () => {
                 {avatarSrc ? (
                   <img src={avatarSrc} alt={displayName} className="w-24 h-24 rounded-full object-cover" />
                 ) : (
-                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: '#EBEDDF' }}>
-                    <User className="w-12 h-12" style={{ color: '#333A2F' }} />
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-chip)' }}>
+                    <User className="w-12 h-12" style={{ color: 'var(--surface-text-primary)' }} />
                   </div>
                 )}
                 <div>
-                  <h1 className="font-heading text-3xl font-bold mb-2" style={{ color: '#333A2F' }}>
+                  <h1 className="font-heading text-3xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                     {displayName}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                  <div className="flex flex-wrap items-center gap-4" style={{ color: 'var(--surface-text-muted)' }}>
                     <div className="flex items-center gap-1">
                       <Mail className="w-4 h-4" />
                       <span>{currentUser.email}</span>
@@ -1823,7 +1823,7 @@ export const ProfilePage = () => {
                         <span>{location}</span>
                       </div>
                     )}
-                    <span className="px-2 py-1 rounded-lg text-xs" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
+                    <span className="px-2 py-1 rounded-lg text-xs" style={{ backgroundColor: 'var(--surface-chip)', color: 'var(--surface-text-primary)' }}>
                       {isHr ? 'HR profile' : 'Candidate profile'}
                     </span>
                   </div>
@@ -1842,8 +1842,8 @@ export const ProfilePage = () => {
                 }}
                 className="px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium border-2"
                 style={{
-                  borderColor: 'rgba(51, 58, 47, 0.2)',
-                  color: '#333A2F',
+                  borderColor: 'var(--surface-border-strong)',
+                  color: 'var(--surface-text-primary)',
                   backgroundColor: 'transparent',
                 }}
               >
@@ -1854,7 +1854,7 @@ export const ProfilePage = () => {
             <div className="mb-6 flex flex-wrap gap-3">
               <label
                 className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
-                style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+                style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-subtle)', color: 'var(--surface-text-primary)' }}
               >
                 <UploadCloud className="w-4 h-4" />
                 Upload avatar
@@ -1879,7 +1879,7 @@ export const ProfilePage = () => {
                   }
                   disabled={isDeletingMedia}
                   className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
-                  style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'white', color: '#b91c1c' }}
+                  style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'var(--surface-base)', color: '#b91c1c' }}
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove avatar
@@ -1890,7 +1890,7 @@ export const ProfilePage = () => {
                 <>
                   <label
                     className="inline-flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1', color: '#333A2F' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-subtle)', color: 'var(--surface-text-primary)' }}
                   >
                     <ImagePlus className="w-4 h-4" />
                     Upload company logo
@@ -1915,7 +1915,7 @@ export const ProfilePage = () => {
                       }
                       disabled={isDeletingMedia}
                       className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium"
-                      style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'white', color: '#b91c1c' }}
+                      style={{ borderColor: 'rgba(220, 38, 38, 0.2)', backgroundColor: 'var(--surface-base)', color: '#b91c1c' }}
                     >
                       <Trash2 className="w-4 h-4" />
                       Remove logo
@@ -1935,69 +1935,69 @@ export const ProfilePage = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                       City
                     </label>
-                    <Input {...register('city')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                    <Input {...register('city')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                       Country
                     </label>
-                    <Input {...register('country')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                    <Input {...register('country')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                     Bio
                   </label>
-                  <Textarea {...register('bio')} rows={4} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                  <Textarea {...register('bio')} rows={4} style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                 </div>
 
                 {isHr ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Company name
                         </label>
-                        <Input {...register('companyName')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('companyName')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Position
                         </label>
-                        <Input {...register('position')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('position')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                         Company website
                       </label>
-                      <Input {...register('companyWebsite')} type="url" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      <Input {...register('companyWebsite')} type="url" className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                         About company
                       </label>
-                      <Textarea {...register('aboutCompany')} rows={4} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                      <Textarea {...register('aboutCompany')} rows={4} style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Company contact phone
                         </label>
-                        <Input {...register('companyContactPhone')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('companyContactPhone')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           HR phone
                         </label>
-                        <Input {...register('hrPhone')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('hrPhone')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
                   </>
@@ -2005,44 +2005,44 @@ export const ProfilePage = () => {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Desired role
                         </label>
-                        <Input {...register('desiredRole')} className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('desiredRole')} className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Desired salary
                         </label>
-                        <Input {...register('desiredSalary')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('desiredSalary')} type="number" className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Graduation Year
                         </label>
-                        <Input {...register('graduationYear')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('graduationYear')} type="number" className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Date of birth
                         </label>
-                        <Input {...register('dateOfBirth')} type="date" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('dateOfBirth')} type="date" className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F9FAF3', color: '#333A2F' }}>
+                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
                         <input type="checkbox" {...register('openToWork')} className="h-4 w-4" />
                         Open to work
                       </label>
-                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F9FAF3', color: '#333A2F' }}>
+                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
                         <input type="checkbox" {...register('remoteReady')} className="h-4 w-4" />
                         Remote ready
                       </label>
-                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F9FAF3', color: '#333A2F' }}>
+                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
                         <input type="checkbox" {...register('relocationReady')} className="h-4 w-4" />
                         Relocation ready
                       </label>
@@ -2050,13 +2050,13 @@ export const ProfilePage = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Availability
                         </label>
                         <select
                           {...register('availability')}
                           className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                         >
                           <option value="">Not set</option>
                           <option value="IMMEDIATE">Immediate</option>
@@ -2067,13 +2067,13 @@ export const ProfilePage = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Education level
                         </label>
                         <select
                           {...register('educationLevel')}
                           className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                         >
                           <option value="">Not set</option>
                           <option value="NONE">None</option>
@@ -2086,19 +2086,19 @@ export const ProfilePage = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Hours per week
                         </label>
-                        <Input {...register('hoursPerWeek')} type="number" className="h-12" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }} />
+                        <Input {...register('hoursPerWeek')} type="number" className="h-12" style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Preferred employment types
                         </label>
-                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FAF3' }}>
+                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
                           {preferredEmploymentTypeOptions.map((option) => {
                             const active = selectedEmploymentTypes.includes(option.value);
                             return (
@@ -2108,9 +2108,9 @@ export const ProfilePage = () => {
                                 onClick={() => togglePreferredOption('preferredEmploymentTypesText', option.value)}
                                 className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
                                 style={{
-                                  borderColor: active ? '#2B6A4D' : 'rgba(51, 58, 47, 0.18)',
+                                  borderColor: active ? '#2B6A4D' : 'var(--surface-border-strong)',
                                   backgroundColor: active ? '#E3F1E5' : 'white',
-                                  color: active ? '#1F513A' : '#33412C',
+                                  color: active ? '#1F513A' : 'var(--surface-text-primary)',
                                 }}
                               >
                                 {option.label}
@@ -2122,10 +2122,10 @@ export const ProfilePage = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Preferred work formats
                         </label>
-                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FAF3' }}>
+                        <div className="flex flex-wrap gap-2 rounded-xl border p-3" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
                           {preferredWorkFormatOptions.map((option) => {
                             const active = selectedWorkFormats.includes(option.value);
                             return (
@@ -2135,9 +2135,9 @@ export const ProfilePage = () => {
                                 onClick={() => togglePreferredOption('preferredWorkFormatsText', option.value)}
                                 className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
                                 style={{
-                                  borderColor: active ? '#2B6A4D' : 'rgba(51, 58, 47, 0.18)',
+                                  borderColor: active ? '#2B6A4D' : 'var(--surface-border-strong)',
                                   backgroundColor: active ? '#E3F1E5' : 'white',
-                                  color: active ? '#1F513A' : '#33412C',
+                                  color: active ? '#1F513A' : 'var(--surface-text-primary)',
                                 }}
                               >
                                 {option.label}
@@ -2149,16 +2149,16 @@ export const ProfilePage = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF3' }}>
+                    <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: '#F7FAF3' }}>
                       <div className="flex items-center justify-between gap-3 mb-3">
-                        <h3 className="font-heading text-lg font-semibold" style={{ color: '#2F3B2A' }}>
+                        <h3 className="font-heading text-lg font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                           Skills & Levels
                         </h3>
                         {candidateSkills.length > 0 && (
                           <button
                             type="button"
                             className="text-xs font-semibold"
-                            style={{ color: '#4F5E46' }}
+                            style={{ color: 'var(--surface-text-muted)' }}
                             onClick={() => {
                               setCandidateSkills([]);
                               setCandidateSkillLevels({});
@@ -2181,24 +2181,24 @@ export const ProfilePage = () => {
                           }}
                           placeholder="Search skills or type your own"
                           className="h-11"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => addCandidateSkill(candidateSkillDraft)}
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                         >
                           Add
                         </Button>
                       </div>
 
-                      <div className="rounded-xl border p-3 mb-3" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#ffffff' }}>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6B7B62' }}>
+                      <div className="rounded-xl border p-3 mb-3" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--surface-text-soft)' }}>
                           Suggestions
                         </p>
                         {skillSearchOptions.length === 0 ? (
-                          <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                          <p className="text-xs" style={{ color: 'var(--surface-text-muted)' }}>
                             Nothing found. Add custom skill manually.
                           </p>
                         ) : (
@@ -2209,7 +2209,7 @@ export const ProfilePage = () => {
                                 type="button"
                                 onClick={() => addCandidateSkill(skill)}
                                 className="rounded-full border px-2.5 py-1 text-xs font-medium"
-                                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#F9FCF6', color: '#32422B' }}
+                                style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}
                               >
                                 {skill}
                               </button>
@@ -2219,7 +2219,7 @@ export const ProfilePage = () => {
                       </div>
 
                       {candidateSkills.length === 0 ? (
-                        <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                        <p className="text-xs" style={{ color: 'var(--surface-text-muted)' }}>
                           No skills selected yet.
                         </p>
                       ) : (
@@ -2230,16 +2230,16 @@ export const ProfilePage = () => {
                               <div
                                 key={`candidate-skill-${skill}`}
                                 className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr,220px,auto]"
-                                style={{ borderColor: 'rgba(51, 58, 47, 0.14)', backgroundColor: '#FFFFFF' }}
+                                style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}
                               >
-                                <div className="self-center text-sm font-medium" style={{ color: '#2D3A27' }}>
+                                <div className="self-center text-sm font-medium" style={{ color: 'var(--surface-text-primary)' }}>
                                   {skill}
                                 </div>
                                 <select
                                   value={level}
                                   onChange={(event) => setCandidateSkillLevel(skill, event.target.value)}
                                   className="flex h-10 w-full rounded-lg border px-3 py-2 text-sm"
-                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                                 >
                                   <option value="">Level not set</option>
                                   {candidateSkillLevelOptions.map((option) => (
@@ -2270,7 +2270,7 @@ export const ProfilePage = () => {
                   variant="hero"
                   size="lg"
                   disabled={isSaving}
-                  style={{ backgroundColor: '#333A2F', color: 'white' }}
+                  style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}
                 >
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
@@ -2280,7 +2280,7 @@ export const ProfilePage = () => {
                 <section
                   className="rounded-2xl border px-5 py-5 sm:px-6"
                   style={{
-                    borderColor: 'rgba(51, 58, 47, 0.12)',
+                    borderColor: 'var(--surface-border-strong)',
                     background:
                       'linear-gradient(145deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,0.92) 100%)',
                   }}
@@ -2288,15 +2288,15 @@ export const ProfilePage = () => {
                   <div className="flex items-center gap-2">
                     <span
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: '#E3EAD4', color: '#2E3A2A' }}
+                      style={{ backgroundColor: '#E3EAD4', color: 'var(--surface-text-primary)' }}
                     >
                       <User className="h-4 w-4" />
                     </span>
-                    <h2 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
+                    <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                       About
                     </h2>
                   </div>
-                  <p className="mt-4 text-sm leading-7 sm:text-base" style={{ color: '#4F5E46' }}>
+                  <p className="mt-4 text-sm leading-7 sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
                     {getString(profile?.bio) || 'Add a short summary about your goals, strengths, and the type of work you are looking for.'}
                   </p>
                 </section>
@@ -2305,10 +2305,10 @@ export const ProfilePage = () => {
                   <>
                     {(getString(profile?.companyName) || getString(profile?.position)) && (
                       <div>
-                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
+                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Company
                         </h2>
-                        <div className="flex items-center gap-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <div className="flex items-center gap-2" style={{ color: 'var(--surface-text-muted)' }}>
                           <Building2 className="w-4 h-4" />
                           <span>{[getString(profile?.companyName), getString(profile?.position)].filter(Boolean).join(' • ')}</span>
                         </div>
@@ -2317,12 +2317,12 @@ export const ProfilePage = () => {
 
                     {(getString(profile?.companyWebsite) || getString(profile?.companyContactPhone) || getString(profile?.hrPhone)) && (
                       <div>
-                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
+                        <h2 className="font-heading text-xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                           Contacts
                         </h2>
-                        <div className="flex flex-col gap-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <div className="flex flex-col gap-2" style={{ color: 'var(--surface-text-muted)' }}>
                           {getString(profile?.companyWebsite) && (
-                            <a href={getString(profile?.companyWebsite)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: '#333A2F' }}>
+                            <a href={getString(profile?.companyWebsite)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline" style={{ color: 'var(--surface-text-primary)' }}>
                               <Globe className="w-4 h-4" />
                               <span>Company website</span>
                             </a>
@@ -2347,58 +2347,58 @@ export const ProfilePage = () => {
                   <>
                     <section
                       className="rounded-2xl border p-5 sm:p-6"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#FCFDF9' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
-                          style={{ backgroundColor: '#E9EFDA', color: '#2E3A2A' }}
+                          style={{ backgroundColor: '#E9EFDA', color: 'var(--surface-text-primary)' }}
                         >
                           <Briefcase className="h-4 w-4" />
                         </span>
-                        <h2 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
+                        <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           Career Preferences
                         </h2>
                       </div>
 
-                      <p className="mt-3 text-base font-semibold" style={{ color: '#2F3B2A' }}>
+                      <p className="mt-3 text-base font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                         {getString(profile?.desiredRole) || 'Desired role is not set yet'}
                       </p>
 
                       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Salary</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Salary</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {profile?.desiredSalary !== undefined && profile?.desiredSalary !== null ? String(profile.desiredSalary) : 'Not set'}
                           </p>
                         </div>
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Graduation</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Graduation</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {profile?.graduationYear !== undefined && profile?.graduationYear !== null ? String(profile.graduationYear) : 'Not set'}
                           </p>
                         </div>
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Education</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Education</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {getString(profile?.educationLevel) ? formatEnum(getString(profile?.educationLevel)) : 'Not set'}
                           </p>
                         </div>
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Availability</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Availability</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {getString(profile?.availability) ? formatEnum(getString(profile?.availability)) : 'Not set'}
                           </p>
                         </div>
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Hours / Week</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Hours / Week</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {profile?.hoursPerWeek !== undefined && profile?.hoursPerWeek !== null ? String(profile.hoursPerWeek) : 'Not set'}
                           </p>
                         </div>
-                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(51, 58, 47, 0.1)', backgroundColor: 'white' }}>
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#74836A' }}>Date of Birth</p>
-                          <p className="mt-1 text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                        <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Date of Birth</p>
+                          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {getString(profile?.dateOfBirth) ? getString(profile?.dateOfBirth).slice(0, 10) : 'Not set'}
                           </p>
                         </div>
@@ -2438,7 +2438,7 @@ export const ProfilePage = () => {
                         <div className="mt-5 space-y-3">
                           {preferredEmploymentTypes.length > 0 && (
                             <div>
-                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
                                 Preferred Employment
                               </p>
                               <div className="mt-2 flex flex-wrap gap-2">
@@ -2457,7 +2457,7 @@ export const ProfilePage = () => {
 
                           {preferredWorkFormats.length > 0 && (
                             <div>
-                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
                                 Preferred Formats
                               </p>
                               <div className="mt-2 flex flex-wrap gap-2">
@@ -2478,7 +2478,7 @@ export const ProfilePage = () => {
 
                       {savedCandidateSkills.length > 0 && (
                         <div className="mt-5">
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#6C7A63' }}>
+                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
                             Skills
                           </p>
                           <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -2489,12 +2489,12 @@ export const ProfilePage = () => {
                                 <div
                                   key={`candidate-skill-readonly-${skill}`}
                                   className="rounded-xl border px-3 py-2"
-                                  style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: 'white' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}
                                 >
-                                  <p className="text-sm font-semibold" style={{ color: '#2F3B2A' }}>
+                                  <p className="text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                                     {skill}
                                   </p>
-                                  <p className="text-xs mt-0.5" style={{ color: '#66775E' }}>
+                                  <p className="text-xs mt-0.5" style={{ color: 'var(--surface-text-soft)' }}>
                                     {levelLabel || 'Level not set'}
                                   </p>
                                 </div>
@@ -2515,10 +2515,10 @@ export const ProfilePage = () => {
             <section id="company-media" className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                  <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                     Company Media
                   </h2>
-                  <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                     Logo is uploaded through backend proxy and opened via secure download URL. Max size: 15MB.
                   </p>
                 </div>
@@ -2531,7 +2531,7 @@ export const ProfilePage = () => {
                         : window.open(companyLogoSrc, '_blank', 'noopener,noreferrer')
                     }
                     className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-                    style={{ color: '#333A2F' }}
+                    style={{ color: 'var(--surface-text-primary)' }}
                   >
                     Open logo
                     <ExternalLink className="w-4 h-4" />
@@ -2546,8 +2546,8 @@ export const ProfilePage = () => {
                     alt={getString(profile?.companyName) || 'Company logo'}
                     className="h-24 w-24 rounded-2xl object-cover"
                   />
-                  <div className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
-                    <p className="font-semibold" style={{ color: '#333A2F' }}>
+                  <div className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                    <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                       {companyLogoFile ? getFileName(companyLogoFile) : 'Company logo'}
                     </p>
                     {companyLogoFile && (
@@ -2556,7 +2556,7 @@ export const ProfilePage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-5 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   Upload a company logo to show real branding on vacancies and profile surfaces.
                 </div>
               )}
@@ -2579,7 +2579,7 @@ export const ProfilePage = () => {
           )}
 
           {(isUploadingMedia || isDeletingMedia) && (
-            <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(51, 58, 47, 0.08)', color: '#333A2F' }}>
+            <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--surface-border-soft)', color: 'var(--surface-text-primary)' }}>
               {isUploadingMedia ? 'Uploading file...' : 'Removing file...'}
             </div>
           )}
@@ -2591,17 +2591,17 @@ export const ProfilePage = () => {
                   <div
                     className="rounded-2xl border p-4 sm:p-5"
                     style={{
-                      borderColor: 'rgba(51, 58, 47, 0.12)',
+                      borderColor: 'var(--surface-border-strong)',
                       background:
                         'linear-gradient(140deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,1) 100%)',
                     }}
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h2 className="font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                        <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           Resumes
                         </h2>
-                        <p className="mt-2 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.74)' }}>
+                        <p className="mt-2 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
                           CV library for applications. Upload PDF or DOCX via backend proxy.
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -2623,7 +2623,7 @@ export const ProfilePage = () => {
                           setIsResumeUploadModalOpen(true);
                         }}
                         className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-sm"
-                        style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: '#2D3928' }}
+                        style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: 'var(--surface-text-primary)' }}
                       >
                         <FileUp className="h-4 w-4" />
                         Add Resume
@@ -2632,8 +2632,8 @@ export const ProfilePage = () => {
                   </div>
 
                   {displayedResumes.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: 'rgba(51, 58, 47, 0.68)' }}>
-                      <p className="font-semibold" style={{ color: '#3A4833' }}>No resumes yet</p>
+                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-muted)' }}>
+                      <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>No resumes yet</p>
                       <p className="mt-2">Use “Add Resume” to upload your first CV with a custom title.</p>
                     </div>
                   ) : (
@@ -2643,7 +2643,7 @@ export const ProfilePage = () => {
                           key={getFileId(resume) || getString(resume.id) || `resume-${index}`}
                           className="rounded-2xl border p-4"
                           style={{
-                            borderColor: 'rgba(51, 58, 47, 0.1)',
+                            borderColor: 'var(--surface-border-soft)',
                             background:
                               'linear-gradient(145deg, rgba(247,248,241,0.95) 0%, rgba(255,255,255,1) 100%)',
                           }}
@@ -2654,7 +2654,7 @@ export const ProfilePage = () => {
                                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: '#E2EBD4', color: '#364631' }}>
                                   <FileArchive className="h-4 w-4" />
                                 </span>
-                                <p className="font-semibold" style={{ color: '#2D3928' }}>
+                                <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                                   {getFileName(resume)}
                                 </p>
                                 {resume.isPrimary === true && (
@@ -2663,7 +2663,7 @@ export const ProfilePage = () => {
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-2 text-xs" style={{ color: 'rgba(51, 58, 47, 0.63)' }}>
+                              <p className="mt-2 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                                 {formatFileSize(resume.sizeBytes)} • Updated {formatDateTime(getString(resume.updatedAt) || getString(resume.createdAt))}
                               </p>
                             </div>
@@ -2674,7 +2674,7 @@ export const ProfilePage = () => {
                                   type="button"
                                   onClick={() => void handleOpenFile(resume)}
                                   className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
-                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D3928', backgroundColor: 'white' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                                 >
                                   <Download className="h-4 w-4" />
                                   Open
@@ -2687,7 +2687,7 @@ export const ProfilePage = () => {
                                 }
                                 disabled={isDeletingMedia}
                                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
-                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'white' }}
+                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'var(--surface-base)' }}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 Delete
@@ -2704,17 +2704,17 @@ export const ProfilePage = () => {
                   <div
                     className="rounded-2xl border p-4 sm:p-5"
                     style={{
-                      borderColor: 'rgba(51, 58, 47, 0.12)',
+                      borderColor: 'var(--surface-border-strong)',
                       background:
                         'linear-gradient(140deg, rgba(241,247,250,0.9) 0%, rgba(255,255,255,1) 100%)',
                     }}
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h2 className="font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                        <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           Portfolio Files
                         </h2>
-                        <p className="mt-2 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.74)' }}>
+                        <p className="mt-2 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
                           Certificates, cases, and work samples for recruiters.
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -2743,8 +2743,8 @@ export const ProfilePage = () => {
                   </div>
 
                   {displayedPortfolioFiles.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: 'rgba(51, 58, 47, 0.68)' }}>
-                      <p className="font-semibold" style={{ color: '#3A4833' }}>No portfolio files yet</p>
+                    <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-muted)' }}>
+                      <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>No portfolio files yet</p>
                       <p className="mt-2">Add visual or document evidence of your experience.</p>
                     </div>
                   ) : (
@@ -2754,7 +2754,7 @@ export const ProfilePage = () => {
                           key={getFileId(file) || getString(file.id) || `portfolio-${index}`}
                           className="rounded-2xl border p-4"
                           style={{
-                            borderColor: 'rgba(51, 58, 47, 0.1)',
+                            borderColor: 'var(--surface-border-soft)',
                             background:
                               'linear-gradient(145deg, rgba(244,248,250,0.85) 0%, rgba(255,255,255,1) 100%)',
                           }}
@@ -2765,11 +2765,11 @@ export const ProfilePage = () => {
                                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: '#DCEBF1', color: '#2D4D58' }}>
                                   <FileArchive className="h-4 w-4" />
                                 </span>
-                                <p className="font-semibold" style={{ color: '#2D3928' }}>
+                                <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                                   {getFileName(file)}
                                 </p>
                               </div>
-                              <p className="mt-2 text-xs" style={{ color: 'rgba(51, 58, 47, 0.63)' }}>
+                              <p className="mt-2 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                                 {formatFileSize(file.sizeBytes)} • Uploaded {formatDateTime(getString(file.createdAt))}
                               </p>
                             </div>
@@ -2780,7 +2780,7 @@ export const ProfilePage = () => {
                                   type="button"
                                   onClick={() => void handleOpenFile(file)}
                                   className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
-                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D3928', backgroundColor: 'white' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                                 >
                                   <Download className="h-4 w-4" />
                                   Open
@@ -2793,7 +2793,7 @@ export const ProfilePage = () => {
                                 }
                                 disabled={isDeletingMedia}
                                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
-                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'white' }}
+                                style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#b91c1c', backgroundColor: 'var(--surface-base)' }}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 Delete
@@ -2809,16 +2809,16 @@ export const ProfilePage = () => {
 
               {isResumeUploadModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm">
-                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'rgba(51, 58, 47, 0.15)' }}>
+                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'var(--surface-border-strong)' }}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#5A6F4B' }}>
                           Resume Upload
                         </p>
-                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           Add New Resume
                         </h3>
-                        <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           Set a custom title and upload one PDF or DOCX file.
                         </p>
                       </div>
@@ -2826,7 +2826,7 @@ export const ProfilePage = () => {
                         type="button"
                         onClick={() => setIsResumeUploadModalOpen(false)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.18)', color: '#4B5D41' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-soft)' }}
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" />
@@ -2834,7 +2834,7 @@ export const ProfilePage = () => {
                     </div>
 
                     <div className="mt-6 space-y-4">
-                      <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F8FAF3' }}>
+                      <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
                         <input
                           ref={resumeFileInputRef}
                           type="file"
@@ -2850,18 +2850,18 @@ export const ProfilePage = () => {
                           type="button"
                           onClick={() => resumeFileInputRef.current?.click()}
                           className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-                          style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: '#2D3928' }}
+                          style={{ borderColor: '#8FA683', backgroundColor: '#EAF3DD', color: 'var(--surface-text-primary)' }}
                         >
                           <UploadCloud className="h-4 w-4" />
                           {resumeUploadFile ? 'Change File' : 'Choose File'}
                         </button>
-                        <p className="mt-3 text-sm" style={{ color: '#4A5B42' }}>
+                        <p className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           {resumeUploadFile ? `${resumeUploadFile.name} • ${formatFileSize(resumeUploadFile.size)}` : 'No file selected yet'}
                         </p>
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-sm font-semibold" style={{ color: '#33412C' }}>
+                        <label className="mb-2 block text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                           Resume Title Editor
                         </label>
                         <div className="relative">
@@ -2871,12 +2871,12 @@ export const ProfilePage = () => {
                             onChange={(event) => setResumeTitle(event.target.value)}
                             placeholder="Frontend CV v3 / Product Resume / Internship Resume"
                             className="h-12 rounded-xl border pl-10"
-                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', backgroundColor: '#FBFCF8' }}
+                            style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}
                           />
                         </div>
                       </div>
 
-                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F8FAF3', color: '#33412C' }}>
+                      <label className="inline-flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
                         <input
                           type="checkbox"
                           checked={resumePrimary}
@@ -2892,7 +2892,7 @@ export const ProfilePage = () => {
                         type="button"
                         onClick={() => setIsResumeUploadModalOpen(false)}
                         className="rounded-xl border px-4 py-2 text-sm font-semibold"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.16)', color: '#3F4C37', backgroundColor: 'white' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-soft)', backgroundColor: 'var(--surface-base)' }}
                       >
                         Cancel
                       </button>
@@ -2912,16 +2912,16 @@ export const ProfilePage = () => {
 
               {isPortfolioUploadModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm">
-                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'rgba(51, 58, 47, 0.15)' }}>
+                  <div className="w-full max-w-xl rounded-3xl border bg-white p-6 shadow-2xl sm:p-7" style={{ borderColor: 'var(--surface-border-strong)' }}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#4E6D75' }}>
                           Portfolio Upload
                         </p>
-                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: '#2D3928' }}>
+                        <h3 className="mt-1 font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           Add Portfolio File
                         </h3>
-                        <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           Upload image or document that shows your work.
                         </p>
                       </div>
@@ -2929,14 +2929,14 @@ export const ProfilePage = () => {
                         type="button"
                         onClick={() => setIsPortfolioUploadModalOpen(false)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.18)', color: '#4B5D41' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-soft)' }}
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
 
-                    <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F5FAFC' }}>
+                    <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
                       <input
                         ref={portfolioFileInputRef}
                         type="file"
@@ -2967,7 +2967,7 @@ export const ProfilePage = () => {
                         type="button"
                         onClick={() => setIsPortfolioUploadModalOpen(false)}
                         className="rounded-xl border px-4 py-2 text-sm font-semibold"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.16)', color: '#3F4C37', backgroundColor: 'white' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-soft)', backgroundColor: 'var(--surface-base)' }}
                       >
                         Cancel
                       </button>
@@ -2992,10 +2992,10 @@ export const ProfilePage = () => {
               <section className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
                 <div className="flex items-center justify-between gap-4 mb-6">
                   <div>
-                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                       Saved Vacancies
                     </h2>
-                    <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                    <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       Favorites loaded from the new `/favorites/my` flow.
                     </p>
                   </div>
@@ -3006,10 +3006,10 @@ export const ProfilePage = () => {
                 </div>
 
                 {favoritesLoading ? (
-                  <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading saved vacancies...</p>
+                  <p style={{ color: 'var(--surface-text-muted)' }}>Loading saved vacancies...</p>
                 ) : favoriteItems.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF0' }}>
-                    <p style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
+                    <p style={{ color: 'var(--surface-text-muted)' }}>
                       Save a vacancy from the jobs list or vacancy details to see it here.
                     </p>
                     <Link
@@ -3025,37 +3025,37 @@ export const ProfilePage = () => {
                 ) : (
                   <div className="space-y-4">
                     {favoriteItems.map((item) => (
-                      <div key={item.vacancy.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                      <div key={item.vacancy.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: 'var(--surface-subtle)' }}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <Link to={`/app/jobs/${item.vacancy.id}`} className="font-semibold hover:underline" style={{ color: '#333A2F' }}>
+                            <Link to={`/app/jobs/${item.vacancy.id}`} className="font-semibold hover:underline" style={{ color: 'var(--surface-text-primary)' }}>
                               {item.vacancy.title}
                             </Link>
-                            <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                            <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                               {item.vacancy.company?.name || 'Company'}
                               {item.vacancy.publicationCity?.name
                                 ? ` • ${item.vacancy.publicationCity.name}`
                                 : ''}
                             </p>
                           </div>
-                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
                             {item.vacancy.favoritesCount} saved
                           </span>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {item.vacancy.specializations.slice(0, 3).map((specialization) => (
-                            <span key={`${item.vacancy.id}-${specialization.id || specialization.name}`} className="rounded-lg px-3 py-1 text-xs font-medium" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                            <span key={`${item.vacancy.id}-${specialization.id || specialization.name}`} className="rounded-lg px-3 py-1 text-xs font-medium" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
                               {specialization.name || 'Specialization'}
                             </span>
                           ))}
                         </div>
-                        <p className="mt-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                        <p className="mt-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                           Saved at: {formatDateTime(item.favoriteCreatedAt)}
                         </p>
                         <Link
                           to={`/app/jobs/${item.vacancy.id}`}
                           className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D553F', backgroundColor: 'white' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', color: '#2D553F', backgroundColor: 'var(--surface-base)' }}
                         >
                           <Eye className="h-4 w-4" />
                           View vacancy
@@ -3070,10 +3070,10 @@ export const ProfilePage = () => {
               <section id="invites" className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
                 <div className="flex items-center justify-between gap-4 mb-6">
                   <div>
-                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                       My Invites
                     </h2>
-                    <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                    <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       Candidate invites loaded from `/invites/my`.
                     </p>
                   </div>
@@ -3084,10 +3084,10 @@ export const ProfilePage = () => {
                 </div>
 
                 {invitesLoading ? (
-                  <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading invites...</p>
+                  <p style={{ color: 'var(--surface-text-muted)' }}>Loading invites...</p>
                 ) : myInvites.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F7FAF0' }}>
-                    <p style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                  <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}>
+                    <p style={{ color: 'var(--surface-text-muted)' }}>
                       HR invites will appear here after an employer sends one.
                     </p>
                     <Link
@@ -3103,13 +3103,13 @@ export const ProfilePage = () => {
                 ) : (
                   <div className="space-y-4">
                     {myInvites.map((invite) => (
-                      <div key={invite.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                      <div key={invite.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: 'var(--surface-subtle)' }}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-semibold" style={{ color: '#333A2F' }}>
+                            <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                               {invite.vacancy?.title || 'Vacancy invite'}
                             </p>
-                            <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                            <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                               {invite.vacancy?.company?.name || 'Company'}
                             </p>
                           </div>
@@ -3122,12 +3122,12 @@ export const ProfilePage = () => {
                         </div>
 
                         {invite.message && (
-                          <p className="mt-3 text-sm leading-relaxed" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                          <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--surface-text-muted)' }}>
                             {invite.message}
                           </p>
                         )}
 
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                           <span>Created: {formatDateTime(invite.createdAt)}</span>
                           <span>Interview: {formatDateTime(invite.interviewAt)}</span>
                         </div>
@@ -3136,7 +3136,7 @@ export const ProfilePage = () => {
                           <Link
                             to={`/app/jobs/${invite.vacancy.id}`}
                             className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
-                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D553F', backgroundColor: 'white' }}
+                            style={{ borderColor: 'var(--surface-border-strong)', color: '#2D553F', backgroundColor: 'var(--surface-base)' }}
                           >
                             <ExternalLink className="w-4 h-4" />
                             Open vacancy
@@ -3156,10 +3156,10 @@ export const ProfilePage = () => {
               <div className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
                 <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                       Notifications
                     </h2>
-                    <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       Platform events, invite updates, and activity signals from your account.
                     </p>
                   </div>
@@ -3174,7 +3174,7 @@ export const ProfilePage = () => {
                       size="sm"
                       onClick={() => void loadNotifications({ limit: 20, offset: 0 })}
                       disabled={notificationsLoading}
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                     >
                       <RefreshCcw className="h-4 w-4" />
                       Refresh
@@ -3184,7 +3184,7 @@ export const ProfilePage = () => {
                       size="sm"
                       disabled={notificationsMutating || notificationsMeta.unread === 0}
                       onClick={() => void handleMarkAllNotificationsRead()}
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                     >
                       <CheckCheck className="h-4 w-4" />
                       Mark all read
@@ -3193,18 +3193,18 @@ export const ProfilePage = () => {
                 </div>
 
                 {notificationsLoading ? (
-                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#F7F8F1] p-6 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-subtle)] p-6 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                     Loading notifications...
                   </div>
                 ) : notifications.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#F7F8F1] p-8 text-center">
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-subtle)] p-8 text-center">
                     <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#37432F]">
                       <Bell className="h-5 w-5" />
                     </div>
-                    <p className="mt-4 text-lg font-semibold" style={{ color: '#333A2F' }}>
+                    <p className="mt-4 text-lg font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                       No notifications yet
                     </p>
-                    <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       New invites, status changes, and system events will appear here.
                     </p>
                   </div>
@@ -3223,25 +3223,25 @@ export const ProfilePage = () => {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="font-semibold" style={{ color: '#333A2F' }}>
+                              <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                                 {notification.title}
                               </p>
-                              <p className="mt-1 text-xs uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.5)' }}>
+                              <p className="mt-1 text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-faint)' }}>
                                 {notification.type}
                               </p>
                             </div>
-                            <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ backgroundColor: isUnread ? '#2F5E43' : '#EBEDDF', color: isUnread ? 'white' : '#333A2F' }}>
+                            <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ backgroundColor: isUnread ? '#2F5E43' : 'var(--surface-chip)', color: isUnread ? 'white' : 'var(--surface-text-primary)' }}>
                               {isUnread ? 'Unread' : 'Read'}
                             </span>
                           </div>
 
-                          <p className="mt-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                          <p className="mt-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                             {formatDateTime(notification.createdAt)}
                           </p>
 
                           <div className="mt-3 flex flex-wrap gap-3">
                             {href && (
-                              <Link to={href} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2B5A41', backgroundColor: 'white' }}>
+                              <Link to={href} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm" style={{ borderColor: 'var(--surface-border-strong)', color: '#2B5A41', backgroundColor: 'var(--surface-base)' }}>
                                 Open
                                 <ExternalLink className="h-4 w-4" />
                               </Link>
@@ -3251,7 +3251,7 @@ export const ProfilePage = () => {
                                 type="button"
                                 onClick={() => void handleMarkNotificationRead(notification.id)}
                                 className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm"
-                                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'white' }}
+                                style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                               >
                                 <CheckCircle2 className="h-4 w-4" />
                                 Mark as read
@@ -3267,18 +3267,18 @@ export const ProfilePage = () => {
 
               <div className="rounded-2xl p-6 sm:p-8 xl:sticky xl:top-[110px] xl:h-fit" style={cardStyle}>
                 <div className="mb-5">
-                  <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                  <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                     Telegram Notifications
                   </h2>
-                  <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                  <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                     Connect Telegram once, then manage what exactly should be delivered there.
                   </p>
                 </div>
 
-                <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: '#F7F8F1' }}>
+                <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-subtle)' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#61755A' }}>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                         Connection Status
                       </p>
                       <div className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: isTelegramLinked ? '#DCF2DE' : '#FEE2E2', color: isTelegramLinked ? '#166534' : '#991B1B' }}>
@@ -3291,7 +3291,7 @@ export const ProfilePage = () => {
                         type="button"
                         onClick={() => void handleTelegramChatIdCopy()}
                         className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2E4030', backgroundColor: 'white' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy ID
@@ -3299,9 +3299,9 @@ export const ProfilePage = () => {
                     )}
                   </div>
 
-                  <div className="mt-3 rounded-xl border px-3 py-2" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', backgroundColor: 'white' }}>
-                    <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: '#73836C' }}>Chat ID</p>
-                    <p className="mt-1 font-mono text-sm" style={{ color: '#2D3928' }}>
+                  <div className="mt-3 rounded-xl border px-3 py-2" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}>
+                    <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>Chat ID</p>
+                    <p className="mt-1 font-mono text-sm" style={{ color: 'var(--surface-text-primary)' }}>
                       {telegramSettings.telegramChatId || '—'}
                     </p>
                   </div>
@@ -3315,18 +3315,18 @@ export const ProfilePage = () => {
                         telegramNotificationsEnabled: !telegramSettings.telegramNotificationsEnabled,
                       })
                     }
-                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4 text-left"
+                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4 text-left"
                   >
                     <div>
-                      <p className="font-medium" style={{ color: '#333A2F' }}>
+                      <p className="font-medium" style={{ color: 'var(--surface-text-primary)' }}>
                         Enable Telegram notifications
                       </p>
-                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                         Toggle delivery to Telegram for all enabled event types.
                       </p>
                     </div>
                     <span className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${telegramSettings.telegramNotificationsEnabled ? 'bg-[#2B6A4D]' : 'bg-[#D7DCCC]'}`}>
-                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${telegramSettings.telegramNotificationsEnabled ? 'left-6' : 'left-1'}`} />
+                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white keep-white transition-all ${telegramSettings.telegramNotificationsEnabled ? 'left-6' : 'left-1'}`} />
                     </span>
                   </button>
 
@@ -3337,18 +3337,18 @@ export const ProfilePage = () => {
                         telegramNotifyInvites: !telegramSettings.telegramNotifyInvites,
                       })
                     }
-                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4 text-left"
+                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4 text-left"
                   >
                     <div>
-                      <p className="font-medium" style={{ color: '#333A2F' }}>
+                      <p className="font-medium" style={{ color: 'var(--surface-text-primary)' }}>
                         Invite notifications
                       </p>
-                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                         Vacancy invites from HR.
                       </p>
                     </div>
                     <span className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${telegramSettings.telegramNotifyInvites ? 'bg-[#2B6A4D]' : 'bg-[#D7DCCC]'}`}>
-                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${telegramSettings.telegramNotifyInvites ? 'left-6' : 'left-1'}`} />
+                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white keep-white transition-all ${telegramSettings.telegramNotifyInvites ? 'left-6' : 'left-1'}`} />
                     </span>
                   </button>
 
@@ -3359,18 +3359,18 @@ export const ProfilePage = () => {
                         telegramNotifyApplications: !telegramSettings.telegramNotifyApplications,
                       })
                     }
-                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4 text-left"
+                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4 text-left"
                   >
                     <div>
-                      <p className="font-medium" style={{ color: '#333A2F' }}>
+                      <p className="font-medium" style={{ color: 'var(--surface-text-primary)' }}>
                         Application notifications
                       </p>
-                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                         Alerts for new applications and application-related events.
                       </p>
                     </div>
                     <span className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${telegramSettings.telegramNotifyApplications ? 'bg-[#2B6A4D]' : 'bg-[#D7DCCC]'}`}>
-                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${telegramSettings.telegramNotifyApplications ? 'left-6' : 'left-1'}`} />
+                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white keep-white transition-all ${telegramSettings.telegramNotifyApplications ? 'left-6' : 'left-1'}`} />
                     </span>
                   </button>
                 </div>
@@ -3381,7 +3381,7 @@ export const ProfilePage = () => {
                     onClick={() => void handleTelegramSettingsSave()}
                     disabled={notificationsMutating}
                     className="justify-center"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                   >
                     <CheckCheck className="h-4 w-4" />
                     Save settings
@@ -3401,7 +3401,7 @@ export const ProfilePage = () => {
                     onClick={() => void handleTelegramStatusRefresh()}
                     disabled={notificationsMutating}
                     className="justify-center"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                   >
                     <RefreshCcw className="h-4 w-4" />
                     Refresh connection status
@@ -3409,15 +3409,15 @@ export const ProfilePage = () => {
                 </div>
 
                 {telegramLinkSession?.deepLink && (
-                  <div className="mt-5 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4">
-                    <p className="inline-flex items-center gap-2 font-medium" style={{ color: '#333A2F' }}>
+                  <div className="mt-5 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4">
+                    <p className="inline-flex items-center gap-2 font-medium" style={{ color: 'var(--surface-text-primary)' }}>
                       <MessageCircle className="h-4 w-4" />
                       Telegram deep-link is ready
                     </p>
-                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       Expires at: {formatDateTime(telegramLinkSession.expiresAt)}
                     </p>
-                    <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       Bot: {telegramLinkSession.botUsername || 'configured bot'}
                     </p>
                     <a
@@ -3431,7 +3431,7 @@ export const ProfilePage = () => {
                       <ExternalLink className="h-4 w-4" />
                     </a>
                     {telegramLinkSession.instructions && (
-                      <p className="mt-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.68)' }}>
+                      <p className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                         {telegramLinkSession.instructions}
                       </p>
                     )}
@@ -3446,10 +3446,10 @@ export const ProfilePage = () => {
               <div className="app-section-card p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
                       Trust & Compliance
                     </p>
-                    <p className="mt-1 text-sm text-[#465A3B]">
+                    <p className="mt-1 text-sm text-[var(--surface-text-soft)]">
                       Manage consents, export personal data, send complaints, and control deletion workflow.
                     </p>
                   </div>
@@ -3457,7 +3457,7 @@ export const ProfilePage = () => {
                     variant="outline"
                     onClick={() => void reloadPrivacyCenter()}
                     disabled={isPrivacyLoading}
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                   >
                     Refresh
                   </Button>
@@ -3471,7 +3471,7 @@ export const ProfilePage = () => {
               )}
 
               {privacySuccess && (
-                <div className="rounded-2xl border border-[#C8D9B3] bg-[#F1F8E8] px-4 py-3 text-sm text-[#2B5A41]">
+                <div className="rounded-2xl border border-[#C8D9B3] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[#2B5A41]">
                   {privacySuccess}
                 </div>
               )}
@@ -3480,9 +3480,9 @@ export const ProfilePage = () => {
                 <div className="rounded-2xl p-6 sm:p-7" style={cardStyle}>
                   <div className="mb-4 flex items-center gap-2">
                     <FileArchive className="h-4 w-4 text-[#2B5A41]" />
-                    <h2 className="font-heading text-xl font-bold text-[#333A2F]">Consent Snapshots</h2>
+                    <h2 className="font-heading text-xl font-bold text-[var(--surface-text-primary)]">Consent Snapshots</h2>
                   </div>
-                  <p className="mb-4 text-sm text-[#526347]">
+                  <p className="mb-4 text-sm text-[var(--surface-text-soft)]">
                     Backend stores consent history as snapshots, not overwrites.
                   </p>
 
@@ -3490,7 +3490,7 @@ export const ProfilePage = () => {
                     value={consentVersion}
                     onChange={(event) => setConsentVersion(event.target.value)}
                     placeholder="Consent version, e.g. v1.0-2026-05-13"
-                    className="mb-4 rounded-xl border-black/10 bg-[#F9FAF3]"
+                    className="mb-4 rounded-xl border-black/10 bg-[var(--surface-soft)]"
                   />
 
                   <div className="space-y-3">
@@ -3504,11 +3504,11 @@ export const ProfilePage = () => {
                             [type]: !prev[type],
                           }))
                         }
-                        className="flex w-full items-center justify-between rounded-2xl border border-black/5 bg-[#F7F8F1] px-4 py-3 text-left"
+                        className="flex w-full items-center justify-between rounded-2xl border border-black/5 bg-[var(--surface-subtle)] px-4 py-3 text-left"
                       >
                         <div>
-                          <p className="font-medium text-[#333A2F]">{formatEnum(type)}</p>
-                          <p className="text-xs text-[#5A6D4F]">Current draft: {consentDraft[type] ? 'Accepted' : 'Declined'}</p>
+                          <p className="font-medium text-[var(--surface-text-primary)]">{formatEnum(type)}</p>
+                          <p className="text-xs text-[var(--surface-text-soft)]">Current draft: {consentDraft[type] ? 'Accepted' : 'Declined'}</p>
                         </div>
                         <span
                           className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${
@@ -3516,7 +3516,7 @@ export const ProfilePage = () => {
                           }`}
                         >
                           <span
-                            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${
+                            className={`absolute top-1 h-5 w-5 rounded-full bg-white keep-white transition-all ${
                               consentDraft[type] ? 'left-6' : 'left-1'
                             }`}
                           />
@@ -3544,29 +3544,29 @@ export const ProfilePage = () => {
                   </div>
 
                   {privacyExport && (
-                    <div className="mt-5 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4 text-sm text-[#4E6142]">
+                    <div className="mt-5 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4 text-sm text-[#4E6142]">
                       <p>
-                        Exported at: <span className="font-semibold text-[#2D3A26]">{formatDateTime(privacyExport.exportedAt)}</span>
+                        Exported at: <span className="font-semibold text-[var(--surface-text-primary)]">{formatDateTime(privacyExport.exportedAt)}</span>
                       </p>
                       <p className="mt-1">
-                        Files indexed: <span className="font-semibold text-[#2D3A26]">{privacyExport.filesIndex.length}</span>
+                        Files indexed: <span className="font-semibold text-[var(--surface-text-primary)]">{privacyExport.filesIndex.length}</span>
                       </p>
                     </div>
                   )}
 
                   <div className="mt-5">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#526347]">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
                       Latest consent history
                     </p>
                     <div className="space-y-2">
                       {consents.slice(0, 6).map((entry) => (
-                        <div key={entry.id} className="rounded-xl border border-black/5 bg-[#F9FAF3] px-3 py-2 text-xs text-[#526347]">
-                          <span className="font-semibold text-[#2D3A26]">{formatEnum(entry.type)}</span> • {entry.version} •{' '}
+                        <div key={entry.id} className="rounded-xl border border-black/5 bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--surface-text-soft)]">
+                          <span className="font-semibold text-[var(--surface-text-primary)]">{formatEnum(entry.type)}</span> • {entry.version} •{' '}
                           {entry.accepted ? 'accepted' : 'declined'} • {formatDateTime(entry.createdAt)}
                         </div>
                       ))}
                       {consents.length === 0 && !isPrivacyLoading && (
-                        <p className="text-sm text-[#607356]">No consent snapshots yet.</p>
+                        <p className="text-sm text-[var(--surface-text-muted)]">No consent snapshots yet.</p>
                       )}
                     </div>
                   </div>
@@ -3576,9 +3576,9 @@ export const ProfilePage = () => {
                   <div className="rounded-2xl p-6 sm:p-7" style={cardStyle}>
                     <div className="mb-4 flex items-center gap-2">
                       <UserRoundX className="h-4 w-4 text-[#8A2A2A]" />
-                      <h2 className="font-heading text-xl font-bold text-[#333A2F]">Delete Request</h2>
+                      <h2 className="font-heading text-xl font-bold text-[var(--surface-text-primary)]">Delete Request</h2>
                     </div>
-                    <p className="mb-4 text-sm text-[#526347]">
+                    <p className="mb-4 text-sm text-[var(--surface-text-soft)]">
                       Creates account deletion request and schedules hard-delete according to backend policy.
                     </p>
                     <Textarea
@@ -3586,7 +3586,7 @@ export const ProfilePage = () => {
                       onChange={(event) => setDeleteReason(event.target.value)}
                       rows={3}
                       placeholder="Reason for delete request"
-                      className="rounded-xl border-black/10 bg-[#F9FAF3]"
+                      className="rounded-xl border-black/10 bg-[var(--surface-soft)]"
                     />
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
                       <Button
@@ -3615,7 +3615,7 @@ export const ProfilePage = () => {
                     <div className="rounded-2xl p-6 sm:p-7" style={cardStyle}>
                       <div className="mb-4 flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-[#2B5A41]" />
-                        <h2 className="font-heading text-xl font-bold text-[#333A2F]">Company Verification</h2>
+                        <h2 className="font-heading text-xl font-bold text-[var(--surface-text-primary)]">Company Verification</h2>
                       </div>
 
                       {companyVerification ? (
@@ -3623,33 +3623,33 @@ export const ProfilePage = () => {
                           <div className="inline-flex rounded-full bg-[#EDF2E3] px-3 py-1 text-xs font-semibold text-[#2E4638]">
                             Status: {companyVerificationStatuses.includes(companyVerification.verificationStatus || 'PENDING') ? formatEnum(companyVerification.verificationStatus) : 'Pending'}
                           </div>
-                          <p className="mt-3 text-sm text-[#526347]">
+                          <p className="mt-3 text-sm text-[var(--surface-text-soft)]">
                             Reviewed at: {formatDateTime(companyVerification.verificationReviewedAt)}
                           </p>
-                          <p className="text-sm text-[#526347]">
+                          <p className="text-sm text-[var(--surface-text-soft)]">
                             Due at: {formatDateTime(companyVerification.verificationDueAt)}
                           </p>
                           {companyVerification.verificationComment && (
-                            <p className="mt-2 rounded-xl bg-[#F7F8F1] px-3 py-2 text-sm text-[#4F6143]">
+                            <p className="mt-2 rounded-xl bg-[var(--surface-subtle)] px-3 py-2 text-sm text-[var(--surface-text-muted)]">
                               Comment: {companyVerification.verificationComment}
                             </p>
                           )}
                           <div className="mt-4 space-y-2">
                             {companyVerification.verificationSubmissions.map((submission) => (
-                              <div key={submission.id} className="rounded-xl border border-black/5 bg-[#F9FAF3] px-3 py-2 text-xs text-[#526347]">
-                                <span className="font-semibold text-[#2D3A26]">
+                              <div key={submission.id} className="rounded-xl border border-black/5 bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--surface-text-soft)]">
+                                <span className="font-semibold text-[var(--surface-text-primary)]">
                                   {formatEnum(submission.status)}
                                 </span>{' '}
                                 • {submission.binIin || 'No BIN/IIN'} • {formatDateTime(submission.createdAt)}
                               </div>
                             ))}
                             {companyVerification.verificationSubmissions.length === 0 && (
-                              <p className="text-sm text-[#607356]">No verification submissions yet.</p>
+                              <p className="text-sm text-[var(--surface-text-muted)]">No verification submissions yet.</p>
                             )}
                           </div>
                         </>
                       ) : (
-                        <p className="text-sm text-[#607356]">
+                        <p className="text-sm text-[var(--surface-text-muted)]">
                           Verification snapshot not available yet.
                         </p>
                       )}
@@ -3661,9 +3661,9 @@ export const ProfilePage = () => {
               <div className="rounded-2xl p-6 sm:p-7" style={cardStyle}>
                 <div className="mb-4 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-[#8A2A2A]" />
-                  <h2 className="font-heading text-xl font-bold text-[#333A2F]">Complaints</h2>
+                  <h2 className="font-heading text-xl font-bold text-[var(--surface-text-primary)]">Complaints</h2>
                 </div>
-                <p className="mb-4 text-sm text-[#526347]">
+                <p className="mb-4 text-sm text-[var(--surface-text-soft)]">
                   Report vacancy, profile, or message directly to moderation queue.
                 </p>
 
@@ -3671,7 +3671,7 @@ export const ProfilePage = () => {
                   <select
                     value={complaintTargetType}
                     onChange={(event) => setComplaintTargetType(event.target.value as ComplaintTargetType)}
-                    className="h-11 rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+                    className="h-11 rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                   >
                     {complaintTargetTypes.map((type) => (
                       <option key={type} value={type}>
@@ -3683,7 +3683,7 @@ export const ProfilePage = () => {
                     value={complaintTargetId}
                     onChange={(event) => setComplaintTargetId(event.target.value)}
                     placeholder="Target ID (vacancy/profile/message)"
-                    className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                    className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
                   />
                 </div>
 
@@ -3691,14 +3691,14 @@ export const ProfilePage = () => {
                   value={complaintReason}
                   onChange={(event) => setComplaintReason(event.target.value)}
                   placeholder="Reason"
-                  className="mt-3 h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                  className="mt-3 h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
                 />
                 <Textarea
                   value={complaintDetails}
                   onChange={(event) => setComplaintDetails(event.target.value)}
                   rows={3}
                   placeholder="Details (optional)"
-                  className="mt-3 rounded-xl border-black/10 bg-[#F9FAF3]"
+                  className="mt-3 rounded-xl border-black/10 bg-[var(--surface-soft)]"
                 />
                 <div className="mt-3">
                   <Button variant="hero" onClick={() => void handleCreateComplaint()} disabled={isPrivacyMutating}>
@@ -3711,11 +3711,11 @@ export const ProfilePage = () => {
                     const count = myComplaints.filter((entry) => entry.status === status).length;
 
                     return (
-                      <div key={status} className="rounded-xl border border-black/5 bg-[#F9FAF3] px-3 py-2 text-center">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6D4F]">
+                      <div key={status} className="rounded-xl border border-black/5 bg-[var(--surface-soft)] px-3 py-2 text-center">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
                           {formatEnum(status)}
                         </p>
-                        <p className="mt-1 text-base font-bold text-[#2D3A26]">{count}</p>
+                        <p className="mt-1 text-base font-bold text-[var(--surface-text-primary)]">{count}</p>
                       </div>
                     );
                   })}
@@ -3723,24 +3723,24 @@ export const ProfilePage = () => {
 
                 <div className="mt-4 space-y-2">
                   {myComplaints.slice(0, 8).map((complaint) => (
-                    <div key={complaint.id} className="rounded-xl border border-black/5 bg-[#F9FAF3] p-3">
+                    <div key={complaint.id} className="rounded-xl border border-black/5 bg-[var(--surface-soft)] p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-[#2D3A26]">
+                        <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
                           {formatEnum(complaint.targetType)} • {complaint.targetId || 'No target'}
                         </p>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#3F5341]">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--surface-text-soft)]">
                           {formatEnum(complaint.status)}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-[#4F6143]">{complaint.reason || 'No reason'}</p>
+                      <p className="mt-1 text-sm text-[var(--surface-text-muted)]">{complaint.reason || 'No reason'}</p>
                       {complaint.details && (
-                        <p className="mt-1 text-xs text-[#607356]">{complaint.details}</p>
+                        <p className="mt-1 text-xs text-[var(--surface-text-muted)]">{complaint.details}</p>
                       )}
-                      <p className="mt-1 text-xs text-[#607356]">{formatDateTime(complaint.createdAt)}</p>
+                      <p className="mt-1 text-xs text-[var(--surface-text-muted)]">{formatDateTime(complaint.createdAt)}</p>
                     </div>
                   ))}
                   {myComplaints.length === 0 && !isPrivacyLoading && (
-                    <p className="text-sm text-[#607356]">No complaints yet.</p>
+                    <p className="text-sm text-[var(--surface-text-muted)]">No complaints yet.</p>
                   )}
                 </div>
               </div>

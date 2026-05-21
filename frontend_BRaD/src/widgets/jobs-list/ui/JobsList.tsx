@@ -74,7 +74,7 @@ export const JobsList = () => {
               id="sort-vacancies"
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="h-10 rounded-xl border border-[#9FB08A]/35 bg-white px-3 text-sm font-medium text-[#2D3D25] focus:outline-none focus:ring-2 focus:ring-[#2B6A4D]/30"
+              className="h-10 rounded-xl border border-[#9FB08A]/35 bg-white dark:bg-[#111814] px-3 text-sm font-medium text-[#2D3D25] focus:outline-none focus:ring-2 focus:ring-[#2B6A4D]/30"
             >
               <option value="relevance">Relevance</option>
               <option value="newest">Newest first</option>

@@ -944,10 +944,10 @@ export const EmployerPage = () => {
         <AppHeader />
         <main className="container mx-auto px-6 py-12" style={{ maxWidth: '1280px' }}>
           <div className="text-center">
-            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading text-3xl font-bold mb-4" style={{ color: 'var(--surface-text-primary)' }}>
               {t('employer.accessDenied')}
             </h1>
-            <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p style={{ color: 'var(--surface-text-muted)' }}>
               {t('employer.accessDescription')}
             </p>
           </div>
@@ -962,10 +962,10 @@ export const EmployerPage = () => {
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
               {t('employer.title')}
             </h1>
-            <p className="text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
               {t('employer.description')}
             </p>
           </div>
@@ -974,7 +974,7 @@ export const EmployerPage = () => {
             variant="hero"
             className="w-full sm:w-auto"
             disabled={isSaving}
-            style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+            style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
           >
             <Plus className="w-4 h-4 mr-2" />
             {t('employer.createVacancy')}
@@ -1002,10 +1002,10 @@ export const EmployerPage = () => {
         )}
 
         {showWizard && (
-          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'rgba(51, 58, 47, 0.12)', background: '#FFFFFF' }}>
+          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'var(--surface-border-strong)', background: 'var(--surface-base)' }}>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: '#1F2A1A' }}>
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   Vacancy Builder
                 </h2>
                 <p className="text-sm mt-1" style={{ color: 'rgba(31, 42, 26, 0.65)' }}>
@@ -1039,7 +1039,7 @@ export const EmployerPage = () => {
                   type="button"
                   onClick={handleClose}
                   className="px-4 py-2 rounded-lg border-2 text-sm font-medium"
-                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                 >
                   Close
                 </button>
@@ -1047,27 +1047,27 @@ export const EmployerPage = () => {
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Basic</h3>
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'var(--surface-border-strong)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Basic</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Vacancy title</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Vacancy title</label>
                     <Input
                       value={formData.basic.title}
                       onChange={(event) => updateField('basic', 'title', event.target.value)}
                       placeholder="Frontend Developer Intern"
                       className="h-12"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                     />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Experience level</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Experience level</label>
                       <select
                         value={formData.basic.experienceLevel}
                         onChange={(event) => updateField('basic', 'experienceLevel', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.experienceLevels.map((option) => (
@@ -1076,21 +1076,21 @@ export const EmployerPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Hiring plan</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Hiring plan</label>
                       <Input
                         type="number"
                         min={1}
                         value={formData.basic.hiringPlan}
                         onChange={(event) => updateField('basic', 'hiringPlan', event.target.value)}
                         className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Specializations</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Specializations</label>
                     {dictionaries.specializations.length === 0 ? (
-                      <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                      <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                         {isDictionariesLoading ? 'Loading specializations...' : 'Optional field. You can skip it.'}
                       </p>
                     ) : (
@@ -1103,9 +1103,9 @@ export const EmployerPage = () => {
                               type="button"
                               className="px-3 py-1 rounded-lg text-xs border"
                               style={{
-                                borderColor: selected ? '#204B35' : 'rgba(51, 58, 47, 0.2)',
-                                backgroundColor: selected ? '#204B35' : '#ffffff',
-                                color: selected ? '#ffffff' : '#333A2F',
+                                borderColor: selected ? '#204B35' : 'var(--surface-border-strong)',
+                                backgroundColor: selected ? '#204B35' : 'var(--surface-base)',
+                                color: selected ? 'var(--surface-base)' : 'var(--surface-text-primary)',
                               }}
                               onClick={() =>
                                 updateField('basic', 'specializationIds', toggleArrayValue(formData.basic.specializationIds, option.value))
@@ -1121,17 +1121,17 @@ export const EmployerPage = () => {
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Conditions</h3>
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'var(--surface-border-strong)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Conditions</h3>
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Worker kind</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Worker kind</label>
                       <select
                         value={formData.conditions.workerKind}
                         onChange={(event) => updateField('conditions', 'workerKind', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.workerKinds.map((option) => (
@@ -1140,12 +1140,12 @@ export const EmployerPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Employment type</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Employment type</label>
                       <select
                         value={formData.conditions.employmentType}
                         onChange={(event) => updateField('conditions', 'employmentType', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.employmentTypes.map((option) => (
@@ -1155,7 +1155,7 @@ export const EmployerPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Work formats</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Work formats</label>
                     <div className="flex flex-wrap gap-2">
                       {dictionaries.workFormats.map((option) => {
                         const selected = formData.conditions.workFormats.includes(option.value);
@@ -1165,9 +1165,9 @@ export const EmployerPage = () => {
                             type="button"
                             className="px-3 py-1 rounded-lg text-xs border"
                             style={{
-                              borderColor: selected ? '#204B35' : 'rgba(51, 58, 47, 0.2)',
-                              backgroundColor: selected ? '#204B35' : '#ffffff',
-                              color: selected ? '#ffffff' : '#333A2F',
+                              borderColor: selected ? '#204B35' : 'var(--surface-border-strong)',
+                              backgroundColor: selected ? '#204B35' : 'var(--surface-base)',
+                              color: selected ? 'var(--surface-base)' : 'var(--surface-text-primary)',
                             }}
                             onClick={() =>
                               updateField('conditions', 'workFormats', toggleArrayValue(formData.conditions.workFormats, option.value))
@@ -1182,12 +1182,12 @@ export const EmployerPage = () => {
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5 xl:col-span-2" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Schedule</h3>
+              <section className="rounded-2xl border bg-white p-5 xl:col-span-2" style={{ borderColor: 'var(--surface-border-strong)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Schedule</h3>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <section className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F6F8F1' }}>
+                  <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-subtle)' }}>
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <label className="block text-sm font-semibold" style={{ color: '#2D4A37' }}>Schedules</label>
+                      <label className="block text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>Schedules</label>
                       {formData.schedule.schedules.length > 0 && (
                         <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'schedules', [])}>Clear</button>
                       )}
@@ -1200,7 +1200,7 @@ export const EmployerPage = () => {
                         updateField('schedule', 'schedules', addArrayValue(formData.schedule.schedules, value));
                       }}
                       className="flex h-11 w-full rounded-xl border px-3 py-2 text-sm mb-3"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                     >
                       <option value="">Choose schedule type</option>
                       {dictionaries.schedules.map((option) => (
@@ -1208,7 +1208,7 @@ export const EmployerPage = () => {
                       ))}
                     </select>
                     <div className="flex flex-wrap gap-2">
-                      {formData.schedule.schedules.length === 0 && <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No schedules selected.</span>}
+                      {formData.schedule.schedules.length === 0 && <span className="text-xs" style={{ color: 'var(--surface-text-muted)' }}>No schedules selected.</span>}
                       {formData.schedule.schedules.map((value) => {
                         const label = dictionaries.schedules.find((item) => item.value === value)?.label || value;
                         return (
@@ -1216,7 +1216,7 @@ export const EmployerPage = () => {
                             key={`schedule-${value}`}
                             type="button"
                             className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                            style={{ backgroundColor: '#ffffff', color: '#2D4A37', border: '1px solid rgba(45, 74, 55, 0.2)' }}
+                            style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)', border: '1px solid rgba(45, 74, 55, 0.2)' }}
                             onClick={() => updateField('schedule', 'schedules', formData.schedule.schedules.filter((item) => item !== value))}
                           >
                             {label}
@@ -1227,9 +1227,9 @@ export const EmployerPage = () => {
                     </div>
                   </section>
 
-                  <section className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#F6F8F1' }}>
+                  <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-subtle)' }}>
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <label className="block text-sm font-semibold" style={{ color: '#2D4A37' }}>Work hours</label>
+                      <label className="block text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>Work hours</label>
                       {formData.schedule.workHours.length > 0 && (
                         <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'workHours', [])}>Clear</button>
                       )}
@@ -1242,7 +1242,7 @@ export const EmployerPage = () => {
                         updateField('schedule', 'workHours', addArrayValue(formData.schedule.workHours, value));
                       }}
                       className="flex h-11 w-full rounded-xl border px-3 py-2 text-sm mb-3"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                     >
                       <option value="">Choose work hours</option>
                       {dictionaries.workHours.map((option) => (
@@ -1252,7 +1252,7 @@ export const EmployerPage = () => {
                       ))}
                     </select>
                     <div className="flex flex-wrap gap-2">
-                      {formData.schedule.workHours.length === 0 && <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No work hours selected.</span>}
+                      {formData.schedule.workHours.length === 0 && <span className="text-xs" style={{ color: 'var(--surface-text-muted)' }}>No work hours selected.</span>}
                       {formData.schedule.workHours.map((value) => {
                         const option = dictionaries.workHours.find((item) => item.value === value);
                         const label = formatWorkHourLabel(value, option?.label || value);
@@ -1261,7 +1261,7 @@ export const EmployerPage = () => {
                             key={`work-hours-${value}`}
                             type="button"
                             className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                            style={{ backgroundColor: '#ffffff', color: '#2D4A37', border: '1px solid rgba(45, 74, 55, 0.2)' }}
+                            style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)', border: '1px solid rgba(45, 74, 55, 0.2)' }}
                             onClick={() => updateField('schedule', 'workHours', formData.schedule.workHours.filter((item) => item !== value))}
                           >
                             {label}
@@ -1274,16 +1274,16 @@ export const EmployerPage = () => {
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Address</h3>
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'var(--surface-border-strong)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Address</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Publication city</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Publication city</label>
                     <select
                       value={formData.address.publicationCityId}
                       onChange={(event) => updateField('address', 'publicationCityId', event.target.value)}
                       className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                     >
                       <option value="">Not specified</option>
                       {dictionaries.cities.map((option) => (
@@ -1292,16 +1292,16 @@ export const EmployerPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Work address</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Work address</label>
                     <Input
                       value={formData.address.workAddress}
                       onChange={(event) => updateField('address', 'workAddress', event.target.value)}
                       placeholder="Abylai Khan Ave 123"
                       className="h-12"
-                      style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                      style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                     />
                   </div>
-                  <label className="inline-flex items-center gap-2 text-sm" style={{ color: '#333A2F' }}>
+                  <label className="inline-flex items-center gap-2 text-sm" style={{ color: 'var(--surface-text-primary)' }}>
                     <input
                       type="checkbox"
                       checked={formData.address.hideWorkAddress}
@@ -1312,40 +1312,40 @@ export const EmployerPage = () => {
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Compensation (optional)</h3>
-                <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+              <section className="rounded-2xl border bg-white p-5" style={{ borderColor: 'var(--surface-border-strong)' }}>
+                <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Compensation (optional)</h3>
+                <p className="text-xs mb-3" style={{ color: 'var(--surface-text-muted)' }}>
                   You can leave salary fields empty.
                 </p>
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary from</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Salary from</label>
                       <Input
                         type="number"
                         value={formData.compensation.salaryFrom}
                         onChange={(event) => updateField('compensation', 'salaryFrom', event.target.value)}
                         className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary to</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Salary to</label>
                       <Input
                         type="number"
                         value={formData.compensation.salaryTo}
                         onChange={(event) => updateField('compensation', 'salaryTo', event.target.value)}
                         className="h-12"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Currency</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Currency</label>
                       <select
                         value={formData.compensation.currency}
                         onChange={(event) => updateField('compensation', 'currency', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         {dictionaries.currencies.map((option) => (
                           <option key={option.value} value={option.value}>{option.label}</option>
@@ -1355,12 +1355,12 @@ export const EmployerPage = () => {
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Salary period</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Salary period</label>
                       <select
                         value={formData.compensation.salaryPeriod}
                         onChange={(event) => updateField('compensation', 'salaryPeriod', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.salaryPeriods.map((option) => (
@@ -1369,12 +1369,12 @@ export const EmployerPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Tax mode</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Tax mode</label>
                       <select
                         value={formData.compensation.salaryTaxMode}
                         onChange={(event) => updateField('compensation', 'salaryTaxMode', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.salaryTaxModes.map((option) => (
@@ -1383,12 +1383,12 @@ export const EmployerPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Payout frequency</label>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Payout frequency</label>
                       <select
                         value={formData.compensation.payoutFrequency}
                         onChange={(event) => updateField('compensation', 'payoutFrequency', event.target.value)}
                         className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                       >
                         <option value="">Not specified</option>
                         {dictionaries.payoutFrequencies.map((option) => (
@@ -1401,32 +1401,32 @@ export const EmployerPage = () => {
               </section>
             </div>
 
-            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Description</h3>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Vacancy description (max 200 chars)</label>
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'var(--surface-border-strong)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Description</h3>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Vacancy description (max 200 chars)</label>
               <Textarea
                 rows={5}
                 maxLength={200}
                 value={formData.description.description}
                 onChange={(event) => updateField('description', 'description', event.target.value)}
                 placeholder="Describe role in up to 200 chars"
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
               />
-              <p className="text-xs mt-1" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <p className="text-xs mt-1" style={{ color: 'var(--surface-text-soft)' }}>
                 {formData.description.description.length}/200
               </p>
             </section>
 
-            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Skills</h3>
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'var(--surface-border-strong)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Skills</h3>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Legacy skills (compatibility)</label>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Legacy skills (compatibility)</label>
                 <Textarea
                   rows={4}
                   value={formData.skills.skillsText}
                   onChange={(event) => updateField('skills', 'skillsText', event.target.value)}
                   placeholder="React, TypeScript, REST API"
-                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                  style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                 />
               </div>
 
@@ -1442,9 +1442,9 @@ export const EmployerPage = () => {
                     : availableOptions.slice(0, 14);
 
                   return (
-                    <div key={field} className="rounded-2xl border p-4" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: config.surface }}>
+                    <div key={field} className="rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: config.surface }}>
                       <label className="block text-sm font-semibold mb-1" style={{ color: config.accent }}>{config.label}</label>
-                      <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>{config.hint}</p>
+                      <p className="text-xs mb-3" style={{ color: 'var(--surface-text-muted)' }}>{config.hint}</p>
 
                       <div className="flex gap-2 mb-3">
                         <Input
@@ -1458,20 +1458,20 @@ export const EmployerPage = () => {
                           }}
                           placeholder={config.placeholder}
                           className="h-11"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                         />
-                        <Button type="button" variant="outline" onClick={() => commitSkillDraft(field)} style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}>
+                        <Button type="button" variant="outline" onClick={() => commitSkillDraft(field)} style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}>
                           Add
                         </Button>
                       </div>
 
                       <div className="mb-3">
-                        <div className="mb-1 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                        <div className="mb-1 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--surface-text-muted)' }}>
                           Skill list
                         </div>
-                        <div className="max-h-36 overflow-y-auto rounded-xl border p-2" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#ffffff' }}>
+                        <div className="max-h-36 overflow-y-auto rounded-xl border p-2" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}>
                           {filteredOptions.length === 0 ? (
-                            <div className="px-2 py-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                            <div className="px-2 py-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                               Nothing found. Type custom skill and click Add.
                             </div>
                           ) : (
@@ -1481,7 +1481,7 @@ export const EmployerPage = () => {
                                   key={`${field}-search-${skill}`}
                                   type="button"
                                   className="rounded-full border px-2.5 py-1 text-xs"
-                                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#2D4A37', backgroundColor: '#F9FBF7' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: '#F9FBF7' }}
                                   onClick={() => addSkillToBucket(field, skill)}
                                 >
                                   {skill}
@@ -1493,7 +1493,7 @@ export const EmployerPage = () => {
                       </div>
 
                       {selectedSkills.length === 0 ? (
-                        <p className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>No skills selected yet.</p>
+                        <p className="text-xs" style={{ color: 'var(--surface-text-muted)' }}>No skills selected yet.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {selectedSkills.map((skill) => (
@@ -1502,7 +1502,7 @@ export const EmployerPage = () => {
                               type="button"
                               onClick={() => removeSkillFromBucket(field, skill)}
                               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                              style={{ backgroundColor: '#ffffff', color: config.accent, border: '1px solid rgba(51, 58, 47, 0.15)' }}
+                              style={{ backgroundColor: 'var(--surface-base)', color: config.accent, border: '1px solid var(--surface-border-strong)' }}
                               title="Remove skill"
                             >
                               {skill}
@@ -1518,12 +1518,12 @@ export const EmployerPage = () => {
 
               <div className="grid gap-4 md:grid-cols-3 mt-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Required education level</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Required education level</label>
                   <select
                     value={formData.skills.requiredEducationLevel}
                     onChange={(event) => updateField('skills', 'requiredEducationLevel', event.target.value)}
                     className="flex h-12 w-full rounded-lg border px-3 py-2 text-sm"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                   >
                     <option value="">No restriction</option>
                     {educationLevelOptions.map((option) => (
@@ -1532,39 +1532,39 @@ export const EmployerPage = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Min hours/week</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Min hours/week</label>
                   <Input
                     type="number"
                     min={1}
                     value={formData.skills.minHoursPerWeek}
                     onChange={(event) => updateField('skills', 'minHoursPerWeek', event.target.value)}
                     className="h-12"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>Max hours/week</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>Max hours/week</label>
                   <Input
                     type="number"
                     min={1}
                     value={formData.skills.maxHoursPerWeek}
                     onChange={(event) => updateField('skills', 'maxHoursPerWeek', event.target.value)}
                     className="h-12"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                   />
                 </div>
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                   Required skill levels
                 </label>
-                <p className="text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                <p className="text-xs mb-3" style={{ color: 'var(--surface-text-soft)' }}>
                   Choose level for each required skill.
                 </p>
 
                 {readSkillBucket('requiredSkillsText').length === 0 ? (
-                  <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(51, 58, 47, 0.15)', color: 'rgba(51, 58, 47, 0.7)' }}>
+                  <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-muted)' }}>
                     Add required skills first, then set levels here.
                   </div>
                 ) : (
@@ -1577,16 +1577,16 @@ export const EmployerPage = () => {
                         <div
                           key={`required-level-${skillKey}`}
                           className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr,220px]"
-                          style={{ borderColor: 'rgba(51, 58, 47, 0.15)', backgroundColor: '#FAFCF8' }}
+                          style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}
                         >
-                          <div className="text-sm font-medium self-center" style={{ color: '#2B3A30' }}>
+                          <div className="text-sm font-medium self-center" style={{ color: 'var(--surface-text-primary)' }}>
                             {skill}
                           </div>
                           <select
                             value={currentLevel}
                             onChange={(event) => setRequiredSkillLevel(skill, event.target.value)}
                             className="flex h-11 w-full rounded-lg border px-3 py-2 text-sm"
-                            style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                            style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                           >
                             <option value="">Not specified</option>
                             {skillLevelOptions.map((levelOption) => (
@@ -1603,10 +1603,10 @@ export const EmployerPage = () => {
               </div>
             </section>
 
-            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'rgba(51, 58, 47, 0.12)' }}>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: '#243227' }}>Languages</h3>
+            <section className="rounded-2xl border bg-white p-5 mt-4" style={{ borderColor: 'var(--surface-border-strong)' }}>
+              <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: 'var(--surface-text-primary)' }}>Languages</h3>
               {languageOptions.length === 0 ? (
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>No languages in dictionary.</p>
+                <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>No languages in dictionary.</p>
               ) : (
                 <div className="space-y-3">
                   <select
@@ -1617,7 +1617,7 @@ export const EmployerPage = () => {
                       updateField('languages', 'languageIds', toggleArrayValue(formData.languages.languageIds, value));
                     }}
                     className="w-full rounded-xl border px-4 py-3 text-sm"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: '#ffffff' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}
                   >
                     <option value="">Choose language</option>
                     {languageOptions.map((language) => (
@@ -1633,7 +1633,7 @@ export const EmployerPage = () => {
                           key={languageId}
                           type="button"
                           className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                          style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}
+                          style={{ backgroundColor: 'var(--surface-chip)', color: 'var(--surface-text-primary)' }}
                           onClick={() => updateField('languages', 'languageIds', formData.languages.languageIds.filter((id) => id !== languageId))}
                         >
                           {label}
@@ -1649,27 +1649,27 @@ export const EmployerPage = () => {
         )}
 
         <div className="space-y-4">
-          <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+          <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
             {t('employer.yourVacancies')}
           </h2>
 
           {isLoading ? (
             <div className="bg-white rounded-2xl shadow-lg p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading vacancies...</p>
+              <p style={{ color: 'var(--surface-text-muted)' }}>Loading vacancies...</p>
             </div>
           ) : sortedVacancies.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              <Briefcase className="w-16 h-16 mx-auto mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }} />
-              <h3 className="font-heading text-xl font-bold mb-2" style={{ color: '#333A2F' }}>
+              <Briefcase className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--surface-text-muted)' }} />
+              <h3 className="font-heading text-xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                 {t('employer.noVacancies')}
               </h3>
-              <p className="mb-4" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              <p className="mb-4" style={{ color: 'var(--surface-text-muted)' }}>
                 {t('employer.noVacanciesDescription')}
               </p>
               <Button
                 onClick={handleCreate}
                 variant="hero"
-                style={{ backgroundColor: '#333A2F', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
               >
                 {t('employer.createFirstVacancy')}
               </Button>
@@ -1681,7 +1681,7 @@ export const EmployerPage = () => {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
+                        <h3 className="font-heading text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                           {vacancy.title}
                         </h3>
                         <span
@@ -1705,13 +1705,13 @@ export const EmployerPage = () => {
                         </span>
                       </div>
 
-                      <p className="text-sm mb-1" style={{ color: 'rgba(51, 58, 47, 0.8)' }}>
+                      <p className="text-sm mb-1" style={{ color: 'var(--surface-text-muted)' }}>
                         City: {cityLabelById.get(vacancy.publicationCityId || '') || '—'}
                       </p>
-                      <p className="text-sm mb-1" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                      <p className="text-sm mb-1" style={{ color: 'var(--surface-text-muted)' }}>
                         Experience: {vacancy.experienceLevel ? formatEnumLabel(vacancy.experienceLevel) : '—'}
                       </p>
-                      <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                      <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                         <span>Updated: {formatDate(vacancy.updatedAt || vacancy.createdAt)}</span>
                         <span className="inline-flex items-center gap-1">
                           <Heart className="w-3.5 h-3.5" />
@@ -1726,14 +1726,14 @@ export const EmployerPage = () => {
                         onClick={() => {
                           handleSelectMatchingVacancy(vacancy.id, true);
                         }}
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'transparent' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
                       >
                         {t('employer.findCandidates')}
                       </button>
                       <button
                         className="p-2 rounded-lg border-2 transition-all duration-200"
                         onClick={() => void handleEdit(vacancy.id)}
-                        style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F', backgroundColor: 'transparent' }}
+                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -1757,10 +1757,10 @@ export const EmployerPage = () => {
           <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
-                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {t('employer.searchUsersTitle')}
                 </h2>
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {t('employer.searchUsersDescription')}
                 </p>
               </div>
@@ -1768,7 +1768,7 @@ export const EmployerPage = () => {
                 variant="outline"
                 onClick={() => void handleRefreshMatching()}
                 disabled={invitesLoading || !selectedVacancyId}
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
               >
                 {t('employer.refreshMatches')}
               </Button>
@@ -1776,7 +1776,7 @@ export const EmployerPage = () => {
 
             <div className="grid gap-4 lg:grid-cols-[1fr,1fr] mb-4">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                   {t('employer.searchByVacancy')}
                 </label>
                 <div className="relative">
@@ -1785,14 +1785,14 @@ export const EmployerPage = () => {
                     onChange={(event) => setVacancySearch(event.target.value)}
                     placeholder={t('employer.searchByVacancyPlaceholder')}
                     className="h-12 pl-11"
-                    style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                    style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                   />
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#607456]" />
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--surface-text-soft)]" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                   {t('employer.interviewDate')}
                 </label>
                 <Input
@@ -1800,15 +1800,15 @@ export const EmployerPage = () => {
                   value={interviewAt}
                   onChange={(event) => setInterviewAt(event.target.value)}
                   className="h-12"
-                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                  style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
                 />
               </div>
             </div>
 
             {vacancySearch.trim() && (
-              <div className="mb-6 rounded-2xl border border-black/5 bg-[#F7F8F1] p-4">
+              <div className="mb-6 rounded-2xl border border-black/5 bg-[var(--surface-subtle)] p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <p className="text-sm font-medium text-[#33412D]">
+                  <p className="text-sm font-medium text-[var(--surface-text-primary)]">
                     {matchingVacancies.length > 0
                       ? t('employer.vacanciesMatched', { count: matchingVacancies.length })
                       : t('employer.vacanciesMatchedEmpty')}
@@ -1820,7 +1820,7 @@ export const EmployerPage = () => {
                           key={`search-${vacancy.id}`}
                           type="button"
                           onClick={() => handleSelectMatchingVacancy(vacancy.id, true)}
-                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-[#33412D] transition-colors hover:bg-[#ECF5DE]"
+                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)] transition-colors hover:bg-[#ECF5DE]"
                         >
                           {vacancy.title}
                         </button>
@@ -1833,14 +1833,14 @@ export const EmployerPage = () => {
 
             <div className="grid gap-4 lg:grid-cols-[0.9fr,auto] mb-6">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                   Vacancy
                 </label>
                 <select
                   value={selectedVacancyId}
                   onChange={(event) => setSelectedVacancyId(event.target.value)}
                   className="w-full rounded-xl border px-4 py-3 text-sm"
-                  style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                 >
                   <option value="">{t('employer.chooseVacancy')}</option>
                   {matchingVacancies.map((vacancy) => (
@@ -1857,7 +1857,7 @@ export const EmployerPage = () => {
                   className="h-12"
                   onClick={() => void handleRefreshMatching()}
                   disabled={invitesLoading || !selectedVacancyId}
-                  style={{ backgroundColor: '#333A2F', color: 'white' }}
+                  style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}
                 >
                   {t('employer.searchUsers')}
                 </Button>
@@ -1865,63 +1865,63 @@ export const EmployerPage = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#333A2F' }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
                 Invite message
               </label>
               <Textarea
                 value={inviteMessage}
                 onChange={(event) => setInviteMessage(event.target.value)}
                 rows={4}
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', borderRadius: '0.75rem' }}
+                style={{ borderColor: 'var(--surface-border-strong)', borderRadius: '0.75rem' }}
               />
             </div>
 
             {suggestionVacancy?.title && (
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#EBEDDF', color: '#333A2F' }}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-chip)', color: 'var(--surface-text-primary)' }}>
                 <Users className="w-3.5 h-3.5" />
                 Matching against: {suggestionVacancy.title}
               </div>
             )}
 
             {invitesLoading && suggestedCandidates.length === 0 ? (
-              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading suggested candidates...</p>
+              <p style={{ color: 'var(--surface-text-muted)' }}>Loading suggested candidates...</p>
             ) : suggestedCandidates.length === 0 ? (
-              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              <p style={{ color: 'var(--surface-text-muted)' }}>
                 Choose a vacancy and click refresh to see candidate suggestions.
               </p>
             ) : (
               <div className="space-y-4">
                 {suggestedCandidates.map((item) => (
-                  <div key={item.candidate.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                  <div key={item.candidate.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: 'var(--surface-subtle)' }}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-3 mb-2">
-                          <h3 className="font-semibold" style={{ color: '#333A2F' }}>
+                          <h3 className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {getCandidateName(item.candidate)}
                           </h3>
-                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
                             Score {item.matching.normalizedScore ?? item.matching.score}
                           </span>
                           <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#ECF5DE', color: '#245338' }}>
                             Coverage {formatPercent(item.matching.skillCoveragePercent)}
                           </span>
                           {item.existingInvite?.status && (
-                            <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#333A2F', color: 'white' }}>
+                            <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}>
                               Existing invite: {item.existingInvite.status}
                             </span>
                           )}
                         </div>
-                        <p className="text-sm mb-2" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <p className="text-sm mb-2" style={{ color: 'var(--surface-text-muted)' }}>
                           {item.candidate.profile?.desiredRole || item.candidate.email || 'Candidate profile'}
                         </p>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {(item.candidate.profile?.skills || []).slice(0, 6).map((skill) => (
-                            <span key={`${item.candidate.id}-${skill}`} className="rounded-lg px-3 py-1 text-xs font-medium" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                            <span key={`${item.candidate.id}-${skill}`} className="rounded-lg px-3 py-1 text-xs font-medium" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
                               {skill}
                             </span>
                           ))}
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs mb-3" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                        <div className="flex flex-wrap items-center gap-3 text-xs mb-3" style={{ color: 'var(--surface-text-soft)' }}>
                           <span>City: {item.candidate.profile?.city || '—'}</span>
                           <span>Experience: {item.candidate.profile?.totalExperienceMonths || 0} months</span>
                           <span>Profile completeness: {formatPercent(item.matching.profileCompletenessPercent || item.candidate.profile?.profileCompletenessPercent)}</span>
@@ -1958,7 +1958,7 @@ export const EmployerPage = () => {
 
                         <ul className="space-y-1">
                           {item.matching.reasons.map((reason) => (
-                            <li key={`${item.candidate.id}-${reason}`} className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                            <li key={`${item.candidate.id}-${reason}`} className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                               • {reason}
                             </li>
                           ))}
@@ -1971,7 +1971,7 @@ export const EmployerPage = () => {
                           className="w-full"
                           onClick={() => void handleSendInvite(item.candidate.id)}
                           disabled={invitesMutating || !selectedVacancyId}
-                          style={{ backgroundColor: '#333A2F', color: 'white' }}
+                          style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}
                         >
                           <Send className="w-4 h-4 mr-2" />
                           Send invite
@@ -1987,10 +1987,10 @@ export const EmployerPage = () => {
           <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
             <div className="flex items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   Invite History
                 </h2>
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   Latest HR invites from `/invites/hr`.
                 </p>
               </div>
@@ -1999,43 +1999,43 @@ export const EmployerPage = () => {
                 size="sm"
                 onClick={() => void loadHrInvites({ vacancyId: selectedVacancyId || undefined, limit: 20, offset: 0 })}
                 disabled={invitesLoading}
-                style={{ borderColor: 'rgba(51, 58, 47, 0.2)', color: '#333A2F' }}
+                style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
               >
                 Refresh
               </Button>
             </div>
 
             {invitesLoading && hrInvites.length === 0 ? (
-              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>Loading invite history...</p>
+              <p style={{ color: 'var(--surface-text-muted)' }}>Loading invite history...</p>
             ) : hrInvites.length === 0 ? (
-              <p style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              <p style={{ color: 'var(--surface-text-muted)' }}>
                 No invites sent yet for the selected scope.
               </p>
             ) : (
               <div className="space-y-4">
                 {hrInvites.map((invite) => (
-                  <div key={invite.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: '#F7F8F1' }}>
+                  <div key={invite.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: 'var(--surface-subtle)' }}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold" style={{ color: '#333A2F' }}>
+                        <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                           {invite.vacancy?.title || 'Vacancy'}
                         </p>
-                        <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                        <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           {getCandidateName(invite.candidate)}
                         </p>
                       </div>
-                      <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'white', color: '#333A2F' }}>
+                      <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
                         {invite.status}
                       </span>
                     </div>
 
                     {invite.message && (
-                      <p className="mt-3 text-sm leading-relaxed" style={{ color: 'rgba(51, 58, 47, 0.75)' }}>
+                      <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--surface-text-muted)' }}>
                         {invite.message}
                       </p>
                     )}
 
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                       <span>Created: {formatDateTime(invite.createdAt)}</span>
                       <span>Interview: {formatDateTime(invite.interviewAt)}</span>
                     </div>

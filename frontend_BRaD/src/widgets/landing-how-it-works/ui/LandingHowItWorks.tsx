@@ -1,14 +1,17 @@
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingHowItWorks = () => {
+  const { t } = useUISettings();
+
   return (
     <section className="how-it-works" id="how-it-works">
       <div className="bg-decoration-center"></div>
       
       <div className="container">
         <div className="section-header">
-          <h2 className="section-title">How It Works</h2>
-          <p className="section-subtitle">Three simple steps to find your perfect match</p>
+          <h2 className="section-title">{t('landing.how.title')}</h2>
+          <p className="section-subtitle">{t('landing.how.subtitle')}</p>
         </div>
 
         <div className="steps-grid">
@@ -25,8 +28,8 @@ export const LandingHowItWorks = () => {
                   <path d="M20 8v6M23 11h-6"/>
                 </svg>
               </div>
-              <h3 className="step-title">Create Your Profile</h3>
-              <p className="step-description">Sign up and tell us about your skills, interests, and career goals. For employers, describe your ideal candidate.</p>
+              <h3 className="step-title">{t('landing.how.step1.title')}</h3>
+              <p className="step-description">{t('landing.how.step1.description')}</p>
             </div>
           </div>
 
@@ -40,8 +43,8 @@ export const LandingHowItWorks = () => {
                   <path d="m21 21-4.35-4.35"/>
                 </svg>
               </div>
-              <h3 className="step-title">Get Matched</h3>
-              <p className="step-description">Our AI-powered algorithm analyzes your profile and finds the perfect matches based on compatibility and goals.</p>
+              <h3 className="step-title">{t('landing.how.step2.title')}</h3>
+              <p className="step-description">{t('landing.how.step2.description')}</p>
             </div>
           </div>
 
@@ -56,8 +59,8 @@ export const LandingHowItWorks = () => {
                   <path d="M12 12L9 9m3 3 3-3"/>
                 </svg>
               </div>
-              <h3 className="step-title">Start Collaborating</h3>
-              <p className="step-description">Connect with your matches, start virtual internships, and build meaningful professional relationships.</p>
+              <h3 className="step-title">{t('landing.how.step3.title')}</h3>
+              <p className="step-description">{t('landing.how.step3.description')}</p>
             </div>
           </div>
         </div>

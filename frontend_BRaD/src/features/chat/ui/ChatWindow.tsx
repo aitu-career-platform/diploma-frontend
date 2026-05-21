@@ -196,7 +196,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-[#2B3B23]/10 bg-white px-4 py-3">
+      <div className="border-t border-[#2B3B23]/10 bg-white dark:bg-[#111814] px-4 py-3">
         {submitError && <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
         <div className="flex gap-2">
           <Input
@@ -209,7 +209,7 @@ export const ChatWindow = ({ chat, onClose, embedded = false }: ChatWindowProps)
               }
             }}
             placeholder="Write a message"
-            className="h-11 flex-1 rounded-xl border-[#9FB08A]/35 bg-white"
+            className="h-11 flex-1 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
           />
           <Button onClick={() => void handleSend()} variant="hero" size="icon" disabled={!canSend}>
             <Send className="h-4 w-4" />

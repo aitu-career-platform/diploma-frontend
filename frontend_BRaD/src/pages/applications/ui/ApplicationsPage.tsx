@@ -43,7 +43,7 @@ const manageableStatuses: ApplicationStatus[] = [
 ];
 
 const cardStyle = {
-  backgroundColor: 'white',
+  backgroundColor: 'var(--surface-base)',
   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
 };
 
@@ -82,22 +82,22 @@ const formatStatus = (status?: string): string => {
     .join(' ');
 };
 
-const getCandidateName = (application: Application): string => {
+const getCandidateName = (application: Application, fallback: string): string => {
   const firstName = application.candidate?.firstName || '';
   const lastName = application.candidate?.lastName || '';
   const fullName = `${firstName} ${lastName}`.trim();
 
-  return fullName || application.candidate?.email || 'Candidate';
+  return fullName || application.candidate?.email || fallback;
 };
 
 const getTimelineActor = (event: {
   actor?: { firstName?: string; lastName?: string; email?: string } | null;
-}): string => {
+}, fallback: string): string => {
   const firstName = event.actor?.firstName || '';
   const lastName = event.actor?.lastName || '';
   const fullName = `${firstName} ${lastName}`.trim();
 
-  return fullName || event.actor?.email || 'System';
+  return fullName || event.actor?.email || fallback;
 };
 
 const getPrimaryResume = (application: Application) => {
@@ -128,18 +128,6 @@ const toSkillLevelPairs = (value: unknown): Array<{ skill: string; level: string
 
     return [{ skill: skill.trim(), level: level.trim() }];
   });
-};
-
-const formatFlag = (value: unknown): string => {
-  if (value === true) {
-    return 'Yes';
-  }
-
-  if (value === false) {
-    return 'No';
-  }
-
-  return '—';
 };
 
 const formatToken = (value?: string): string => {
@@ -226,6 +214,16 @@ export const ApplicationsPage = () => {
 
   const currentTimeline = selectedApplication ? timelines[selectedApplication.id] : null;
 
+  const formatFlagLabel = (value: unknown): string => {
+    if (value === true) {
+      return t('common.yes');
+    }
+    if (value === false) {
+      return t('common.no');
+    }
+    return '—';
+  };
+
   const scopeLabel = useMemo(() => {
     if (isAdmin) {
       return t('applications.scopeAdmin');
@@ -242,26 +240,26 @@ export const ApplicationsPage = () => {
     const entries: Array<{ key: keyof ApplicationFilters; label: string; value: string }> = [];
 
     if (filters.status) {
-      entries.push({ key: 'status', label: 'Status', value: formatStatus(filters.status) });
+      entries.push({ key: 'status', label: t('applications.filter.status'), value: formatStatus(filters.status) });
     }
     if (filters.vacancyId) {
-      entries.push({ key: 'vacancyId', label: 'Vacancy ID', value: filters.vacancyId });
+      entries.push({ key: 'vacancyId', label: t('applications.filter.vacancyId'), value: filters.vacancyId });
     }
     if (filters.candidateId) {
-      entries.push({ key: 'candidateId', label: 'Candidate ID', value: filters.candidateId });
+      entries.push({ key: 'candidateId', label: t('applications.filter.candidateId'), value: filters.candidateId });
     }
     if (filters.hrUserId) {
-      entries.push({ key: 'hrUserId', label: 'HR User ID', value: filters.hrUserId });
+      entries.push({ key: 'hrUserId', label: t('applications.filter.hrUserId'), value: filters.hrUserId });
     }
     if (filters.dateFrom) {
-      entries.push({ key: 'dateFrom', label: 'From', value: formatDateTime(filters.dateFrom) });
+      entries.push({ key: 'dateFrom', label: t('applications.filter.dateFromShort'), value: formatDateTime(filters.dateFrom) });
     }
     if (filters.dateTo) {
-      entries.push({ key: 'dateTo', label: 'To', value: formatDateTime(filters.dateTo) });
+      entries.push({ key: 'dateTo', label: t('applications.filter.dateToShort'), value: formatDateTime(filters.dateTo) });
     }
 
     return entries;
-  }, [filters]);
+  }, [filters, t]);
 
   const removeFilter = (key: keyof ApplicationFilters) => {
     setFilters((prev) => ({
@@ -288,7 +286,7 @@ export const ApplicationsPage = () => {
     try {
       await listApplications(currentUser.role, nextFilters);
     } catch (loadError) {
-      setPageError(loadError instanceof Error ? loadError.message : 'Failed to load applications');
+      setPageError(loadError instanceof Error ? loadError.message : t('applications.error.loadList'));
     }
   };
 
@@ -313,7 +311,7 @@ export const ApplicationsPage = () => {
         setStatusNote('');
         setNextStatus('REVIEWED');
       } catch (loadError) {
-        setPageError(loadError instanceof Error ? loadError.message : 'Failed to load application');
+        setPageError(loadError instanceof Error ? loadError.message : t('applications.error.loadSingle'));
       }
     };
 
@@ -367,7 +365,7 @@ export const ApplicationsPage = () => {
       await loadTimeline(applicationId);
     } catch (mutationError) {
       setPageError(
-        mutationError instanceof Error ? mutationError.message : 'Failed to withdraw application',
+        mutationError instanceof Error ? mutationError.message : t('applications.error.withdraw'),
       );
     }
   };
@@ -391,7 +389,7 @@ export const ApplicationsPage = () => {
       setPageError(
         mutationError instanceof Error
           ? mutationError.message
-          : 'Failed to update application status',
+          : t('applications.error.updateStatus'),
       );
     }
   };
@@ -404,7 +402,7 @@ export const ApplicationsPage = () => {
       const downloadUrl = await getDownloadUrl(fileId);
       window.open(downloadUrl, '_blank', 'noopener,noreferrer');
     } catch (downloadError) {
-      setPageError(downloadError instanceof Error ? downloadError.message : 'Failed to open resume');
+      setPageError(downloadError instanceof Error ? downloadError.message : t('applications.error.openResume'));
     } finally {
       setDownloadingFileId(null);
     }
@@ -426,10 +424,10 @@ export const ApplicationsPage = () => {
         <AppHeader />
         <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
-            <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: '#333A2F' }}>
+            <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('applications.accessTitle')}
             </h1>
-            <p className="mb-6 text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="mb-6 text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
               {t('applications.accessDescription')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -454,19 +452,19 @@ export const ApplicationsPage = () => {
           className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
-            background: '#FFFFFF',
+            background: 'var(--surface-base)',
           }}
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: '#333A2F' }}>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-primary)' }}>
                 <Shield className="h-3.5 w-3.5" />
                 {scopeLabel}
               </div>
-              <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: '#333A2F' }}>
+              <h1 className="font-heading mb-3 text-3xl font-bold sm:text-4xl" style={{ color: 'var(--surface-text-primary)' }}>
                 {isCandidate ? t('applications.titleCandidate') : t('applications.titleTeam')}
               </h1>
-              <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+              <p className="max-w-2xl text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
                 {isCandidate
                   ? t('applications.descriptionCandidate')
                   : t('applications.descriptionTeam')}
@@ -475,26 +473,26 @@ export const ApplicationsPage = () => {
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   {t('applications.loaded')}
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {items.length}
                 </div>
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   {t('applications.total')}
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {meta.total}
                 </div>
               </div>
               <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   {t('applications.pageSize')}
                 </div>
-                <div className="mt-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <div className="mt-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {meta.limit}
                 </div>
               </div>
@@ -504,35 +502,35 @@ export const ApplicationsPage = () => {
 
         <section className="mb-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
               Step 1
             </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('applications.step1Title')}
             </p>
-            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
               {t('applications.step1Description')}
             </p>
           </div>
           <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
               Step 2
             </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('applications.step2Title')}
             </p>
-            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
               {t('applications.step2Description')}
             </p>
           </div>
           <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
               Step 3
             </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: '#333A2F' }}>
+            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('applications.step3Title')}
             </p>
-            <p className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
               {t('applications.step3Description')}
             </p>
           </div>
@@ -541,7 +539,7 @@ export const ApplicationsPage = () => {
         {activeFilters.length > 0 && (
           <section className="mb-6 rounded-[22px] border border-black/5 bg-white p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.58)' }}>
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
                 <Filter className="h-3.5 w-3.5" />
                 {t('applications.activeFilters')}
               </div>
@@ -562,8 +560,8 @@ export const ApplicationsPage = () => {
                   key={entry.key}
                   type="button"
                   onClick={() => removeFilter(entry.key)}
-                  className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-[#F7F8F1] px-3 py-1.5 text-xs font-semibold"
-                  style={{ color: '#333A2F' }}
+                  className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-[var(--surface-subtle)] px-3 py-1.5 text-xs font-semibold"
+                  style={{ color: 'var(--surface-text-primary)' }}
                 >
                   {entry.label}: {entry.value}
                   <X className="h-3.5 w-3.5" />
@@ -575,13 +573,13 @@ export const ApplicationsPage = () => {
 
         <section className="mb-6 grid gap-4 rounded-[28px] border border-black/5 p-5 sm:grid-cols-2 xl:grid-cols-6" style={cardStyle}>
           <div className="xl:col-span-1">
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
               {t('applications.filter.status')}
             </label>
             <select
               value={filters.status || ''}
               onChange={(event) => handleFilterChange('status', event.target.value)}
-              className="h-11 w-full rounded-xl border border-black/10 bg-[#F9FAF3] px-3 text-sm"
+              className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
             >
               <option value="">{t('applications.allStatuses')}</option>
               {applicationStatuses.map((status) => (
@@ -594,49 +592,49 @@ export const ApplicationsPage = () => {
 
           {!isCandidate && (
             <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                 {t('applications.filter.vacancyId')}
               </label>
               <Input
                 value={filters.vacancyId || ''}
                 onChange={(event) => handleFilterChange('vacancyId', event.target.value)}
                 placeholder="uuid"
-                className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
           )}
 
           {!isCandidate && (
             <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                 {t('applications.filter.candidateId')}
               </label>
               <Input
                 value={filters.candidateId || ''}
                 onChange={(event) => handleFilterChange('candidateId', event.target.value)}
                 placeholder="uuid"
-                className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
           )}
 
           {isAdmin && (
             <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                 {t('applications.filter.hrUserId')}
               </label>
               <Input
                 value={filters.hrUserId || ''}
                 onChange={(event) => handleFilterChange('hrUserId', event.target.value)}
                 placeholder="uuid"
-                className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
           )}
 
           {!isCandidate && (
             <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                 {t('applications.filter.dateFrom')}
               </label>
               <Input
@@ -646,14 +644,14 @@ export const ApplicationsPage = () => {
                   const value = event.target.value;
                   handleFilterChange('dateFrom', value ? new Date(value).toISOString() : '');
                 }}
-                className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
           )}
 
           {!isCandidate && (
             <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
                 {t('applications.filter.dateTo')}
               </label>
               <Input
@@ -663,7 +661,7 @@ export const ApplicationsPage = () => {
                   const value = event.target.value;
                   handleFilterChange('dateTo', value ? new Date(value).toISOString() : '');
                 }}
-                className="h-11 rounded-xl border-black/10 bg-[#F9FAF3]"
+                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
           )}
@@ -702,28 +700,28 @@ export const ApplicationsPage = () => {
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
+                <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
                   {t('applications.listTitle')}
                 </h2>
-                <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {isCandidate ? t('applications.listDescriptionCandidate') : t('applications.listDescriptionTeam')}
                 </p>
               </div>
             </div>
 
             {isLoading ? (
-              <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+              <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {t('applications.loading')}
                 </div>
             ) : items.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center">
+              <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
-                  <FileText className="h-6 w-6" style={{ color: '#333A2F' }} />
+                  <FileText className="h-6 w-6" style={{ color: 'var(--surface-text-primary)' }} />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold" style={{ color: '#333A2F' }}>
+                <h3 className="mb-2 text-lg font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                   {t('applications.emptyTitle')}
                 </h3>
-                <p className="mx-auto mb-5 max-w-md text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
+                <p className="mx-auto mb-5 max-w-md text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {isCandidate
                     ? t('applications.emptyDescriptionCandidate')
                     : t('applications.emptyDescriptionTeam')}
@@ -746,51 +744,51 @@ export const ApplicationsPage = () => {
                       onClick={() => handleSelectApplication(application.id)}
                       className="w-full rounded-[24px] border p-5 text-left transition-all"
                       style={{
-                        borderColor: isSelected ? '#333A2F' : 'rgba(51, 58, 47, 0.08)',
-                        backgroundColor: isSelected ? '#F7F8EF' : '#FFFFFF',
+                        borderColor: isSelected ? 'var(--surface-text-primary)' : 'var(--surface-border-soft)',
+                        backgroundColor: isSelected ? '#F7F8EF' : 'var(--surface-base)',
                       }}
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <div className="mb-2 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
+                            <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
                               {formatStatus(application.status)}
                             </span>
-                            <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold" style={{ color: '#333A2F' }}>
-                              {application.vacancy?.company?.name || 'Company'}
+                            <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                              {application.vacancy?.company?.name || t('common.company')}
                             </span>
                           </div>
-                          <h3 className="font-heading text-xl font-bold" style={{ color: '#333A2F' }}>
-                            {application.vacancy?.title || 'Untitled vacancy'}
+                          <h3 className="font-heading text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
+                            {application.vacancy?.title || t('common.untitledVacancy')}
                           </h3>
-                          <div className="mt-3 flex flex-wrap gap-4 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                          <div className="mt-3 flex flex-wrap gap-4 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                             <span className="inline-flex items-center gap-2">
                               <CalendarDays className="h-4 w-4" />
                               {formatDateTime(application.createdAt)}
                             </span>
                             <span className="inline-flex items-center gap-2">
                               <Clock3 className="h-4 w-4" />
-                              Updated {formatDateTime(application.updatedAt)}
+                              {t('common.updated')} {formatDateTime(application.updatedAt)}
                             </span>
                             {!isCandidate && (
                               <span className="inline-flex items-center gap-2">
                                 <UserRound className="h-4 w-4" />
-                                {getCandidateName(application)}
+                                {getCandidateName(application, t('common.candidate'))}
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                          <div>ID</div>
-                          <div className="mt-1 break-all font-mono text-[11px]" style={{ color: '#333A2F' }}>
+                        <div className="text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                          <div>{t('common.id')}</div>
+                          <div className="mt-1 break-all font-mono text-[11px]" style={{ color: 'var(--surface-text-primary)' }}>
                             {application.id}
                           </div>
                         </div>
                       </div>
 
                       {application.coverLetter && (
-                        <p className="mt-4 line-clamp-3 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                        <p className="mt-4 line-clamp-3 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
                           {application.coverLetter}
                         </p>
                       )}
@@ -806,7 +804,7 @@ export const ApplicationsPage = () => {
                             }}
                           >
                             <UserRound className="h-4 w-4" />
-                            View candidate
+                            {t('applications.viewCandidate')}
                           </Button>
                         )}
                         {application.chatId && (
@@ -817,7 +815,7 @@ export const ApplicationsPage = () => {
                               onClick={(event) => event.stopPropagation()}
                             >
                               <MessageSquare className="h-4 w-4" />
-                              Open chat
+                              {t('applications.openChat')}
                             </Button>
                           </Link>
                         )}
@@ -831,7 +829,7 @@ export const ApplicationsPage = () => {
                               void handleWithdraw(application.id);
                             }}
                           >
-                            Withdraw
+                            {t('applications.withdraw')}
                           </Button>
                         )}
                       </div>
@@ -847,59 +845,59 @@ export const ApplicationsPage = () => {
           <section className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <Button variant="outline" onClick={handleBackToList}>
-                Back to list
+                {t('common.backToList')}
               </Button>
-              <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                Full application view
+              <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                {t('applications.fullView')}
               </p>
             </div>
 
             {!isSelectedDetailLoaded || (isLoading && !selectedApplication) ? (
-              <div className="rounded-[24px] border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                Loading application details...
+              <div className="rounded-[24px] border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                {t('applications.loadingDetails')}
               </div>
             ) : !selectedApplication ? (
-              <div className="rounded-[24px] border border-dashed border-black/10 bg-[#F9FAF3] p-8 text-center">
+              <div className="rounded-[24px] border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
-                  <CheckCircle2 className="h-6 w-6" style={{ color: '#333A2F' }} />
+                  <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--surface-text-primary)' }} />
                 </div>
-                <h2 className="font-heading mb-2 text-2xl font-bold" style={{ color: '#333A2F' }}>
-                  Application not found
+                <h2 className="font-heading mb-2 text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
+                  {t('applications.notFoundTitle')}
                 </h2>
-                <p className="text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                  This application is unavailable or no longer in your access scope.
+                <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                  {t('applications.notFoundDescription')}
                 </p>
               </div>
             ) : (
               <div className="space-y-6">
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[#333A2F] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
+                    <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
                       {formatStatus(selectedApplication.status)}
                     </span>
-                    <span className="rounded-full bg-[#EBEDDF] px-3 py-1 text-xs font-semibold" style={{ color: '#333A2F' }}>
-                      {selectedApplication.vacancy?.publicationCity?.name || 'No city'}
+                    <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                      {selectedApplication.vacancy?.publicationCity?.name || t('common.noCity')}
                     </span>
                   </div>
-                  <h2 className="font-heading text-2xl font-bold" style={{ color: '#333A2F' }}>
-                    {selectedApplication.vacancy?.title || 'Untitled vacancy'}
+                  <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
+                    {selectedApplication.vacancy?.title || t('common.untitledVacancy')}
                   </h2>
-                  <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
-                    {selectedApplication.vacancy?.company?.name || 'Company'}
+                  <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                    {selectedApplication.vacancy?.company?.name || t('common.company')}
                   </p>
                 </div>
 
                 {!isCandidate && (
-                  <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4">
-                    <div className="text-xs uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                      Candidate
+                  <div className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                    <div className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('common.candidate')}
                     </div>
-                    <div className="mt-2 text-base font-semibold" style={{ color: '#333A2F' }}>
-                      {getCandidateName(selectedApplication)}
+                    <div className="mt-2 text-base font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                      {getCandidateName(selectedApplication, t('common.candidate'))}
                     </div>
-                    <div className="mt-2 space-y-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                    <div className="mt-2 space-y-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                       <div>{selectedApplication.candidate?.email || '—'}</div>
-                      <div>{selectedApplication.candidate?.phone || 'No phone'}</div>
+                      <div>{selectedApplication.candidate?.phone || t('common.noPhone')}</div>
                       <div>
                         {selectedApplication.candidate?.profile?.city || '—'}
                         {selectedApplication.candidate?.profile?.country
@@ -919,8 +917,8 @@ export const ApplicationsPage = () => {
                         >
                           <Download className="h-4 w-4" />
                           {downloadingFileId === getPrimaryResume(selectedApplication)?.fileId
-                            ? 'Opening resume...'
-                            : `Open ${getPrimaryResume(selectedApplication)?.isPrimary ? 'primary ' : ''}resume`}
+                            ? t('common.openingResume')
+                            : `${t('common.open')} ${getPrimaryResume(selectedApplication)?.isPrimary ? `${t('common.primary')} ` : ''}${t('common.resumeLower')}`}
                         </Button>
                       </div>
                     )}
@@ -931,7 +929,7 @@ export const ApplicationsPage = () => {
                         onClick={() => openCandidatePreview(selectedApplication)}
                       >
                         <UserRound className="h-4 w-4" />
-                        Open full candidate profile
+                        {t('applications.openCandidateProfile')}
                       </Button>
                     </div>
                   </div>
@@ -939,36 +937,36 @@ export const ApplicationsPage = () => {
 
                 {selectedApplication.coverLetter && (
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                      Cover letter
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('common.coverLetter')}
                     </div>
-                    <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.78)' }}>
+                    <div className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-4 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
                       {selectedApplication.coverLetter}
                     </div>
                   </div>
                 )}
 
                 {selectedApplication.chatId && (
-                  <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                      Chat
+                  <div className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('common.chat')}
                     </div>
-                    <p className="mb-3 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
-                      Open the application chat to continue the conversation in realtime.
+                    <p className="mb-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                      {t('applications.chatDescription')}
                     </p>
                     <Link to={`/app/chat?chatId=${selectedApplication.chatId}`}>
                       <Button variant="hero" className="w-full">
                         <MessageSquare className="h-4 w-4" />
-                        Open chat
+                        {t('applications.openChat')}
                       </Button>
                     </Link>
                   </div>
                 )}
 
                 {(isHr || isAdmin) && selectedApplication.status !== 'WITHDRAWN' && (
-                  <div className="rounded-[24px] border border-black/5 bg-[#F9FAF3] p-4">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                      Update status
+                  <div className="rounded-[24px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('applications.updateStatus')}
                     </div>
                     <div className="space-y-3">
                       <select
@@ -985,7 +983,7 @@ export const ApplicationsPage = () => {
                       <Textarea
                         value={statusNote}
                         onChange={(event) => setStatusNote(event.target.value)}
-                        placeholder="Optional note for timeline"
+                        placeholder={t('applications.timelineNotePlaceholder')}
                         className="min-h-[110px] rounded-2xl border-black/10 bg-white"
                       />
                       <Button
@@ -994,7 +992,7 @@ export const ApplicationsPage = () => {
                         disabled={isMutating}
                         onClick={() => void handleStatusUpdate()}
                       >
-                        Save status update
+                        {t('applications.saveStatusUpdate')}
                       </Button>
                     </div>
                   </div>
@@ -1002,38 +1000,38 @@ export const ApplicationsPage = () => {
 
                 <div>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                      Timeline
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('common.timeline')}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => void loadTimeline(selectedApplication.id)}
                     >
-                      Reload
+                      {t('common.reload')}
                     </Button>
                   </div>
 
                   {currentTimeline?.events?.length ? (
                     <div className="space-y-3">
                       {currentTimeline.events.map((event) => (
-                        <div key={event.id} className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
+                        <div key={event.id} className="rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <div className="text-sm font-semibold" style={{ color: '#333A2F' }}>
+                              <div className="text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                                 {event.fromStatus ? `${formatStatus(event.fromStatus)} -> ` : ''}
                                 {formatStatus(event.toStatus)}
                               </div>
-                              <div className="mt-1 text-xs" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                                {getTimelineActor(event)}
+                              <div className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                                {getTimelineActor(event, t('common.system'))}
                               </div>
                             </div>
-                            <div className="text-right text-xs" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
+                            <div className="text-right text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                               {formatDateTime(event.createdAt)}
                             </div>
                           </div>
                           {event.note && (
-                            <p className="mt-3 text-sm leading-6" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
+                            <p className="mt-3 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
                               {event.note}
                             </p>
                           )}
@@ -1041,8 +1039,8 @@ export const ApplicationsPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-[22px] border border-dashed border-black/10 bg-[#F9FAF3] p-5 text-sm" style={{ color: 'rgba(51, 58, 47, 0.65)' }}>
-                      Timeline will appear here after loading the selected application.
+                    <div className="rounded-[22px] border border-dashed border-black/10 bg-[var(--surface-soft)] p-5 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                      {t('applications.timelineEmpty')}
                     </div>
                   )}
                 </div>
@@ -1060,28 +1058,28 @@ export const ApplicationsPage = () => {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Candidate profile"
+            aria-label={t('applications.candidateProfileAria')}
             className="max-h-[92vh] w-full overflow-hidden rounded-t-[28px] border border-black/5 bg-white sm:max-w-4xl sm:rounded-[28px]"
             style={cardStyle}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-black/5 px-5 py-4 sm:px-6">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                  Candidate profile
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.candidateProfile')}
                 </p>
-                <h3 className="mt-1 text-xl font-bold sm:text-2xl" style={{ color: '#333A2F' }}>
-                  {getCandidateName(candidatePreviewApplication)}
+                <h3 className="mt-1 text-xl font-bold sm:text-2xl" style={{ color: 'var(--surface-text-primary)' }}>
+                  {getCandidateName(candidatePreviewApplication, t('common.candidate'))}
                 </h3>
-                <p className="mt-1 text-sm" style={{ color: 'rgba(51, 58, 47, 0.7)' }}>
+                <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {previewCandidate.email || '—'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeCandidatePreview}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 text-[#333A2F] transition hover:bg-[#F3F5EA]"
-                aria-label="Close candidate profile"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 text-[var(--surface-text-primary)] transition hover:bg-[#F3F5EA]"
+                aria-label={t('applications.closeCandidateProfile')}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1089,12 +1087,12 @@ export const ApplicationsPage = () => {
 
             <div className="max-h-[calc(92vh-92px)] overflow-y-auto p-5 sm:p-6">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    Contacts
+                <div className="rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.contacts')}
                   </p>
-                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
-                    <div>{previewCandidate.phone || 'No phone'}</div>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: 'var(--surface-text-primary)' }}>
+                    <div>{previewCandidate.phone || t('common.noPhone')}</div>
                     <div>
                       {previewProfile?.city || '—'}
                       {previewProfile?.country ? `, ${previewProfile.country}` : ''}
@@ -1102,27 +1100,27 @@ export const ApplicationsPage = () => {
                   </div>
                 </div>
 
-                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    Career
+                <div className="rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.career')}
                   </p>
-                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
-                    <div>Desired role: {previewProfile?.desiredRole || '—'}</div>
-                    <div>Experience: {previewProfile?.experience || '—'}</div>
-                    <div>Education: {previewProfile?.educationLevel || '—'}</div>
-                    <div>Desired salary: {previewProfile?.desiredSalary || '—'}</div>
-                    <div>Availability: {previewProfile?.availability || '—'}</div>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: 'var(--surface-text-primary)' }}>
+                    <div>{t('common.desiredRole')}: {previewProfile?.desiredRole || '—'}</div>
+                    <div>{t('common.experience')}: {previewProfile?.experience || '—'}</div>
+                    <div>{t('common.education')}: {previewProfile?.educationLevel || '—'}</div>
+                    <div>{t('common.desiredSalary')}: {previewProfile?.desiredSalary || '—'}</div>
+                    <div>{t('common.availability')}: {previewProfile?.availability || '—'}</div>
                   </div>
                 </div>
 
-                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    Preferences
+                <div className="rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.preferences')}
                   </p>
-                  <div className="mt-2 space-y-1 text-sm" style={{ color: '#333A2F' }}>
-                    <div>Open to work: {formatFlag(previewProfile?.openToWork)}</div>
-                    <div>Remote ready: {formatFlag(previewProfile?.remoteReady)}</div>
-                    <div>Relocation ready: {formatFlag(previewProfile?.relocationReady)}</div>
+                  <div className="mt-2 space-y-1 text-sm" style={{ color: 'var(--surface-text-primary)' }}>
+                    <div>{t('common.openToWork')}: {formatFlagLabel(previewProfile?.openToWork)}</div>
+                    <div>{t('common.remoteReady')}: {formatFlagLabel(previewProfile?.remoteReady)}</div>
+                    <div>{t('common.relocationReady')}: {formatFlagLabel(previewProfile?.relocationReady)}</div>
                   </div>
                   {previewPreferredEmploymentTypes.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1130,7 +1128,7 @@ export const ApplicationsPage = () => {
                         <span
                           key={entry}
                           className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
-                          style={{ color: '#333A2F' }}
+                          style={{ color: 'var(--surface-text-primary)' }}
                         >
                           {formatToken(entry)}
                         </span>
@@ -1143,7 +1141,7 @@ export const ApplicationsPage = () => {
                         <span
                           key={entry}
                           className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
-                          style={{ color: '#333A2F' }}
+                          style={{ color: 'var(--surface-text-primary)' }}
                         >
                           {formatToken(entry)}
                         </span>
@@ -1152,9 +1150,9 @@ export const ApplicationsPage = () => {
                   )}
                 </div>
 
-                <div className="rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    Skills and levels
+                <div className="rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.skillsAndLevels')}
                   </p>
                   {previewSkills.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -1167,7 +1165,7 @@ export const ApplicationsPage = () => {
                           <span
                             key={skill}
                             className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
-                            style={{ color: '#333A2F' }}
+                            style={{ color: 'var(--surface-text-primary)' }}
                           >
                             {skill}
                             {levelMatch ? ` · ${formatToken(levelMatch.level)}` : ''}
@@ -1176,28 +1174,28 @@ export const ApplicationsPage = () => {
                       })}
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm" style={{ color: 'rgba(51, 58, 47, 0.72)' }}>
-                      Skills are not specified.
+                    <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                      {t('common.skillsNotSpecified')}
                     </p>
                   )}
                 </div>
               </div>
 
               {previewProfile?.about && (
-                <div className="mt-4 rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    About candidate
+                <div className="mt-4 rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.aboutCandidate')}
                   </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6" style={{ color: '#333A2F' }}>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6" style={{ color: 'var(--surface-text-primary)' }}>
                     {previewProfile.about}
                   </p>
                 </div>
               )}
 
               {previewProfile?.resumes?.length ? (
-                <div className="mt-4 rounded-[22px] border border-black/5 bg-[#F9FAF3] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(51, 58, 47, 0.55)' }}>
-                    Resume files
+                <div className="mt-4 rounded-[22px] border border-black/5 bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('common.resumeFiles')}
                   </p>
                   <div className="mt-3 space-y-2">
                     {previewProfile.resumes.map((resume) => (
@@ -1205,9 +1203,9 @@ export const ApplicationsPage = () => {
                         key={resume.id}
                         className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/10 bg-white px-3 py-2"
                       >
-                        <div className="text-sm" style={{ color: '#333A2F' }}>
-                          {resume.title || 'Resume'}
-                          {resume.isPrimary ? ' · Primary' : ''}
+                        <div className="text-sm" style={{ color: 'var(--surface-text-primary)' }}>
+                          {resume.title || t('common.resume')}
+                          {resume.isPrimary ? ` · ${t('common.primary')}` : ''}
                         </div>
                         {resume.fileId ? (
                           <Button
@@ -1217,11 +1215,11 @@ export const ApplicationsPage = () => {
                             onClick={() => void handleOpenResume(resume.fileId || '')}
                           >
                             <Download className="h-4 w-4" />
-                            {downloadingFileId === resume.fileId ? 'Opening...' : 'Open'}
+                            {downloadingFileId === resume.fileId ? t('common.opening') : t('common.open')}
                           </Button>
                         ) : (
-                          <span className="text-xs" style={{ color: 'rgba(51, 58, 47, 0.6)' }}>
-                            No file attached
+                          <span className="text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                            {t('common.noFileAttached')}
                           </span>
                         )}
                       </div>

@@ -1,12 +1,15 @@
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingFeatures = () => {
+  const { t } = useUISettings();
+
   return (
     <section className="features" id="features">
       <div className="container">
         <div className="section-header">
-          <h2 className="section-title">Everything You Need to Succeed</h2>
-          <p className="section-subtitle">Powerful features designed to connect talent with opportunity seamlessly</p>
+          <h2 className="section-title">{t('landing.features.title')}</h2>
+          <p className="section-subtitle">{t('landing.features.subtitle')}</p>
         </div>
 
         <div className="features-grid">
@@ -19,8 +22,8 @@ export const LandingFeatures = () => {
                 <path d="M12 17h.01"/>
               </svg>
             </div>
-            <h3 className="feature-title">Smart Matching</h3>
-            <p className="feature-description">AI-powered algorithm that matches candidates with opportunities based on skills, interests, and company culture.</p>
+            <h3 className="feature-title">{t('landing.features.items.smartMatching.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.smartMatching.description')}</p>
           </div>
 
           {/* Feature 2 */}
@@ -31,8 +34,8 @@ export const LandingFeatures = () => {
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
               </svg>
             </div>
-            <h3 className="feature-title">Virtual Internships</h3>
-            <p className="feature-description">Remote internship opportunities that let you gain real experience from anywhere in the world.</p>
+            <h3 className="feature-title">{t('landing.features.items.virtualInternships.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.virtualInternships.description')}</p>
           </div>
 
           {/* Feature 3 */}
@@ -43,8 +46,8 @@ export const LandingFeatures = () => {
                 <path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>
               </svg>
             </div>
-            <h3 className="feature-title">Skill-Based Hiring</h3>
-            <p className="feature-description">Focus on what you can do, not just your credentials. Showcase your skills through real projects.</p>
+            <h3 className="feature-title">{t('landing.features.items.skillHiring.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.skillHiring.description')}</p>
           </div>
 
           {/* Feature 4 */}
@@ -57,8 +60,8 @@ export const LandingFeatures = () => {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </div>
-            <h3 className="feature-title">Diverse Talent Pool</h3>
-            <p className="feature-description">Access to thousands of pre-vetted students and junior specialists across various fields.</p>
+            <h3 className="feature-title">{t('landing.features.items.talentPool.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.talentPool.description')}</p>
           </div>
 
           {/* Feature 5 */}
@@ -68,8 +71,8 @@ export const LandingFeatures = () => {
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <h3 className="feature-title">Quick Onboarding</h3>
-            <p className="feature-description">Get started in minutes with our streamlined application and matching process.</p>
+            <h3 className="feature-title">{t('landing.features.items.quickOnboarding.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.quickOnboarding.description')}</p>
           </div>
 
           {/* Feature 6 */}
@@ -79,8 +82,8 @@ export const LandingFeatures = () => {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
             </div>
-            <h3 className="feature-title">Verified Companies</h3>
-            <p className="feature-description">All employers are verified to ensure safe and legitimate opportunities for candidates.</p>
+            <h3 className="feature-title">{t('landing.features.items.verifiedCompanies.title')}</h3>
+            <p className="feature-description">{t('landing.features.items.verifiedCompanies.description')}</p>
           </div>
         </div>
       </div>

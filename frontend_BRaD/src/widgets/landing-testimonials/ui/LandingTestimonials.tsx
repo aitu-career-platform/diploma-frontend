@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
+import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingTestimonials = () => {
+  const { t } = useUISettings();
+
   return (
     <section className="testimonials" id="testimonials">
       <div className="container">
         <div className="section-header">
-          <h2 className="section-title">Trusted by Thousands</h2>
-          <p className="section-subtitle">See what our community has to say about their experience</p>
+          <h2 className="section-title">{t('landing.testimonials.title')}</h2>
+          <p className="section-subtitle">{t('landing.testimonials.subtitle')}</p>
         </div>
 
         {/* Testimonial Cards */}
@@ -38,14 +41,14 @@ export const LandingTestimonials = () => {
             </div>
             
             <p className="testimonial-quote">
-              "This platform changed my career trajectory. I landed a virtual internship that turned into a full-time position within 3 months."
+              {t('landing.testimonials.quote1')}
             </p>
             
             <div className="testimonial-author">
               <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80" alt="Sarah Chen" />
               <div>
                 <div className="author-name">Sarah Chen</div>
-                <div className="author-role">UX Design Intern at TechCorp</div>
+                <div className="author-role">{t('landing.testimonials.role1')}</div>
               </div>
             </div>
           </div>
@@ -76,14 +79,14 @@ export const LandingTestimonials = () => {
             </div>
             
             <p className="testimonial-quote">
-              "We've hired 5 amazing junior developers through this platform. The matching algorithm really understands what we need."
+              {t('landing.testimonials.quote2')}
             </p>
             
             <div className="testimonial-author">
               <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80" alt="Michael Rodriguez" />
               <div>
                 <div className="author-name">Michael Rodriguez</div>
-                <div className="author-role">HR Director at InnovateLabs</div>
+                <div className="author-role">{t('landing.testimonials.role2')}</div>
               </div>
             </div>
           </div>
@@ -114,14 +117,14 @@ export const LandingTestimonials = () => {
             </div>
             
             <p className="testimonial-quote">
-              "As a student, I was nervous about finding the right opportunity. The virtual internship format was perfect for my schedule."
+              {t('landing.testimonials.quote3')}
             </p>
             
             <div className="testimonial-author">
               <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80" alt="Emma Thompson" />
               <div>
                 <div className="author-name">Emma Thompson</div>
-                <div className="author-role">Marketing Intern at GrowthHub</div>
+                <div className="author-role">{t('landing.testimonials.role3')}</div>
               </div>
             </div>
           </div>
@@ -132,30 +135,30 @@ export const LandingTestimonials = () => {
           <div className="metrics-grid">
             <div className="metric-item">
               <div className="metric-value">10,000+</div>
-              <div className="metric-label">Active Students</div>
+              <div className="metric-label">{t('landing.testimonials.metrics.students')}</div>
             </div>
             <div className="metric-item">
               <div className="metric-value">500+</div>
-              <div className="metric-label">Partner Companies</div>
+              <div className="metric-label">{t('landing.testimonials.metrics.companies')}</div>
             </div>
             <div className="metric-item">
               <div className="metric-value">94%</div>
-              <div className="metric-label">Match Success Rate</div>
+              <div className="metric-label">{t('landing.testimonials.metrics.matchRate')}</div>
             </div>
             <div className="metric-item">
               <div className="metric-value">2,500+</div>
-              <div className="metric-label">Placements This Year</div>
+              <div className="metric-label">{t('landing.testimonials.metrics.placements')}</div>
             </div>
           </div>
         </div>
 
         {/* Final CTA */}
         <div className="final-cta">
-          <h3 className="cta-title">Ready to Find Your Perfect Match?</h3>
-          <p className="cta-subtitle">Join thousands of students and employers who have found success through our platform</p>
+          <h3 className="cta-title">{t('landing.testimonials.ctaTitle')}</h3>
+          <p className="cta-subtitle">{t('landing.testimonials.ctaSubtitle')}</p>
           <div className="cta-buttons">
-            <Link to="/app" className="btn btn-primary">Get Started Now</Link>
-            <button className="btn btn-secondary">Schedule a Demo</button>
+            <Link to="/app" className="btn btn-primary">{t('landing.testimonials.ctaPrimary')}</Link>
+            <button className="btn btn-secondary">{t('landing.testimonials.ctaSecondary')}</button>
           </div>
         </div>
       </div>

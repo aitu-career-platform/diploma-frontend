@@ -176,7 +176,7 @@ export const ChatPage = () => {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by name, email, vacancy"
-                  className="h-10 rounded-xl border-[#9FB08A]/35 bg-white pl-10 pr-10"
+                  className="h-10 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] pl-10 pr-10"
                 />
                 {search && (
                   <button
@@ -217,7 +217,7 @@ export const ChatPage = () => {
                       className={`w-full rounded-xl border p-3 text-left transition-colors ${
                         selected
                           ? 'border-[#2B6A4D] bg-[#ECF5DE]'
-                          : 'border-[#2B3B23]/10 bg-white hover:bg-[#F4F8EA]'
+                          : 'border-[#2B3B23]/10 bg-white dark:bg-[#111814] hover:bg-[#F4F8EA]'
                       }`}
                     >
                       <div className="flex items-start gap-3">

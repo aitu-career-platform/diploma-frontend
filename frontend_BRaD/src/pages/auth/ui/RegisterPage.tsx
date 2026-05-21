@@ -73,7 +73,7 @@ export const RegisterPage = () => {
                 id="name"
                 {...register('name')}
                 placeholder="John Doe"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.name && <p className="mt-1 text-sm text-red-700">{errors.name.message}</p>}
             </div>
@@ -87,7 +87,7 @@ export const RegisterPage = () => {
                 type="email"
                 {...register('email')}
                 placeholder="you@example.com"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.email && <p className="mt-1 text-sm text-red-700">{errors.email.message}</p>}
             </div>
@@ -101,7 +101,7 @@ export const RegisterPage = () => {
                 type="password"
                 {...register('password')}
                 placeholder="••••••••"
-                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white"
+                className="h-11 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814]"
               />
               {errors.password && <p className="mt-1 text-sm text-red-700">{errors.password.message}</p>}
             </div>
@@ -113,7 +113,7 @@ export const RegisterPage = () => {
               <select
                 id="role"
                 {...register('role')}
-                className="flex h-11 w-full rounded-xl border border-[#9FB08A]/35 bg-white px-3 py-2 text-sm text-[#2B3B23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
+                className="flex h-11 w-full rounded-xl border border-[#9FB08A]/35 bg-white dark:bg-[#111814] px-3 py-2 text-sm text-[#2B3B23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
               >
                  <option value="user">{t('auth.register.candidate')}</option>
                  <option value="hr">{t('auth.register.hr')}</option>
