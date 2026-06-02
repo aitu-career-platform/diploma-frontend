@@ -3,10 +3,12 @@ import { SearchX } from 'lucide-react';
 import { useJobStore } from '@entities/job';
 import { Button } from '@shared/ui';
 import { JobCard } from '@widgets/job-card';
+import { useUISettings } from '@shared/lib/ui-settings';
 
 type SortOption = 'relevance' | 'newest' | 'leastApplied';
 
 export const JobsList = () => {
+  const { t } = useUISettings();
   const { filteredJobs, isLoading, filters, setFilters } = useJobStore();
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
 
@@ -31,7 +33,7 @@ export const JobsList = () => {
   if (isLoading) {
     return (
       <div className="app-section-card flex items-center justify-center py-16">
-        <p className="app-text-muted text-sm sm:text-base">Loading vacancies...</p>
+        <p className="app-text-muted text-sm sm:text-base">{t('jobs.list.loading')}</p>
       </div>
     );
   }
@@ -39,16 +41,16 @@ export const JobsList = () => {
   if (filteredJobs.length === 0) {
     return (
       <div className="app-section-card flex flex-col items-center justify-center gap-3 py-16 text-center">
-        <div className="rounded-2xl bg-[#E8F0D8] p-3 text-[#24442E]">
+        <div className="rounded-2xl bg-[var(--surface-chip)] p-3 text-[var(--surface-text-primary)]">
           <SearchX className="h-7 w-7" />
         </div>
-        <h3 className="app-title text-xl">No vacancies match the filters</h3>
+        <h3 className="app-title text-xl">{t('jobs.list.emptyTitle')}</h3>
         <p className="app-text-muted max-w-md text-sm sm:text-base">
-          Clear or adjust filters to see more options.
+          {t('jobs.list.emptyDescription')}
         </p>
         {hasActiveFilters && (
           <Button variant="outline" size="sm" onClick={() => setFilters({})}>
-            Reset filters
+            {t('jobs.list.resetFilters')}
           </Button>
         )}
       </div>
@@ -60,34 +62,34 @@ export const JobsList = () => {
       <div className="app-section-card p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#556849]">Search results</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{t('jobs.list.searchResults')}</p>
             <h3 className="app-title mt-1 text-xl">
-              {sortedJobs.length} {sortedJobs.length === 1 ? 'vacancy' : 'vacancies'} found
+              {t('jobs.list.resultsFound', { count: sortedJobs.length })}
             </h3>
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="sort-vacancies" className="text-sm font-semibold text-[#4D6141]">
-              Sort:
+            <label htmlFor="sort-vacancies" className="text-sm font-semibold text-[var(--surface-text-muted)]">
+              {t('jobs.list.sortLabel')}
             </label>
             <select
               id="sort-vacancies"
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="h-10 rounded-xl border border-[#9FB08A]/35 bg-white dark:bg-[#111814] px-3 text-sm font-medium text-[#2D3D25] focus:outline-none focus:ring-2 focus:ring-[#2B6A4D]/30"
+              className="h-10 rounded-xl border border-black/10 bg-[var(--surface-base)] px-3 text-sm font-medium text-[var(--surface-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--tone-info-bg)]"
             >
-              <option value="relevance">Relevance</option>
-              <option value="newest">Newest first</option>
-              <option value="leastApplied">Lower competition</option>
+              <option value="relevance">{t('jobs.list.sort.relevance')}</option>
+              <option value="newest">{t('jobs.list.sort.newest')}</option>
+              <option value="leastApplied">{t('jobs.list.sort.leastApplied')}</option>
             </select>
           </div>
         </div>
 
         {hasActiveFilters && (
-          <div className="mt-3 flex items-center justify-between rounded-xl border border-[#9FB08A]/30 bg-[#F5F9EB] px-3 py-2">
-            <p className="text-sm text-[#495D3D]">Filters are active. You are seeing narrowed results.</p>
+          <div className="mt-3 flex items-center justify-between rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 py-2">
+            <p className="text-sm text-[var(--surface-text-muted)]">{t('jobs.list.activeFiltersNotice')}</p>
             <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
-              Clear all
+              {t('jobs.list.clearAll')}
             </Button>
           </div>
         )}

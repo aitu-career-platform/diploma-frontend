@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { X, CheckCircle } from 'lucide-react';
-import { Button, Input, PreferencesControls } from '@shared/ui';
+import { BrandLogo, Button, Input, PreferencesControls } from '@shared/ui';
 import { useUserStore } from '@entities/user';
 import { useUISettings } from '@shared/lib/ui-settings';
 
@@ -79,7 +79,7 @@ export const ResetPasswordPage = () => {
           <PreferencesControls compact />
         </div>
         <Link to="/app" className="mb-1 inline-flex items-center gap-3">
-          <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-24 w-auto object-contain" />
+          <BrandLogo className="h-24" />
         </Link>
 
         <div className="app-section-card relative p-7 sm:p-8">

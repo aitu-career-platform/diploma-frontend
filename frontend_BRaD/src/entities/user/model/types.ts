@@ -1,4 +1,10 @@
-export type UserRole = 'user' | 'candidate' | 'hr' | 'employer' | 'admin';
+export type UserRole =
+  | 'user'
+  | 'candidate'
+  | 'hr'
+  | 'employer'
+  | 'university'
+  | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'banned';
 
 export interface User {

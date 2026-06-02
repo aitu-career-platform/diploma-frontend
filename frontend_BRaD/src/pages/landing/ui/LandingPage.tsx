@@ -1,7 +1,6 @@
 import { LandingHeader } from "@widgets/landing-header";
 import { LandingHero } from "@widgets/landing-hero";
 import { LandingFeatures } from "@widgets/landing-features";
-import { LandingHowItWorks } from "@widgets/landing-how-it-works";
 import { LandingBenefits } from "@widgets/landing-benefits";
 import { LandingTestimonials } from "@widgets/landing-testimonials";
 import { LandingFooter } from "@widgets/landing-footer";
@@ -14,7 +13,6 @@ export const LandingPage = () => {
       <main>
         <LandingHero />
         <LandingFeatures />
-        <LandingHowItWorks />
         <LandingBenefits />
         <LandingTestimonials />
       </main>
@@ -22,4 +20,3 @@ export const LandingPage = () => {
     </div>
   );
 };
-

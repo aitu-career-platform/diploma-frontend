@@ -6,5 +6,6 @@ export {
   isCandidateRole,
   isEmployerRole,
   isHrRole,
+  isUniversityRole,
   mapRoleToRegisterPayload,
 } from './model/role';

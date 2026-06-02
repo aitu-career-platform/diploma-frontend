@@ -1,4 +1,5 @@
 import { useUISettings } from "@shared/lib/ui-settings";
+import { BrandLogo } from "@shared/ui";
 import "../../../pages/landing/ui/landing.css";
 
 export const LandingFooter = () => {
@@ -11,7 +12,7 @@ export const LandingFooter = () => {
           {/* Brand */}
           <div className="footer-brand">
             <div className="footer-logo">
-              <img src="/images/logo/logo.png" alt="BRaD Logo" className="footer-logo-img" />
+              <BrandLogo className="footer-logo-img" />
             </div>
             <p className="footer-description">
               {t('landing.footer.description')}
@@ -88,4 +89,3 @@ export const LandingFooter = () => {
     </footer>
   );
 };
-

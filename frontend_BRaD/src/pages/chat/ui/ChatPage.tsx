@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MessageSquare, RefreshCcw, Search, User, X } from 'lucide-react';
+import { MessageSquare, RefreshCcw, Search, User, Wifi, X } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input } from '@shared/ui';
 import { useMessageStore } from '@entities/message';
@@ -142,15 +142,41 @@ export const ChatPage = () => {
     <div className="min-h-screen app-shell app-page">
       <AppHeader />
       <main className="app-page-main">
-        <section className="mb-4 flex items-center justify-between gap-2">
-          <h1 className="app-title text-2xl sm:text-3xl">Messages</h1>
-          <div className="flex items-center gap-2">
-            <span className="app-chip hidden sm:inline-flex">Stream: {streamStatus}</span>
-            <span className="app-chip hidden sm:inline-flex">Chats: {meta.total}</span>
-            <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </Button>
+        <section className="app-section-card app-page-hero p-6 sm:p-7">
+          <div className="app-toolbar">
+            <div className="app-section-heading">
+              <p className="app-section-eyebrow">Inbox</p>
+              <h1 className="app-title text-2xl sm:text-3xl">Messages</h1>
+              <p className="app-text-muted text-sm sm:text-base">
+                Keep active application conversations in one place. Search a chat on the left and continue the thread on the right.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="app-chip hidden sm:inline-flex">
+                <Wifi className="h-3.5 w-3.5" />
+                Stream: {streamStatus}
+              </span>
+              <span className="app-chip hidden sm:inline-flex">Chats: {meta.total}</span>
+              <Button variant="outline" size="sm" onClick={() => void listChats({ limit: 50, offset: 0 })}>
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 app-stat-grid">
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Total chats</p>
+              <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{meta.total}</p>
+            </div>
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Visible now</p>
+              <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{visibleChats.length}</p>
+            </div>
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Status</p>
+              <p className="mt-2 text-xl font-extrabold text-[var(--surface-text-primary)]">{streamStatus}</p>
+            </div>
           </div>
         </section>
 
@@ -160,23 +186,26 @@ export const ChatPage = () => {
           </div>
         )}
 
-        <section className="mt-3 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6">
-          <div className={`${selectedChat ? 'hidden lg:block' : 'block'} app-section-card p-4`}>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="app-title text-lg">Conversations</h2>
+        <section className="mt-6 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-6">
+          <div className={`${selectedChat ? 'hidden lg:block' : 'block'} app-section-card p-4 sm:p-5`}>
+            <div className="app-toolbar mb-4">
+              <div className="app-section-heading">
+                <p className="app-section-eyebrow">Conversations</p>
+                <h2 className="app-title text-lg">Choose a thread</h2>
+              </div>
               <span className="rounded-full bg-[#EBF1DE] px-2.5 py-1 text-[11px] font-semibold text-[#2B3B23]">
                 {visibleChats.length}/{chats.length}
               </span>
             </div>
 
-            <div className="mb-3">
+            <div className="mb-4">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65785A]" />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by name, email, vacancy"
-                  className="h-10 rounded-xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] pl-10 pr-10"
+                  className="h-11 rounded-2xl border-[#9FB08A]/35 bg-white dark:bg-[#111814] pl-10 pr-10"
                 />
                 {search && (
                   <button
@@ -193,17 +222,27 @@ export const ChatPage = () => {
             {isLoadingList ? (
               <p className="app-text-muted text-sm">Loading conversations...</p>
             ) : chats.length === 0 ? (
-              <div className="py-8 text-center">
-                <MessageSquare className="mx-auto h-12 w-12 text-[#6D7E62]" />
-                <p className="app-text-muted mt-2 text-sm">No chats yet</p>
+              <div className="app-empty-state">
+                <div className="app-empty-state-icon">
+                  <MessageSquare className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="app-title text-lg">No chats yet</p>
+                  <p className="app-text-muted mt-2 text-sm">Chats will appear here after applications and invite flows start.</p>
+                </div>
               </div>
             ) : visibleChats.length === 0 ? (
-              <div className="py-8 text-center">
-                <Search className="mx-auto h-8 w-8 text-[#6D7E62]" />
-                <p className="app-text-muted mt-2 text-sm">No conversations match your search</p>
+              <div className="app-empty-state">
+                <div className="app-empty-state-icon">
+                  <Search className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="app-title text-lg">Nothing matched your search</p>
+                  <p className="app-text-muted mt-2 text-sm">Try another name, vacancy title or email.</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-2 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
+              <div className="app-list-scroll space-y-2 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
                 {visibleChats.map((chat) => {
                   const other = getOtherParticipant(chat);
                   const fullName = `${other?.firstName || ''} ${other?.lastName || ''}`.trim();
@@ -214,7 +253,7 @@ export const ChatPage = () => {
                     <button
                       key={chat.id}
                       onClick={() => void handleSelectChat(chat.id)}
-                      className={`w-full rounded-xl border p-3 text-left transition-colors ${
+                      className={`w-full rounded-2xl border p-3.5 text-left transition-colors ${
                         selected
                           ? 'border-[#2B6A4D] bg-[#ECF5DE]'
                           : 'border-[#2B3B23]/10 bg-white dark:bg-[#111814] hover:bg-[#F4F8EA]'
@@ -255,10 +294,15 @@ export const ChatPage = () => {
                 <ChatWindow chat={selectedChat} embedded onClose={handleBackToList} />
               </div>
             ) : (
-              <div className="app-section-card flex h-[620px] items-center justify-center p-6 text-center">
+              <div className="app-section-card app-empty-state h-[620px] p-6">
+                <div className="app-empty-state-icon">
+                  <MessageSquare className="h-7 w-7" />
+                </div>
                 <div>
-                  <MessageSquare className="mx-auto h-16 w-16 text-[#6D7E62]" />
-                  <p className="app-text-muted mt-3">Select a conversation to start chatting</p>
+                  <h3 className="app-title text-xl">Open a conversation</h3>
+                  <p className="app-text-muted mt-2 text-sm sm:text-base">
+                    Pick a thread from the left to read messages, reply, and track application discussions in context.
+                  </p>
                 </div>
               </div>
             )}

@@ -32,7 +32,7 @@ export const LandingAbout = () => {
             About Us
           </span>
           <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6">
-            Why Choose <span className="text-gradient">BRaD.</span>?
+            Why Choose <span className="text-gradient">Scoutly</span>?
           </h2>
           <p className="text-lg text-muted-foreground">
             We're revolutionizing how students and professionals connect with remote work opportunities. Our platform bridges the gap between talent and opportunity.
@@ -68,4 +68,3 @@ export const LandingAbout = () => {
     </section>
   );
 };
-

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PreferencesControls } from "@shared/ui";
+import { BrandLogo, PreferencesControls } from "@shared/ui";
 import { useUISettings } from "@shared/lib/ui-settings";
 import "../../../pages/landing/ui/landing.css";
 
@@ -15,7 +15,7 @@ export const LandingHeader = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <a href="#" className="navbar-logo">
-          <img src="/images/logo/logo.png" alt="BRaD Logo" className="logo-img" />
+          <BrandLogo className="logo-img" />
         </a>
         
         <div className="navbar-menu">

@@ -1097,7 +1097,7 @@
 }
 
 .footer-logo-img {
-    height: 5.5rem;
+    height: 3.5rem;
     width: auto;
     filter: brightness(0) invert(1);
 }
@@ -1236,24 +1236,24 @@
     text-decoration: none;
     overflow: visible;
     position: relative;
-    height: 2rem;
+    height: 1.5rem;
 }
 
 .logo-img {
-    height: 4rem;
+    height: 2.6rem;
     width: auto;
     object-fit: contain;
-    margin-top: -1.5rem;
-    margin-bottom: -1.5rem;
+    margin-top: -0.55rem;
+    margin-bottom: -0.55rem;
     display: block;
     max-width: 100%;
 }
 
 @media (min-width: 640px) {
     .logo-img {
-        height: 6.5rem;
-        margin-top: -2.25rem;
-        margin-bottom: -2.25rem;
+        height: 3.4rem;
+        margin-top: -0.8rem;
+        margin-bottom: -0.8rem;
     }
 }
 

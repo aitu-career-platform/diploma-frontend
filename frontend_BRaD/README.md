@@ -1,1 +1,1 @@
-# BRaD Platform
+# Scoutly Platform

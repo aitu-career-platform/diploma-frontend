@@ -29,7 +29,7 @@ export const LandingContact = () => {
               </div>
               <div>
                 <h4 className="font-heading font-semibold text-lg mb-1">{t('landing.contact.email')}</h4>
-                <p className="text-muted-foreground">hello@brad.com</p>
+                <p className="text-muted-foreground">hello@scoutly.com</p>
               </div>
             </div>
 

@@ -71,7 +71,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         </button>
 
         <h2 className="font-heading text-3xl font-bold mb-2">Create Account</h2>
-        <p className="text-muted-foreground mb-6">Join BRaD. and start your journey</p>
+        <p className="text-muted-foreground mb-6">Join Scoutly and start your journey</p>
 
         {error && (
           <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
@@ -161,4 +161,3 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     </div>
   );
 };
-

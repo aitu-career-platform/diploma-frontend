@@ -17,7 +17,7 @@ import {
 } from '@entities/compliance';
 import { isAdminRole, useUserStore } from '@entities/user';
 
-type BackendUserRole = 'CANDIDATE' | 'EMPLOYER' | 'ADMIN';
+type BackendUserRole = 'CANDIDATE' | 'EMPLOYER' | 'UNIVERSITY' | 'ADMIN';
 type BackendUserStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DELETED';
 type BackendVacancyStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'CLOSED';
 
@@ -37,6 +37,14 @@ interface ManagedUser {
     companyName?: string;
     jobTitle?: string;
     hrEmail?: string;
+  } | null;
+  universityProfile?: {
+    university?: {
+      id?: string;
+      name?: string;
+      shortName?: string;
+    } | null;
+    jobTitle?: string;
   } | null;
 }
 
@@ -62,7 +70,7 @@ interface ManagedVacancyResponse {
   items?: ManagedVacancy[];
 }
 
-const userRoleOptions: BackendUserRole[] = ['CANDIDATE', 'EMPLOYER', 'ADMIN'];
+const userRoleOptions: BackendUserRole[] = ['CANDIDATE', 'EMPLOYER', 'UNIVERSITY', 'ADMIN'];
 const userStatusOptions: BackendUserStatus[] = ['ACTIVE', 'SUSPENDED'];
 const vacancyStatusOptions: Array<BackendVacancyStatus | ''> = [
   '',
@@ -153,6 +161,11 @@ interface ChartDatum {
   color: string;
 }
 
+interface TrendDatum {
+  label: string;
+  value: number;
+}
+
 const chartPalette = ['#0284c7', '#0d9488', '#f59e0b', '#dc2626', '#7c3aed', '#14b8a6'];
 
 const toChartData = <T extends { count: number }>(
@@ -211,7 +224,13 @@ const DonutDistributionChart = ({
             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.65)',
           }}
         >
-          <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full border border-white/70 bg-white/85 text-center shadow-sm">
+          <div
+            className="absolute inset-5 flex flex-col items-center justify-center rounded-full border text-center shadow-sm"
+            style={{
+              borderColor: 'var(--surface-border-strong)',
+              backgroundColor: 'var(--surface-base-soft)',
+            }}
+          >
             <div className="text-2xl font-bold text-[var(--surface-text-primary)]">{centerValue}</div>
             <div className="text-xs uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{centerLabel}</div>
           </div>
@@ -221,7 +240,8 @@ const DonutDistributionChart = ({
         {data.map((item) => (
           <div
             key={item.label}
-            className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-3 py-2.5"
+            className="flex items-center justify-between rounded-2xl border px-3 py-2.5"
+            style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base-soft)' }}
           >
             <div className="flex items-center gap-2.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -243,7 +263,7 @@ const StackedDistributionBar = ({ data }: { data: ChartDatum[] }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex h-4 overflow-hidden rounded-full bg-slate-200/80">
+      <div className="flex h-4 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-border-soft)' }}>
         {data.map((item) => (
           <div
             key={item.label}
@@ -260,7 +280,8 @@ const StackedDistributionBar = ({ data }: { data: ChartDatum[] }) => {
         {data.map((item) => (
           <div
             key={item.label}
-            className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-3 py-2.5"
+            className="flex items-center justify-between rounded-2xl border px-3 py-2.5"
+            style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base-soft)' }}
           >
             <div className="flex items-center gap-2.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -283,12 +304,16 @@ const HorizontalDistributionBars = ({ data }: { data: ChartDatum[] }) => {
   return (
     <div className="space-y-3">
       {data.map((item) => (
-        <div key={item.label} className="rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
+        <div
+          key={item.label}
+          className="rounded-2xl border px-4 py-3"
+          style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base-soft)' }}
+        >
           <div className="mb-2 flex items-center justify-between gap-2">
             <span className="text-sm font-medium text-[var(--surface-text-primary)]">{item.label}</span>
             <span className="text-sm font-semibold text-[var(--surface-text-primary)]">{item.value}</span>
           </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/70">
+          <div className="h-2.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-border-soft)' }}>
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
@@ -323,12 +348,18 @@ const VerticalColumnChart = ({
         </span>
       </div>
 
-      <div className="h-[260px] rounded-2xl border border-black/5 bg-gradient-to-b from-slate-50 to-white p-4">
+      <div
+        className="h-[260px] rounded-2xl border p-4"
+        style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base-soft)' }}
+      >
         <div className="flex h-full items-end gap-3 sm:gap-4">
           {data.map((item) => (
             <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <div className="text-xs font-semibold text-[var(--surface-text-primary)]">{item.value}</div>
-              <div className="relative flex h-[185px] w-full items-end rounded-xl bg-slate-100/80 px-1.5 pb-1.5">
+              <div
+                className="relative flex h-[185px] w-full items-end rounded-xl px-1.5 pb-1.5"
+                style={{ backgroundColor: 'var(--surface-subtle)' }}
+              >
                 <div
                   className="w-full rounded-lg transition-all duration-500"
                   style={{
@@ -339,6 +370,100 @@ const VerticalColumnChart = ({
                 />
               </div>
               <div className="line-clamp-2 text-center text-xs font-medium text-[var(--surface-text-muted)]">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TrendAreaChart = ({
+  data,
+  title,
+  subtitle,
+  strokeColor,
+}: {
+  data: TrendDatum[];
+  title: string;
+  subtitle: string;
+  strokeColor: string;
+}) => {
+  const maxValue = Math.max(1, ...data.map((item) => item.value));
+  const chartWidth = 100;
+  const chartHeight = 100;
+  const step = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+
+  const points = data
+    .map((item, index) => {
+      const x = index * step;
+      const y = chartHeight - (item.value / maxValue) * chartHeight;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const areaPoints = `0,${chartHeight} ${points} ${chartWidth},${chartHeight}`;
+
+  return (
+    <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">{title}</h2>
+        <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+          {subtitle}
+        </span>
+      </div>
+
+      <div
+        className="rounded-2xl border p-4"
+        style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base-soft)' }}
+      >
+        <div className="h-[240px]">
+          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-full w-full overflow-visible">
+            <defs>
+              <linearGradient id="university-trend-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={strokeColor} stopOpacity="0.35" />
+                <stop offset="100%" stopColor={strokeColor} stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            {[20, 40, 60, 80].map((line) => (
+              <line
+                key={line}
+                x1="0"
+                x2={chartWidth}
+                y1={line}
+                y2={line}
+                stroke="rgba(120,140,128,0.18)"
+                strokeDasharray="2 3"
+              />
+            ))}
+            <polygon points={areaPoints} fill="url(#university-trend-fill)" />
+            <polyline
+              points={points}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="2.2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+            {data.map((item, index) => {
+              const x = index * step;
+              const y = chartHeight - (item.value / maxValue) * chartHeight;
+
+              return (
+                <g key={item.label}>
+                  <circle cx={x} cy={y} r="2.7" fill={strokeColor} />
+                  <circle cx={x} cy={y} r="5.5" fill={strokeColor} opacity="0.12" />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {data.map((item) => (
+            <div key={item.label} className="rounded-xl bg-[var(--surface-base)] px-3 py-2 text-center">
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">{item.label}</div>
+              <div className="mt-1 text-sm font-bold text-[var(--surface-text-primary)]">{item.value}</div>
             </div>
           ))}
         </div>
@@ -382,6 +507,7 @@ export const AdminPanelPage = () => {
   const [roleDrafts, setRoleDrafts] = useState<Record<string, BackendUserRole>>({});
   const [statusDrafts, setStatusDrafts] = useState<Record<string, BackendUserStatus>>({});
   const [companyIdDrafts, setCompanyIdDrafts] = useState<Record<string, string>>({});
+  const [universityIdDrafts, setUniversityIdDrafts] = useState<Record<string, string>>({});
   const [restoreDrafts, setRestoreDrafts] = useState<Record<string, BackendVacancyStatus>>({});
   const [kycReviewDrafts, setKycReviewDrafts] = useState<
     Record<string, { status: CompanyVerificationStatus; comment: string }>
@@ -396,6 +522,51 @@ export const AdminPanelPage = () => {
   const isAdmin = isAdminRole(currentUser?.role);
   const canViewPage = isAuthenticated && isAdmin;
   const openComplianceItems = kycQueue.length + complaintsQueue.length + deleteRequestsQueue.length;
+  const getUserRoleLabel = (role: BackendUserRole): string => {
+    if (role === 'CANDIDATE') {
+      return t('admin.userRole.candidate');
+    }
+    if (role === 'EMPLOYER') {
+      return t('admin.userRole.employer');
+    }
+    if (role === 'ADMIN') {
+      return t('admin.userRole.admin');
+    }
+    if (role === 'UNIVERSITY') {
+      return 'University';
+    }
+    return formatEnum(role);
+  };
+  const getUserStatusLabel = (status: BackendUserStatus): string => {
+    if (status === 'ACTIVE') {
+      return t('admin.userStatus.active');
+    }
+    if (status === 'PENDING') {
+      return t('admin.userStatus.pending');
+    }
+    if (status === 'SUSPENDED') {
+      return t('admin.userStatus.suspended');
+    }
+    if (status === 'DELETED') {
+      return t('admin.userStatus.deleted');
+    }
+    return formatEnum(status);
+  };
+  const getVacancyStatusLabel = (status: BackendVacancyStatus): string => {
+    if (status === 'DRAFT') {
+      return t('admin.vacancyStatus.draft');
+    }
+    if (status === 'PUBLISHED') {
+      return t('admin.vacancyStatus.published');
+    }
+    if (status === 'ARCHIVED') {
+      return t('admin.vacancyStatus.archived');
+    }
+    if (status === 'CLOSED') {
+      return t('admin.vacancyStatus.closed');
+    }
+    return formatEnum(status);
+  };
   const userRoleSummary = userRoleOptions.map((role) => ({
     role,
     count: users.filter((user) => user.role === role).length,
@@ -408,9 +579,15 @@ export const AdminPanelPage = () => {
     status,
     count: vacancies.filter((vacancy) => vacancy.status === status).length,
   }));
-  const userRoleChartData = toChartData(userRoleSummary, (item) => formatEnum(item.role));
-  const userStatusChartData = toChartData(userStatusSummary, (item) => formatEnum(item.status));
-  const vacancyStatusChartData = toChartData(vacancyStatusSummary, (item) => formatEnum(item.status));
+  const universityUsersCount = userRoleSummary.find((item) => item.role === 'UNIVERSITY')?.count || 0;
+  const partnerUniversityCount = Math.max(universityUsersCount, 6);
+  const mockTrackedStudents = partnerUniversityCount * 148;
+  const mockGraduatesReady = Math.round(mockTrackedStudents * 0.36);
+  const mockOpenToWork = Math.round(mockTrackedStudents * 0.42);
+  const mockPlaced = Math.round(mockGraduatesReady * 0.58);
+  const userRoleChartData = toChartData(userRoleSummary, (item) => getUserRoleLabel(item.role));
+  const userStatusChartData = toChartData(userStatusSummary, (item) => getUserStatusLabel(item.status));
+  const vacancyStatusChartData = toChartData(vacancyStatusSummary, (item) => getVacancyStatusLabel(item.status));
   const complianceQueueChartData: ChartDatum[] = [
     { label: 'KYC', value: kycQueue.length, color: '#0284c7' },
     { label: 'Complaints', value: complaintsQueue.length, color: '#f97316' },
@@ -419,9 +596,32 @@ export const AdminPanelPage = () => {
   const moderationPulseChartData: ChartDatum[] = [
     { label: 'Candidates', value: userRoleSummary.find((item) => item.role === 'CANDIDATE')?.count || 0, color: '#0284c7' },
     { label: 'Employers', value: userRoleSummary.find((item) => item.role === 'EMPLOYER')?.count || 0, color: '#0d9488' },
+    { label: 'Universities', value: userRoleSummary.find((item) => item.role === 'UNIVERSITY')?.count || 0, color: '#8b5cf6' },
     { label: 'Admins', value: userRoleSummary.find((item) => item.role === 'ADMIN')?.count || 0, color: '#f59e0b' },
     { label: 'Published vacancies', value: vacancyStatusSummary.find((item) => item.status === 'PUBLISHED')?.count || 0, color: '#22c55e' },
     { label: 'Compliance open', value: openComplianceItems, color: '#ef4444' },
+  ];
+  const universityCareerStageChartData: ChartDatum[] = [
+    { label: 'Students tracked', value: mockTrackedStudents, color: '#2563eb' },
+    { label: 'Graduates ready', value: mockGraduatesReady, color: '#8b5cf6' },
+    { label: 'Open to work', value: mockOpenToWork, color: '#f97316' },
+    { label: 'Placed recently', value: mockPlaced, color: '#16a34a' },
+  ];
+  const universityFacultyMixChartData: ChartDatum[] = [
+    { label: 'Engineering', value: Math.round(mockTrackedStudents * 0.24), color: '#0f766e' },
+    { label: 'Computer science', value: Math.round(mockTrackedStudents * 0.22), color: '#2563eb' },
+    { label: 'Business', value: Math.round(mockTrackedStudents * 0.18), color: '#f59e0b' },
+    { label: 'Design', value: Math.round(mockTrackedStudents * 0.12), color: '#ec4899' },
+    { label: 'Data & science', value: Math.round(mockTrackedStudents * 0.14), color: '#8b5cf6' },
+    { label: 'Other faculties', value: Math.round(mockTrackedStudents * 0.1), color: '#64748b' },
+  ];
+  const universityPipelinePreviewData: TrendDatum[] = [
+    { label: 'Jan', value: Math.max(12, partnerUniversityCount * 2) },
+    { label: 'Feb', value: Math.max(15, partnerUniversityCount * 2 + 3) },
+    { label: 'Mar', value: Math.max(18, partnerUniversityCount * 3 + 2) },
+    { label: 'Apr', value: Math.max(17, partnerUniversityCount * 3 + 1) },
+    { label: 'May', value: Math.max(22, partnerUniversityCount * 4 + 1) },
+    { label: 'Jun', value: Math.max(26, partnerUniversityCount * 4 + 4) },
   ];
 
   const loadUsers = async (nextFilters = userFilters) => {
@@ -453,6 +653,14 @@ export const AdminPanelPage = () => {
           string,
           BackendUserStatus
         >,
+      );
+      setUniversityIdDrafts(
+        Object.fromEntries(
+          parsed.items.map((user) => [
+            user.id,
+            user.universityProfile?.university?.id || '',
+          ]),
+        ) as Record<string, string>,
       );
     } catch (error) {
       setUserError(getApiErrorMessage(error, 'Failed to load users'));
@@ -593,9 +801,13 @@ export const AdminPanelPage = () => {
     try {
       const payload: Record<string, string> = { role: nextRole };
       const companyId = companyIdDrafts[user.id]?.trim();
+      const universityId = universityIdDrafts[user.id]?.trim();
 
       if (companyId) {
         payload.companyId = companyId;
+      }
+      if (universityId) {
+        payload.universityId = universityId;
       }
 
       await api.patch(`/users/${user.id}/role`, payload);
@@ -766,9 +978,9 @@ export const AdminPanelPage = () => {
   return (
     <div className="min-h-screen app-shell app-page">
       <AppHeader />
-      <main className="container mx-auto px-4 sm:px-6 py-8" style={{ maxWidth: '1360px' }}>
+      <main className="app-page-main" style={{ maxWidth: '1360px' }}>
         <section
-          className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
+          className="app-page-hero mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
             background: 'var(--surface-base)',
@@ -776,7 +988,10 @@ export const AdminPanelPage = () => {
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-primary)' }}>
+              <div
+                className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--surface-base-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+                style={{ color: 'var(--surface-text-primary)' }}
+              >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 {t('admin.badge')}
               </div>
@@ -789,7 +1004,7 @@ export const AdminPanelPage = () => {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
+              <div className="rounded-2xl border border-black/5 bg-[var(--surface-base-soft)] p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Users
                 </div>
@@ -797,7 +1012,7 @@ export const AdminPanelPage = () => {
                   {usersTotal}
                 </div>
               </div>
-              <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
+              <div className="rounded-2xl border border-black/5 bg-[var(--surface-base-soft)] p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Vacancies
                 </div>
@@ -805,7 +1020,7 @@ export const AdminPanelPage = () => {
                   {vacancies.length}
                 </div>
               </div>
-              <div className="rounded-2xl border border-black/5 bg-white/80 p-4">
+              <div className="rounded-2xl border border-black/5 bg-[var(--surface-base-soft)] p-4">
                 <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--surface-text-soft)' }}>
                   Compliance
                 </div>
@@ -875,14 +1090,7 @@ export const AdminPanelPage = () => {
             />
 
             <div className="grid gap-6 xl:grid-cols-12">
-              <div
-                className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5"
-                style={{
-                  ...cardStyle,
-                  background:
-                    'radial-gradient(120% 110% at 0% 0%, #f0f9ff 0%, #ecfeff 42%, #ffffff 100%)',
-                }}
-              >
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Users by role</h2>
                   <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
@@ -892,14 +1100,7 @@ export const AdminPanelPage = () => {
                 <DonutDistributionChart data={userRoleChartData} centerValue={`${users.length}`} centerLabel="loaded" />
               </div>
 
-              <div
-                className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7"
-                style={{
-                  ...cardStyle,
-                  background:
-                    'radial-gradient(120% 110% at 100% 0%, #f8fafc 0%, #f8fafc 38%, #ffffff 100%)',
-                }}
-              >
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7" style={cardStyle}>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">User status mix</h2>
                   <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
@@ -931,6 +1132,86 @@ export const AdminPanelPage = () => {
                 <HorizontalDistributionBars data={complianceQueueChartData} />
               </div>
             </div>
+
+            <section className="space-y-6">
+              <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">University analytics showcase</h2>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
+                      Preview charts for the university role. These are mocked presentation metrics until richer backend analytics land.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+                    preview / mock
+                  </span>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      Partner universities
+                    </div>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{partnerUniversityCount}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Estimated active university accounts in the ecosystem.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      Students tracked
+                    </div>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockTrackedStudents}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock cross-campus talent pool for dashboard storytelling.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      Open to work
+                    </div>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockOpenToWork}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock candidates currently ready for internships or jobs.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      Placement pulse
+                    </div>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockPlaced}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock recent placements to make the university lane feel complete.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-12">
+                <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5" style={cardStyle}>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Career stage funnel</h2>
+                    <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+                      mocked mix
+                    </span>
+                  </div>
+                  <DonutDistributionChart
+                    data={universityCareerStageChartData}
+                    centerValue={`${partnerUniversityCount}`}
+                    centerLabel="universities"
+                  />
+                </div>
+
+                <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7" style={cardStyle}>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Faculty demand mix</h2>
+                    <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+                      showcase
+                    </span>
+                  </div>
+                  <HorizontalDistributionBars data={universityFacultyMixChartData} />
+                </div>
+              </div>
+
+              <TrendAreaChart
+                data={universityPipelinePreviewData}
+                title="University growth trend"
+                subtitle="mock monthly activity"
+                strokeColor="#ef4444"
+              />
+            </section>
           </section>
         )}
 
@@ -957,47 +1238,47 @@ export const AdminPanelPage = () => {
                 <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{t('admin.userManagementDescription')}</p>
               </div>
               <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
-                {users.length} loaded
+                {t('admin.loadedCount', { count: users.length })}
               </span>
             </div>
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_120px_auto]">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                  Role filter
+                  {t('admin.filters.role')}
                 </label>
                 <select
                   value={userFilters.role}
                   onChange={(event) => setUserFilters((prev) => ({ ...prev, role: event.target.value }))}
                   className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                 >
-                  <option value="">All roles</option>
+                  <option value="">{t('admin.filters.allRoles')}</option>
                   {userRoleOptions.map((role) => (
                     <option key={role} value={role}>
-                      {formatEnum(role)}
+                      {getUserRoleLabel(role)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                  Status filter
+                  {t('admin.filters.status')}
                 </label>
                 <select
                   value={userFilters.status}
                   onChange={(event) => setUserFilters((prev) => ({ ...prev, status: event.target.value }))}
                   className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
                 >
-                  <option value="">All statuses</option>
+                  <option value="">{t('admin.filters.allStatuses')}</option>
                   {(['ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED'] as BackendUserStatus[]).map((status) => (
                     <option key={status} value={status}>
-                      {formatEnum(status)}
+                      {getUserStatusLabel(status)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                  Limit
+                  {t('admin.filters.limit')}
                 </label>
                 <Input
                   type="number"
@@ -1016,7 +1297,7 @@ export const AdminPanelPage = () => {
               <div className="flex items-end gap-3">
                 <Button variant="hero" className="h-11" onClick={() => void loadUsers()} disabled={isUsersLoading}>
                   <RefreshCcw className="h-4 w-4" />
-                  Reload
+                  {t('admin.filters.reload')}
                 </Button>
               </div>
             </div>
@@ -1064,6 +1345,11 @@ export const AdminPanelPage = () => {
                             Company: {user.employerProfile.companyName}
                           </div>
                         )}
+                        {user.universityProfile?.university?.name && (
+                          <div className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                            University: {user.universityProfile.university.shortName || user.universityProfile.university.name}
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid gap-3 lg:min-w-[320px]">
@@ -1093,6 +1379,19 @@ export const AdminPanelPage = () => {
                               }))
                             }
                             placeholder="Optional company UUID"
+                            className="h-11 rounded-xl border-black/10 bg-white"
+                          />
+                        )}
+                        {isAdmin && roleDrafts[user.id] === 'UNIVERSITY' && (
+                          <Input
+                            value={universityIdDrafts[user.id] || ''}
+                            onChange={(event) =>
+                              setUniversityIdDrafts((prev) => ({
+                                ...prev,
+                                [user.id]: event.target.value,
+                              }))
+                            }
+                            placeholder="University UUID (required if empty)"
                             className="h-11 rounded-xl border-black/10 bg-white"
                           />
                         )}
@@ -1169,7 +1468,7 @@ export const AdminPanelPage = () => {
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                  Vacancy status
+                  {t('admin.filters.vacancyStatus')}
                 </label>
                 <select
                   value={vacancyFilters.status}
@@ -1183,7 +1482,7 @@ export const AdminPanelPage = () => {
                 >
                   {vacancyStatusOptions.map((status) => (
                     <option key={status || 'all'} value={status}>
-                      {status ? formatEnum(status) : 'All statuses'}
+                      {status ? getVacancyStatusLabel(status) : t('admin.filters.allStatuses')}
                     </option>
                   ))}
                 </select>
@@ -1197,7 +1496,7 @@ export const AdminPanelPage = () => {
                   disabled={isVacanciesLoading}
                 >
                   <RefreshCcw className="h-4 w-4" />
-                  Reload
+                  {t('admin.filters.reload')}
                 </Button>
               </div>
             </div>
@@ -1362,7 +1661,7 @@ export const AdminPanelPage = () => {
                     disabled={isComplianceLoading}
                   >
                     <RefreshCcw className="h-4 w-4" />
-                    Reload
+                    {t('admin.filters.reload')}
                   </Button>
                 </div>
               </div>

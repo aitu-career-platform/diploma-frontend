@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Edit, Heart, Plus, Search, Send, Trash2, Users } from 'lucide-react';
+import { Briefcase, Edit, Gauge, Heart, Info, Plus, Search, Send, Trash2, TrendingUp, Users } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
@@ -137,22 +137,22 @@ const skillBucketConfig = {
     label: 'Required skills',
     placeholder: 'Type or choose required skill',
     hint: 'Must-have skills for the role',
-    accent: '#245338',
-    surface: '#ECF5DE',
+    accent: 'var(--tone-success-text)',
+    surface: 'var(--surface-soft)',
   },
   optionalSkillsText: {
     label: 'Optional skills',
     placeholder: 'Type or choose optional skill',
     hint: 'Good to have, but not mandatory',
-    accent: '#6B4F10',
-    surface: '#FFF8E4',
+    accent: 'var(--tone-warning-text)',
+    surface: 'var(--surface-soft)',
   },
   niceToHaveSkillsText: {
     label: 'Nice to have',
     placeholder: 'Type or choose bonus skill',
     hint: 'Extra advantage skills',
-    accent: '#264A78',
-    surface: '#EAF3FF',
+    accent: 'var(--tone-info-text)',
+    surface: 'var(--surface-soft)',
   },
 } as const;
 
@@ -532,6 +532,35 @@ const formatPercent = (value?: number): string => {
   return `${Math.round(value)}%`;
 };
 
+const resolveFinalScore = (value: { normalizedScore?: number; score: number }): number => {
+  const raw = typeof value.normalizedScore === 'number' ? value.normalizedScore : value.score;
+  if (!Number.isFinite(raw)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(raw));
+};
+
+const normalizeToPercent = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
+const getScoreTone = (score: number): { bg: string; text: string } => {
+  if (score >= 75) {
+    return { bg: 'var(--tone-success-bg)', text: 'var(--tone-success-text)' };
+  }
+
+  if (score >= 50) {
+    return { bg: 'var(--tone-warning-bg)', text: 'var(--tone-warning-text)' };
+  }
+
+  return { bg: 'var(--tone-danger-bg)', text: 'var(--tone-danger-text)' };
+};
+
 export const EmployerPage = () => {
   const { t } = useUISettings();
   const { currentUser } = useUserStore();
@@ -656,6 +685,16 @@ export const EmployerPage = () => {
       return matchingVacancies[0].id;
     });
   }, [matchingVacancies, vacancySearch]);
+
+  const rankedSuggestedCandidates = useMemo(() => {
+    return [...suggestedCandidates]
+      .sort((a, b) => resolveFinalScore(b.matching) - resolveFinalScore(a.matching))
+      .map((item, index) => ({
+        rank: index + 1,
+        finalScore: resolveFinalScore(item.matching),
+        item,
+      }));
+  }, [suggestedCandidates]);
 
   useEffect(() => {
     if (!sortedVacancies.length) {
@@ -831,7 +870,7 @@ export const EmployerPage = () => {
       setWizardError(
         saveError instanceof Error
           ? saveError.message
-          : 'Failed to save vacancy',
+          : t('employer.errors.saveVacancy'),
       );
     }
   };
@@ -850,13 +889,13 @@ export const EmployerPage = () => {
         });
       }
       await publishCurrent();
-      setWizardSuccess('Vacancy published successfully');
+      setWizardSuccess(t('employer.success.vacancyPublished'));
       await loadMyVacancies();
     } catch (publishError) {
       setWizardError(
         publishError instanceof Error
           ? publishError.message
-          : 'Failed to publish vacancy',
+          : t('employer.errors.publishVacancy'),
       );
     }
   };
@@ -869,14 +908,14 @@ export const EmployerPage = () => {
       setWizardError(
         archiveError instanceof Error
           ? archiveError.message
-          : 'Failed to archive vacancy',
+          : t('employer.errors.archiveVacancy'),
       );
     }
   };
 
   const handleRefreshMatching = async (vacancyId = selectedVacancyId) => {
     if (!vacancyId) {
-      setWizardError('Choose a vacancy first');
+      setWizardError(t('employer.errors.chooseVacancyFirst'));
       return;
     }
 
@@ -888,12 +927,12 @@ export const EmployerPage = () => {
         loadSuggestedCandidates(vacancyId, 20, 0),
         loadHrInvites({ vacancyId, limit: 20, offset: 0 }),
       ]);
-      setWizardSuccess('Candidate suggestions refreshed');
+      setWizardSuccess(t('employer.success.candidatesRefreshed'));
     } catch (loadingError) {
       setWizardError(
         loadingError instanceof Error
           ? loadingError.message
-          : 'Failed to load candidate suggestions',
+          : t('employer.errors.loadCandidateSuggestions'),
       );
     }
   };
@@ -913,7 +952,7 @@ export const EmployerPage = () => {
 
   const handleSendInvite = async (candidateId: string) => {
     if (!selectedVacancyId) {
-      setWizardError('Choose a vacancy first');
+      setWizardError(t('employer.errors.chooseVacancyFirst'));
       return;
     }
 
@@ -928,10 +967,10 @@ export const EmployerPage = () => {
         interviewAt: interviewAt || undefined,
       });
       await loadHrInvites({ vacancyId: selectedVacancyId, limit: 20, offset: 0 });
-      setWizardSuccess('Invite sent successfully');
+      setWizardSuccess(t('employer.success.inviteSent'));
     } catch (inviteError) {
       setWizardError(
-        inviteError instanceof Error ? inviteError.message : 'Failed to send invite',
+        inviteError instanceof Error ? inviteError.message : t('employer.errors.sendInvite'),
       );
     }
   };
@@ -959,42 +998,60 @@ export const EmployerPage = () => {
   return (
     <div className="min-h-screen app-shell app-page">
       <AppHeader />
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '1280px' }}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <div>
-            <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2" style={{ color: 'var(--surface-text-primary)' }}>
-              {t('employer.title')}
-            </h1>
-            <p className="text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
-              {t('employer.description')}
-            </p>
+      <main className="app-page-main flex flex-col">
+        <section className="app-section-card app-page-hero p-6 sm:p-8">
+          <div className="app-toolbar">
+            <div className="app-section-heading">
+              <p className="app-section-eyebrow">HR workspace</p>
+              <h1 className="font-heading text-3xl font-bold sm:text-4xl" style={{ color: 'var(--surface-text-primary)' }}>
+                {t('employer.title')}
+              </h1>
+              <p className="text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
+                {t('employer.description')}
+              </p>
+            </div>
+            <Button
+              onClick={handleCreate}
+              variant="hero"
+              className="w-full sm:w-auto"
+              disabled={isSaving}
+              style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('employer.createVacancy')}
+            </Button>
           </div>
-          <Button
-            onClick={handleCreate}
-            variant="hero"
-            className="w-full sm:w-auto"
-            disabled={isSaving}
-            style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('employer.createVacancy')}
-          </Button>
-        </div>
+
+          <div className="mt-5 app-stat-grid">
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Your vacancies</p>
+              <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{sortedVacancies.length}</p>
+            </div>
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Matched in search</p>
+              <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{matchingVacancies.length}</p>
+            </div>
+            <div className="app-kpi-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Suggested candidates</p>
+              <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{rankedSuggestedCandidates.length}</p>
+            </div>
+          </div>
+        </section>
 
         {(wizardError || wizardSuccess || error) && (
-          <div className="space-y-2 mb-4">
+          <div className="mb-4 mt-4 space-y-2">
             {wizardError && (
-              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#b91c1c' }}>
+              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-danger-bg)', color: 'var(--tone-danger-text)' }}>
                 {wizardError}
               </div>
             )}
             {wizardSuccess && (
-              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(22, 163, 74, 0.12)', color: '#166534' }}>
+              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-success-bg)', color: 'var(--tone-success-text)' }}>
                 {wizardSuccess}
               </div>
             )}
             {error && (
-              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#92400e' }}>
+              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-warning-bg)', color: 'var(--tone-warning-text)' }}>
                 {error}
               </div>
             )}
@@ -1002,17 +1059,17 @@ export const EmployerPage = () => {
         )}
 
         {showWizard && (
-          <div className="rounded-3xl p-6 sm:p-8 mb-6 border" style={{ borderColor: 'var(--surface-border-strong)', background: 'var(--surface-base)' }}>
+          <div className="app-section-card mb-6 rounded-3xl p-6 sm:p-8" style={{ borderColor: 'var(--surface-border-strong)', background: 'var(--surface-base)' }}>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
-                  Vacancy Builder
+                  {t('employer.builder.title')}
                 </h2>
-                <p className="text-sm mt-1" style={{ color: 'rgba(31, 42, 26, 0.65)' }}>
-                  One page form. Fill fields in any order. Salary and other blocks are optional.
+                <p className="text-sm mt-1" style={{ color: 'var(--surface-text-muted)' }}>
+                  {t('employer.builder.description')}
                 </p>
-                <p className="text-xs mt-2" style={{ color: 'rgba(31, 42, 26, 0.55)' }}>
-                  Draft ID: {currentVacancy?.id || 'will be created after first save'}
+                <p className="text-xs mt-2" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('employer.builder.draftId')}: {currentVacancy?.id || t('employer.builder.draftIdPending')}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1023,7 +1080,7 @@ export const EmployerPage = () => {
                   disabled={isSaving}
                   style={{ backgroundColor: '#204B35', color: 'white' }}
                 >
-                  Save vacancy
+                  {t('employer.actions.saveVacancy')}
                 </Button>
                 <Button
                   type="button"
@@ -1033,7 +1090,7 @@ export const EmployerPage = () => {
                   style={{ backgroundColor: '#166534', color: 'white' }}
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  Publish
+                  {t('employer.actions.publish')}
                 </Button>
                 <button
                   type="button"
@@ -1041,7 +1098,7 @@ export const EmployerPage = () => {
                   className="px-4 py-2 rounded-lg border-2 text-sm font-medium"
                   style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
                 >
-                  Close
+                  {t('common.close')}
                 </button>
               </div>
             </div>
@@ -1189,7 +1246,7 @@ export const EmployerPage = () => {
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <label className="block text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>Schedules</label>
                       {formData.schedule.schedules.length > 0 && (
-                        <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'schedules', [])}>Clear</button>
+                        <button type="button" className="text-xs" style={{ color: 'var(--surface-text-soft)' }} onClick={() => updateField('schedule', 'schedules', [])}>Clear</button>
                       )}
                     </div>
                     <select
@@ -1231,7 +1288,7 @@ export const EmployerPage = () => {
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <label className="block text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>Work hours</label>
                       {formData.schedule.workHours.length > 0 && (
-                        <button type="button" className="text-xs" style={{ color: '#4B5563' }} onClick={() => updateField('schedule', 'workHours', [])}>Clear</button>
+                        <button type="button" className="text-xs" style={{ color: 'var(--surface-text-soft)' }} onClick={() => updateField('schedule', 'workHours', [])}>Clear</button>
                       )}
                     </div>
                     <select
@@ -1481,7 +1538,7 @@ export const EmployerPage = () => {
                                   key={`${field}-search-${skill}`}
                                   type="button"
                                   className="rounded-full border px-2.5 py-1 text-xs"
-                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: '#F9FBF7' }}
+                                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-soft)' }}
                                   onClick={() => addSkillToBucket(field, skill)}
                                 >
                                   {skill}
@@ -1648,7 +1705,7 @@ export const EmployerPage = () => {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="order-3 mt-8 space-y-4">
           <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
             {t('employer.yourVacancies')}
           </h2>
@@ -1675,85 +1732,93 @@ export const EmployerPage = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {sortedVacancies.map((vacancy) => (
-                <div key={vacancy.id} className="bg-white rounded-2xl shadow-lg p-6" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-heading text-xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
-                          {vacancy.title}
-                        </h3>
-                        <span
-                          className="px-3 py-1 rounded-lg text-xs font-semibold"
-                          style={{
-                            backgroundColor:
-                              statusTitle(vacancy.status) === 'Published'
-                                ? 'rgba(22, 163, 74, 0.12)'
-                                : statusTitle(vacancy.status) === 'Archived'
-                                  ? 'rgba(107, 114, 128, 0.15)'
-                                  : 'rgba(245, 158, 11, 0.2)',
-                            color:
-                              statusTitle(vacancy.status) === 'Published'
-                                ? '#166534'
-                                : statusTitle(vacancy.status) === 'Archived'
-                                  ? '#374151'
-                                  : '#92400e',
-                          }}
-                        >
-                          {statusTitle(vacancy.status)}
-                        </span>
-                      </div>
+                <article
+                  key={vacancy.id}
+                  className="flex min-h-[244px] flex-col justify-between rounded-[24px] bg-white p-5"
+                  style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                >
+                  <div>
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <h3
+                        className="font-heading text-lg font-bold leading-tight"
+                        style={{ color: 'var(--surface-text-primary)' }}
+                      >
+                        {vacancy.title}
+                      </h3>
+                      <span
+                        className="shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold"
+                        style={{
+                          backgroundColor:
+                            statusTitle(vacancy.status) === 'Published'
+                              ? 'var(--tone-success-bg)'
+                              : statusTitle(vacancy.status) === 'Archived'
+                                ? 'var(--tone-neutral-bg)'
+                                : 'var(--tone-warning-bg)',
+                          color:
+                            statusTitle(vacancy.status) === 'Published'
+                              ? 'var(--tone-success-text)'
+                              : statusTitle(vacancy.status) === 'Archived'
+                                ? 'var(--tone-neutral-text)'
+                                : 'var(--tone-warning-text)',
+                        }}
+                      >
+                        {statusTitle(vacancy.status)}
+                      </span>
+                    </div>
 
-                      <p className="text-sm mb-1" style={{ color: 'var(--surface-text-muted)' }}>
-                        City: {cityLabelById.get(vacancy.publicationCityId || '') || '—'}
+                    <div className="grid gap-2 rounded-2xl bg-[var(--surface-soft)] p-3 text-sm">
+                      <p style={{ color: 'var(--surface-text-muted)' }}>
+                        {t('employer.labels.city')}: {cityLabelById.get(vacancy.publicationCityId || '') || '—'}
                       </p>
-                      <p className="text-sm mb-1" style={{ color: 'var(--surface-text-muted)' }}>
-                        Experience: {vacancy.experienceLevel ? formatEnumLabel(vacancy.experienceLevel) : '—'}
+                      <p style={{ color: 'var(--surface-text-muted)' }}>
+                        {t('employer.labels.experience')}: {vacancy.experienceLevel ? formatEnumLabel(vacancy.experienceLevel) : '—'}
                       </p>
                       <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
-                        <span>Updated: {formatDate(vacancy.updatedAt || vacancy.createdAt)}</span>
+                        <span>{t('common.updated')}: {formatDate(vacancy.updatedAt || vacancy.createdAt)}</span>
                         <span className="inline-flex items-center gap-1">
-                          <Heart className="w-3.5 h-3.5" />
-                          {countsByVacancyId[vacancy.id] ?? vacancy.favoritesCount ?? 0} saved
+                          <Heart className="h-3.5 w-3.5" />
+                          {t('employer.labels.savedCount', { count: countsByVacancyId[vacancy.id] ?? vacancy.favoritesCount ?? 0 })}
                         </span>
                       </div>
                     </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        className="px-3 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium"
-                        onClick={() => {
-                          handleSelectMatchingVacancy(vacancy.id, true);
-                        }}
-                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
-                      >
-                        {t('employer.findCandidates')}
-                      </button>
-                      <button
-                        className="p-2 rounded-lg border-2 transition-all duration-200"
-                        onClick={() => void handleEdit(vacancy.id)}
-                        style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        className="p-2 rounded-lg border-2 transition-all duration-200"
-                        onClick={() => void handleArchive(vacancy.id)}
-                        style={{ borderColor: 'rgba(220, 38, 38, 0.2)', color: '#dc2626', backgroundColor: 'transparent' }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
                   </div>
-                </div>
+
+                  <div className="mt-4 flex items-center gap-2">
+                    <button
+                      className="flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200"
+                      onClick={() => {
+                        handleSelectMatchingVacancy(vacancy.id, true);
+                      }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
+                    >
+                      {t('employer.findCandidates')}
+                    </button>
+                    <button
+                      className="rounded-xl border p-2.5 transition-all duration-200"
+                      onClick={() => void handleEdit(vacancy.id)}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'transparent' }}
+                      aria-label={`Edit ${vacancy.title}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="rounded-xl border p-2.5 transition-all duration-200"
+                      onClick={() => void handleArchive(vacancy.id)}
+                      style={{ borderColor: 'rgba(220, 38, 38, 0.3)', color: 'var(--tone-danger-text)', backgroundColor: 'transparent' }}
+                      aria-label={`Archive ${vacancy.title}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </article>
               ))}
             </div>
           )}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr] mt-8">
+        <div className="order-2 mt-8 grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
           <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
@@ -1820,7 +1885,7 @@ export const EmployerPage = () => {
                           key={`search-${vacancy.id}`}
                           type="button"
                           onClick={() => handleSelectMatchingVacancy(vacancy.id, true)}
-                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)] transition-colors hover:bg-[#ECF5DE]"
+                          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)] transition-colors hover:bg-[var(--surface-soft)]"
                         >
                           {vacancy.title}
                         </button>
@@ -1834,7 +1899,7 @@ export const EmployerPage = () => {
             <div className="grid gap-4 lg:grid-cols-[0.9fr,auto] mb-6">
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
-                  Vacancy
+                  {t('employer.labels.vacancy')}
                 </label>
                 <select
                   value={selectedVacancyId}
@@ -1866,7 +1931,7 @@ export const EmployerPage = () => {
 
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--surface-text-primary)' }}>
-                Invite message
+                {t('employer.labels.inviteMessage')}
               </label>
               <Textarea
                 value={inviteMessage}
@@ -1879,40 +1944,85 @@ export const EmployerPage = () => {
             {suggestionVacancy?.title && (
               <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-chip)', color: 'var(--surface-text-primary)' }}>
                 <Users className="w-3.5 h-3.5" />
-                Matching against: {suggestionVacancy.title}
+                {t('employer.labels.matchingAgainst')}: {suggestionVacancy.title}
               </div>
             )}
 
-            {invitesLoading && suggestedCandidates.length === 0 ? (
-              <p style={{ color: 'var(--surface-text-muted)' }}>Loading suggested candidates...</p>
-            ) : suggestedCandidates.length === 0 ? (
+            <div
+              className="mb-4 rounded-2xl border p-4 sm:p-5"
+              style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
+                  <Gauge className="h-4 w-4" />
+                </span>
+                <h3 className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                  {t('employer.scoring.title')}
+                </h3>
+              </div>
+              <p className="mt-3 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                {t('employer.scoring.description')}
+              </p>
+              <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3" style={{ color: 'var(--surface-text-primary)' }}>
+                <span>{t('employer.scoring.weights.skills')}</span>
+                <span>{t('employer.scoring.weights.experience')}</span>
+                <span>{t('employer.scoring.weights.compatibility')}</span>
+                <span>{t('employer.scoring.weights.profileCompleteness')}</span>
+                <span>{t('employer.scoring.weights.activity')}</span>
+                <span>{t('employer.scoring.weights.penalties')}</span>
+              </div>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-xs" style={{ backgroundColor: 'var(--tone-info-bg)', color: 'var(--tone-info-text)' }}>
+                <Info className="h-3.5 w-3.5" />
+                {t('employer.scoring.sortedDesc')}
+              </div>
+            </div>
+
+            {invitesLoading && rankedSuggestedCandidates.length === 0 ? (
+              <p style={{ color: 'var(--surface-text-muted)' }}>{t('employer.loadingSuggestedCandidates')}</p>
+            ) : rankedSuggestedCandidates.length === 0 ? (
               <p style={{ color: 'var(--surface-text-muted)' }}>
-                Choose a vacancy and click refresh to see candidate suggestions.
+                {t('employer.emptySuggestedCandidates')}
               </p>
             ) : (
               <div className="space-y-4">
-                {suggestedCandidates.map((item) => (
+                {rankedSuggestedCandidates.map(({ item, rank, finalScore }) => {
+                  const scoreTone = getScoreTone(finalScore);
+                  const progress = normalizeToPercent(finalScore);
+
+                  return (
                   <div key={item.candidate.id} className="rounded-2xl border border-black/5 p-4" style={{ backgroundColor: 'var(--surface-subtle)' }}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-3 mb-2">
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
+                            #{rank}
+                          </span>
                           <h3 className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                             {getCandidateName(item.candidate)}
                           </h3>
-                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}>
-                            Score {item.matching.normalizedScore ?? item.matching.score}
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: scoreTone.bg, color: scoreTone.text }}>
+                            {t('employer.labels.score')} {finalScore}
                           </span>
-                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: '#ECF5DE', color: '#245338' }}>
-                            Coverage {formatPercent(item.matching.skillCoveragePercent)}
+                          <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--tone-success-bg)', color: 'var(--tone-success-text)' }}>
+                            {t('employer.labels.coverage')} {formatPercent(item.matching.skillCoveragePercent)}
                           </span>
                           {item.existingInvite?.status && (
                             <span className="rounded-lg px-2 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}>
-                              Existing invite: {item.existingInvite.status}
+                              {t('employer.labels.existingInvite')}: {item.existingInvite.status}
                             </span>
                           )}
                         </div>
+                        <div className="mb-3">
+                          <div className="mb-1 flex items-center justify-between text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                            <span>{t('employer.scoring.finalScoreLabel')}</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-border-soft)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: 'var(--surface-text-primary)' }} />
+                          </div>
+                        </div>
                         <p className="text-sm mb-2" style={{ color: 'var(--surface-text-muted)' }}>
-                          {item.candidate.profile?.desiredRole || item.candidate.email || 'Candidate profile'}
+                          {item.candidate.profile?.desiredRole || item.candidate.email || t('employer.labels.candidateProfile')}
                         </p>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {(item.candidate.profile?.skills || []).slice(0, 6).map((skill) => (
@@ -1922,37 +2032,59 @@ export const EmployerPage = () => {
                           ))}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-xs mb-3" style={{ color: 'var(--surface-text-soft)' }}>
-                          <span>City: {item.candidate.profile?.city || '—'}</span>
-                          <span>Experience: {item.candidate.profile?.totalExperienceMonths || 0} months</span>
-                          <span>Profile completeness: {formatPercent(item.matching.profileCompletenessPercent || item.candidate.profile?.profileCompletenessPercent)}</span>
+                          <span>{t('employer.labels.city')}: {item.candidate.profile?.city || '—'}</span>
+                          <span>{t('employer.labels.experience')}: {(item.candidate.profile?.totalExperienceMonths || 0)} {t('employer.labels.months')}</span>
+                          <span>{t('employer.labels.profileCompleteness')}: {formatPercent(item.matching.profileCompletenessPercent || item.candidate.profile?.profileCompletenessPercent)}</span>
                           {typeof item.matching.skillMatchCount === 'number' && (
-                            <span>Legacy skill matches: {item.matching.skillMatchCount}</span>
+                            <span>{t('employer.labels.legacySkillMatches')}: {item.matching.skillMatchCount}</span>
                           )}
                         </div>
 
                         {Boolean(item.matching.matchedRequiredSkills?.length || item.matching.missingRequiredSkills?.length) && (
                           <div className="mb-3 space-y-2">
                             {Boolean(item.matching.matchedRequiredSkills?.length) && (
-                              <div className="text-xs" style={{ color: '#2B5A41' }}>
-                                Matched required: {(item.matching.matchedRequiredSkills || []).join(', ')}
+                              <div className="text-xs" style={{ color: 'var(--surface-text-primary)' }}>
+                                {t('employer.labels.matchedRequired')}: {(item.matching.matchedRequiredSkills || []).join(', ')}
                               </div>
                             )}
                             {Boolean(item.matching.missingRequiredSkills?.length) && (
-                              <div className="text-xs" style={{ color: '#9A3412' }}>
-                                Missing required: {(item.matching.missingRequiredSkills || []).join(', ')}
+                              <div className="text-xs" style={{ color: 'var(--tone-warning-text)' }}>
+                                {t('employer.labels.missingRequired')}: {(item.matching.missingRequiredSkills || []).join(', ')}
                               </div>
                             )}
                           </div>
                         )}
 
                         {item.matching.breakdown && (
-                          <div className="mb-3 grid gap-2 sm:grid-cols-3 text-xs">
-                            <span>Skills: {formatPercent(item.matching.breakdown.skills)}</span>
-                            <span>Experience: {formatPercent(item.matching.breakdown.experienceRelevance)}</span>
-                            <span>Compatibility: {formatPercent(item.matching.breakdown.compatibility)}</span>
-                            <span>Completeness: {formatPercent(item.matching.breakdown.profileCompleteness)}</span>
-                            <span>Activity: {formatPercent(item.matching.breakdown.activityRecency)}</span>
-                            <span>Penalties: {item.matching.breakdown.penalties ?? 0}</span>
+                          <div className="mb-3 space-y-2 rounded-xl border p-3" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-base)' }}>
+                            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                              <TrendingUp className="h-3.5 w-3.5" />
+                              {t('employer.scoring.breakdownTitle')}
+                            </div>
+                            {[
+                              { key: t('employer.labels.skills'), value: item.matching.breakdown.skills },
+                              { key: t('employer.labels.experience'), value: item.matching.breakdown.experienceRelevance },
+                              { key: t('employer.labels.compatibility'), value: item.matching.breakdown.compatibility },
+                              { key: t('employer.labels.completeness'), value: item.matching.breakdown.profileCompleteness },
+                              { key: t('employer.labels.activity'), value: item.matching.breakdown.activityRecency },
+                            ].map((metric) => {
+                              const metricPercent = normalizeToPercent(typeof metric.value === 'number' ? metric.value : 0);
+
+                              return (
+                                <div key={`${item.candidate.id}-${metric.key}`}>
+                                  <div className="mb-1 flex items-center justify-between text-[11px]" style={{ color: 'var(--surface-text-soft)' }}>
+                                    <span>{metric.key}</span>
+                                    <span>{metricPercent}%</span>
+                                  </div>
+                                  <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-border-soft)' }}>
+                                    <div className="h-full rounded-full" style={{ width: `${metricPercent}%`, backgroundColor: 'var(--surface-text-primary)' }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div className="text-xs font-semibold" style={{ color: 'var(--tone-warning-text)' }}>
+                              {t('employer.labels.penalties')}: {item.matching.breakdown.penalties ?? 0}
+                            </div>
                           </div>
                         )}
 
@@ -1974,12 +2106,13 @@ export const EmployerPage = () => {
                           style={{ backgroundColor: 'var(--surface-text-primary)', color: 'white' }}
                         >
                           <Send className="w-4 h-4 mr-2" />
-                          Send invite
+                          {t('employer.actions.sendInvite')}
                         </Button>
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             )}
           </section>
@@ -1988,10 +2121,10 @@ export const EmployerPage = () => {
             <div className="flex items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
-                  Invite History
+                  {t('employer.inviteHistory.title')}
                 </h2>
                 <p className="text-sm" style={{ color: 'var(--surface-text-muted)' }}>
-                  Latest HR invites from `/invites/hr`.
+                  {t('employer.inviteHistory.description')}
                 </p>
               </div>
               <Button
@@ -2001,15 +2134,15 @@ export const EmployerPage = () => {
                 disabled={invitesLoading}
                 style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
               >
-                Refresh
+                {t('common.refresh')}
               </Button>
             </div>
 
             {invitesLoading && hrInvites.length === 0 ? (
-              <p style={{ color: 'var(--surface-text-muted)' }}>Loading invite history...</p>
+              <p style={{ color: 'var(--surface-text-muted)' }}>{t('employer.inviteHistory.loading')}</p>
             ) : hrInvites.length === 0 ? (
               <p style={{ color: 'var(--surface-text-muted)' }}>
-                No invites sent yet for the selected scope.
+                {t('employer.inviteHistory.empty')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -2018,7 +2151,7 @@ export const EmployerPage = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-                          {invite.vacancy?.title || 'Vacancy'}
+                          {invite.vacancy?.title || t('employer.labels.vacancy')}
                         </p>
                         <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                           {getCandidateName(invite.candidate)}
@@ -2036,8 +2169,8 @@ export const EmployerPage = () => {
                     )}
 
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
-                      <span>Created: {formatDateTime(invite.createdAt)}</span>
-                      <span>Interview: {formatDateTime(invite.interviewAt)}</span>
+                      <span>{t('profile.labels.created')}: {formatDateTime(invite.createdAt)}</span>
+                      <span>{t('profile.labels.interview')}: {formatDateTime(invite.interviewAt)}</span>
                     </div>
                   </div>
                 ))}

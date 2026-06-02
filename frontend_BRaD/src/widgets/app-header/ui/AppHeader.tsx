@@ -6,6 +6,7 @@ import {
   CheckCheck,
   ClipboardList,
   GripHorizontal,
+  GraduationCap,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -17,12 +18,12 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
+import { isAdminRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
 import { useNotificationsStore } from '@entities/notification';
 import { useMessageStore } from '@entities/message';
 import { useMediaStore } from '@entities/media';
 import { ChatWindow } from '@features/chat';
-import { PreferencesControls } from '@shared/ui';
+import { BrandLogo, PreferencesControls } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
 
 const navLinkBase =
@@ -129,6 +130,7 @@ export const AppHeader = () => {
 
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
+  const isUniversity = isUniversityRole(currentUser?.role);
   const unreadCount = meta.unread;
   const unreadChatCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
   const profileRecord = getRecord(currentProfile);
@@ -450,7 +452,9 @@ export const AppHeader = () => {
     ];
 
     if (isAuthenticated) {
-      items.push({ to: '/app/applications', label: t('nav.applications'), icon: ClipboardList });
+      if (!isUniversity) {
+        items.push({ to: '/app/applications', label: t('nav.applications'), icon: ClipboardList });
+      }
       items.push({ to: '/app/profile', label: t('nav.profile'), icon: Users });
     }
 
@@ -462,14 +466,18 @@ export const AppHeader = () => {
       items.push({ to: '/app/admin', label: t('nav.operations'), icon: Shield });
     }
 
+    if (isUniversity) {
+      items.push({ to: '/app/university', label: 'University', icon: GraduationCap });
+    }
+
     return items;
-  }, [isAdmin, isAuthenticated, isHr, t]);
+  }, [isAdmin, isAuthenticated, isHr, isUniversity, t]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4">
       <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2 rounded-[20px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2.5 shadow-[0_12px_30px_rgba(16,24,18,0.06)] sm:gap-3 sm:px-4">
         <Link to="/app" className="shrink-0">
-          <img src="/images/logo/logo.png" alt="BRaD Logo" className="h-12 w-auto sm:h-14" />
+          <BrandLogo className="h-12 sm:h-14" />
         </Link>
 
         <nav className="hidden flex-1 items-center gap-2 overflow-x-auto lg:flex">

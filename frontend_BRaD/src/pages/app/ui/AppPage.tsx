@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Briefcase,
   ClipboardList,
+  GraduationCap,
   MessageSquare,
   Search,
   Shield,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button } from '@shared/ui';
-import { isAdminRole, isHrRole, useUserStore } from '@entities/user';
+import { isAdminRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
 import { useUISettings } from '@shared/lib/ui-settings';
 
 export const AppPage = () => {
@@ -19,6 +20,7 @@ export const AppPage = () => {
   const { t } = useUISettings();
   const isHr = isHrRole(currentUser?.role);
   const isAdmin = isAdminRole(currentUser?.role);
+  const isUniversity = isUniversityRole(currentUser?.role);
 
   const quickActions = [
     {
@@ -28,18 +30,21 @@ export const AppPage = () => {
       description: t('app.quick.exploreJobs.description'),
     },
     {
-      to: '/app/applications',
-      icon: ClipboardList,
-      title: t('app.quick.trackApplications.title'),
-      description: t('app.quick.trackApplications.description'),
-    },
-    {
       to: '/app/profile',
       icon: Users,
       title: t('app.quick.updateProfile.title'),
       description: t('app.quick.updateProfile.description'),
     },
   ];
+
+  if (!isUniversity) {
+    quickActions.push({
+      to: '/app/applications',
+      icon: ClipboardList,
+      title: t('app.quick.trackApplications.title'),
+      description: t('app.quick.trackApplications.description'),
+    });
+  }
 
   if (isHr) {
     quickActions.push({
@@ -59,6 +64,15 @@ export const AppPage = () => {
     });
   }
 
+  if (isUniversity) {
+    quickActions.push({
+      to: '/app/university',
+      icon: GraduationCap,
+      title: 'University analytics',
+      description: 'Track your students and graduates with role and employability metrics.',
+    });
+  }
+
   if (isAuthenticated) {
     quickActions.push({
       to: '/app/chat',
@@ -73,7 +87,7 @@ export const AppPage = () => {
       <AppHeader />
 
       <main className="app-page-main">
-        <section className="app-section-card app-grid-backdrop relative overflow-hidden p-6 sm:p-8 lg:p-10">
+        <section className="app-section-card app-page-hero app-grid-backdrop relative overflow-hidden p-6 sm:p-8 lg:p-10">
           <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <span className="app-chip mb-4">
@@ -90,26 +104,29 @@ export const AppPage = () => {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="app-stat-grid w-full max-w-[540px]">
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.workspaceLabel')}</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.workspaceValue')}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">{t('app.workspaceLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[var(--surface-text-primary)]">{t('app.workspaceValue')}</p>
               </div>
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.navigationLabel')}</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.navigationValue')}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">{t('app.navigationLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[var(--surface-text-primary)]">{t('app.navigationValue')}</p>
               </div>
               <div className="app-kpi-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526347]">{t('app.chatLabel')}</p>
-                <p className="mt-2 text-xl font-extrabold text-[#1F2B18]">{t('app.chatValue')}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">{t('app.chatLabel')}</p>
+                <p className="mt-2 text-xl font-extrabold text-[var(--surface-text-primary)]">{t('app.chatValue')}</p>
               </div>
             </div>
           </div>
         </section>
 
         <section className="mt-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="app-title text-2xl sm:text-3xl">{t('app.quickActions')}</h2>
+          <div className="app-toolbar mb-4">
+            <div className="app-section-heading">
+              <p className="app-section-eyebrow">{t('app.badge')}</p>
+              <h2 className="app-title text-2xl sm:text-3xl">{t('app.quickActions')}</h2>
+            </div>
             <Link to="/app/jobs" className="app-text-muted text-sm font-semibold hover:underline">
               {t('app.openVacancies')}
             </Link>
@@ -121,12 +138,12 @@ export const AppPage = () => {
 
               return (
                 <Link key={action.to} to={action.to} className="app-section-card app-lift block p-5 sm:p-6">
-                  <div className="mb-4 inline-flex rounded-2xl bg-[#E8F0D8] p-3 text-[#24442E]">
+                  <div className="mb-4 inline-flex rounded-2xl bg-[var(--surface-chip)] p-3 text-[var(--surface-text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="app-title text-lg">{action.title}</h3>
                   <p className="app-text-muted mt-2 text-sm leading-6">{action.description}</p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#2B6A4D]">
+                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--tone-info-text)]">
                     {t('app.open')}
                     <ArrowRight className="h-4 w-4" />
                   </div>

@@ -74,7 +74,7 @@ const toDateTimeLocalValue = (value?: string): string => {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
 
-const formatStatus = (status?: string): string => {
+const formatEnumLabel = (status?: string): string => {
   return String(status || 'UNKNOWN')
     .toLowerCase()
     .split('_')
@@ -213,6 +213,31 @@ export const ApplicationsPage = () => {
   const isDetailPage = Boolean(applicationId);
 
   const currentTimeline = selectedApplication ? timelines[selectedApplication.id] : null;
+  const getStatusLabel = (status?: string): string => {
+    const normalized = String(status || '').toUpperCase();
+    if (normalized === 'SUBMITTED') {
+      return t('applications.status.submitted');
+    }
+    if (normalized === 'REVIEWED') {
+      return t('applications.status.reviewed');
+    }
+    if (normalized === 'INTERVIEW') {
+      return t('applications.status.interview');
+    }
+    if (normalized === 'OFFER') {
+      return t('applications.status.offer');
+    }
+    if (normalized === 'REJECTED') {
+      return t('applications.status.rejected');
+    }
+    if (normalized === 'WITHDRAWN') {
+      return t('applications.status.withdrawn');
+    }
+    if (normalized) {
+      return formatEnumLabel(normalized);
+    }
+    return t('applications.status.unknown');
+  };
 
   const formatFlagLabel = (value: unknown): string => {
     if (value === true) {
@@ -240,7 +265,7 @@ export const ApplicationsPage = () => {
     const entries: Array<{ key: keyof ApplicationFilters; label: string; value: string }> = [];
 
     if (filters.status) {
-      entries.push({ key: 'status', label: t('applications.filter.status'), value: formatStatus(filters.status) });
+      entries.push({ key: 'status', label: t('applications.filter.status'), value: getStatusLabel(filters.status) });
     }
     if (filters.vacancyId) {
       entries.push({ key: 'vacancyId', label: t('applications.filter.vacancyId'), value: filters.vacancyId });
@@ -422,7 +447,7 @@ export const ApplicationsPage = () => {
     return (
       <div className="min-h-screen app-shell app-page">
         <AppHeader />
-        <main className="container mx-auto px-4 sm:px-6 py-10" style={{ maxWidth: '1280px' }}>
+        <main className="app-page-main">
           <div className="mx-auto max-w-2xl rounded-[28px] border border-black/5 p-8 text-center" style={cardStyle}>
             <h1 className="font-heading mb-3 text-3xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
               {t('applications.accessTitle')}
@@ -447,9 +472,9 @@ export const ApplicationsPage = () => {
   return (
     <div className="min-h-screen app-shell app-page">
       <AppHeader />
-      <main className="container mx-auto px-4 sm:px-6 py-8" style={{ maxWidth: '1360px' }}>
+      <main className="app-page-main" style={{ maxWidth: '1360px' }}>
         <section
-          className="mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
+          className="app-page-hero mb-6 overflow-hidden rounded-[30px] border border-black/5 p-6 sm:p-8"
           style={{
             ...cardStyle,
             background: 'var(--surface-base)',
@@ -497,42 +522,6 @@ export const ApplicationsPage = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section className="mb-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
-              Step 1
-            </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-              {t('applications.step1Title')}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
-              {t('applications.step1Description')}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
-              Step 2
-            </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-              {t('applications.step2Title')}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
-              {t('applications.step2Description')}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-black/5 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
-              Step 3
-            </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-              {t('applications.step3Title')}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
-              {t('applications.step3Description')}
-            </p>
           </div>
         </section>
 
@@ -584,7 +573,7 @@ export const ApplicationsPage = () => {
               <option value="">{t('applications.allStatuses')}</option>
               {applicationStatuses.map((status) => (
                 <option key={status} value={status}>
-                  {formatStatus(status)}
+                  {getStatusLabel(status)}
                 </option>
               ))}
             </select>
@@ -598,7 +587,7 @@ export const ApplicationsPage = () => {
               <Input
                 value={filters.vacancyId || ''}
                 onChange={(event) => handleFilterChange('vacancyId', event.target.value)}
-                placeholder="uuid"
+                placeholder={t('applications.filter.uuidPlaceholder')}
                 className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
@@ -612,7 +601,7 @@ export const ApplicationsPage = () => {
               <Input
                 value={filters.candidateId || ''}
                 onChange={(event) => handleFilterChange('candidateId', event.target.value)}
-                placeholder="uuid"
+                placeholder={t('applications.filter.uuidPlaceholder')}
                 className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
@@ -626,7 +615,7 @@ export const ApplicationsPage = () => {
               <Input
                 value={filters.hrUserId || ''}
                 onChange={(event) => handleFilterChange('hrUserId', event.target.value)}
-                placeholder="uuid"
+                placeholder={t('applications.filter.uuidPlaceholder')}
                 className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
               />
             </div>
@@ -745,14 +734,17 @@ export const ApplicationsPage = () => {
                       className="w-full rounded-[24px] border p-5 text-left transition-all"
                       style={{
                         borderColor: isSelected ? 'var(--surface-text-primary)' : 'var(--surface-border-soft)',
-                        backgroundColor: isSelected ? '#F7F8EF' : 'var(--surface-base)',
+                        backgroundColor: isSelected ? 'var(--surface-soft)' : 'var(--surface-base)',
                       }}
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <div className="mb-2 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
-                              {formatStatus(application.status)}
+                            <span
+                              className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]"
+                              style={{ backgroundColor: 'var(--tone-info-bg)', color: 'var(--tone-info-text)' }}
+                            >
+                              {getStatusLabel(application.status)}
                             </span>
                             <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                               {application.vacancy?.company?.name || t('common.company')}
@@ -872,8 +864,11 @@ export const ApplicationsPage = () => {
               <div className="space-y-6">
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[var(--surface-text-primary)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'white' }}>
-                      {formatStatus(selectedApplication.status)}
+                    <span
+                      className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]"
+                      style={{ backgroundColor: 'var(--tone-info-bg)', color: 'var(--tone-info-text)' }}
+                    >
+                      {getStatusLabel(selectedApplication.status)}
                     </span>
                     <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
                       {selectedApplication.vacancy?.publicationCity?.name || t('common.noCity')}
@@ -976,7 +971,7 @@ export const ApplicationsPage = () => {
                       >
                         {manageableStatuses.map((status) => (
                           <option key={status} value={status}>
-                            {formatStatus(status)}
+                            {getStatusLabel(status)}
                           </option>
                         ))}
                       </select>
@@ -1019,8 +1014,8 @@ export const ApplicationsPage = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <div className="text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-                                {event.fromStatus ? `${formatStatus(event.fromStatus)} -> ` : ''}
-                                {formatStatus(event.toStatus)}
+                                {event.fromStatus ? `${getStatusLabel(event.fromStatus)} -> ` : ''}
+                                {getStatusLabel(event.toStatus)}
                               </div>
                               <div className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
                                 {getTimelineActor(event, t('common.system'))}

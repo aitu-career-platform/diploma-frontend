@@ -2,6 +2,7 @@ import type { UserRole } from './types';
 
 const CANDIDATE_ALIASES = new Set(['candidate', 'user', 'applicant']);
 const EMPLOYER_ALIASES = new Set(['hr', 'employer', 'recruiter']);
+const UNIVERSITY_ALIASES = new Set(['university', 'uni']);
 
 const sanitizeRole = (rawRole: unknown): string => {
   return String(rawRole || '')
@@ -24,6 +25,10 @@ export function normalizeRole(rawRole: unknown): UserRole {
 
   if (role === 'admin') {
     return 'admin';
+  }
+
+  if (UNIVERSITY_ALIASES.has(role) || role.includes('universit') || role.includes('campus')) {
+    return 'university';
   }
 
   if (role.includes('admin')) {
@@ -122,6 +127,10 @@ export function isHrRole(role?: UserRole | null): boolean {
 
 export function isEmployerRole(role?: UserRole | null): boolean {
   return isHrRole(role);
+}
+
+export function isUniversityRole(role?: UserRole | null): boolean {
+  return role === 'university';
 }
 
 export function mapRoleToRegisterPayload(role: UserRole): 'CANDIDATE' | 'EMPLOYER' {
