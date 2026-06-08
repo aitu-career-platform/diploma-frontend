@@ -5,6 +5,7 @@ import {
   Briefcase,
   CheckCheck,
   ClipboardList,
+  BarChart3,
   GripHorizontal,
   GraduationCap,
   LayoutDashboard,
@@ -473,6 +474,7 @@ export const AppHeader = () => {
 
     if (isAdmin) {
       items.push({ to: '/app/admin', label: t('nav.operations'), icon: Shield });
+      items.push({ to: '/statistics', label: t('nav.statistics'), icon: BarChart3 });
     }
 
     if (isUniversity) {

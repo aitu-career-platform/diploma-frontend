@@ -26,6 +26,7 @@ interface ManagedUser {
   email: string;
   role: BackendUserRole;
   status: BackendUserStatus;
+  createdAt?: string;
   firstName?: string;
   lastName?: string;
   candidateProfile?: {
@@ -123,6 +124,41 @@ const formatEnum = (value: string): string => {
     .split('_')
     .map((chunk) => `${chunk.slice(0, 1).toUpperCase()}${chunk.slice(1)}`)
     .join(' ');
+};
+
+const buildMonthlyTrend = (dates: Array<string | undefined>, months = 6): TrendDatum[] => {
+  const buckets = new Map<string, number>();
+
+  for (const value of dates) {
+    if (!value) {
+      continue;
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      continue;
+    }
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    buckets.set(key, (buckets.get(key) || 0) + 1);
+  }
+
+  const result: TrendDatum[] = [];
+  const cursor = new Date();
+  cursor.setDate(1);
+  cursor.setHours(0, 0, 0, 0);
+  cursor.setMonth(cursor.getMonth() - (months - 1));
+
+  for (let index = 0; index < months; index += 1) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    result.push({
+      label: cursor.toLocaleString([], { month: 'short' }),
+      value: buckets.get(key) || 0,
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return result;
 };
 
 const getUserName = (user: ManagedUser): string => {
@@ -580,11 +616,6 @@ export const AdminPanelPage = () => {
     count: vacancies.filter((vacancy) => vacancy.status === status).length,
   }));
   const universityUsersCount = userRoleSummary.find((item) => item.role === 'UNIVERSITY')?.count || 0;
-  const partnerUniversityCount = Math.max(universityUsersCount, 6);
-  const mockTrackedStudents = partnerUniversityCount * 148;
-  const mockGraduatesReady = Math.round(mockTrackedStudents * 0.36);
-  const mockOpenToWork = Math.round(mockTrackedStudents * 0.42);
-  const mockPlaced = Math.round(mockGraduatesReady * 0.58);
   const userRoleChartData = toChartData(userRoleSummary, (item) => getUserRoleLabel(item.role));
   const userStatusChartData = toChartData(userStatusSummary, (item) => getUserStatusLabel(item.status));
   const vacancyStatusChartData = toChartData(vacancyStatusSummary, (item) => getVacancyStatusLabel(item.status));
@@ -601,28 +632,7 @@ export const AdminPanelPage = () => {
     { label: 'Published vacancies', value: vacancyStatusSummary.find((item) => item.status === 'PUBLISHED')?.count || 0, color: '#22c55e' },
     { label: 'Compliance open', value: openComplianceItems, color: '#ef4444' },
   ];
-  const universityCareerStageChartData: ChartDatum[] = [
-    { label: 'Students tracked', value: mockTrackedStudents, color: '#2563eb' },
-    { label: 'Graduates ready', value: mockGraduatesReady, color: '#8b5cf6' },
-    { label: 'Open to work', value: mockOpenToWork, color: '#f97316' },
-    { label: 'Placed recently', value: mockPlaced, color: '#16a34a' },
-  ];
-  const universityFacultyMixChartData: ChartDatum[] = [
-    { label: 'Engineering', value: Math.round(mockTrackedStudents * 0.24), color: '#0f766e' },
-    { label: 'Computer science', value: Math.round(mockTrackedStudents * 0.22), color: '#2563eb' },
-    { label: 'Business', value: Math.round(mockTrackedStudents * 0.18), color: '#f59e0b' },
-    { label: 'Design', value: Math.round(mockTrackedStudents * 0.12), color: '#ec4899' },
-    { label: 'Data & science', value: Math.round(mockTrackedStudents * 0.14), color: '#8b5cf6' },
-    { label: 'Other faculties', value: Math.round(mockTrackedStudents * 0.1), color: '#64748b' },
-  ];
-  const universityPipelinePreviewData: TrendDatum[] = [
-    { label: 'Jan', value: Math.max(12, partnerUniversityCount * 2) },
-    { label: 'Feb', value: Math.max(15, partnerUniversityCount * 2 + 3) },
-    { label: 'Mar', value: Math.max(18, partnerUniversityCount * 3 + 2) },
-    { label: 'Apr', value: Math.max(17, partnerUniversityCount * 3 + 1) },
-    { label: 'May', value: Math.max(22, partnerUniversityCount * 4 + 1) },
-    { label: 'Jun', value: Math.max(26, partnerUniversityCount * 4 + 4) },
-  ];
+  const platformGrowthTrendData = buildMonthlyTrend(users.map((user) => user.createdAt));
 
   const loadUsers = async (nextFilters = userFilters) => {
     if (!canViewPage) {
@@ -1137,79 +1147,58 @@ export const AdminPanelPage = () => {
               <div className="rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">University analytics showcase</h2>
+                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Platform snapshot</h2>
                     <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
-                      Preview charts for the university role. These are mocked presentation metrics until richer backend analytics land.
+                      This block uses the current moderation feed and real user growth data. Open the dedicated Statistics page for deeper analytics.
                     </p>
                   </div>
-                  <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
-                    preview / mock
-                  </span>
+                  <Link to="/statistics">
+                    <Button variant="hero" size="sm">
+                      <BarChart3 className="h-4 w-4" />
+                      Open Statistics
+                    </Button>
+                  </Link>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
                     <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
-                      Partner universities
+                      University accounts
                     </div>
-                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{partnerUniversityCount}</div>
-                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Estimated active university accounts in the ecosystem.</p>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{universityUsersCount}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Real user records with the university role.</p>
                   </div>
                   <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
                     <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
-                      Students tracked
+                      Loaded users
                     </div>
-                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockTrackedStudents}</div>
-                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock cross-campus talent pool for dashboard storytelling.</p>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{users.length}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Current moderation snapshot from the real API.</p>
                   </div>
                   <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
                     <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
-                      Open to work
+                      Published vacancies
                     </div>
-                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockOpenToWork}</div>
-                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock candidates currently ready for internships or jobs.</p>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">
+                      {vacancyStatusSummary.find((item) => item.status === 'PUBLISHED')?.count || 0}
+                    </div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Real vacancy lifecycle counts by status.</p>
                   </div>
                   <div className="rounded-[24px] border border-black/5 p-5" style={{ backgroundColor: 'var(--surface-base-soft)' }}>
                     <div className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--surface-text-soft)' }}>
-                      Placement pulse
+                      Open compliance items
                     </div>
-                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{mockPlaced}</div>
-                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">Mock recent placements to make the university lane feel complete.</p>
+                    <div className="mt-3 text-3xl font-bold text-[var(--surface-text-primary)]">{openComplianceItems}</div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">KYC, complaints, and deletion requests combined.</p>
                   </div>
-                </div>
-              </div>
-
-              <div className="grid gap-6 xl:grid-cols-12">
-                <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-5" style={cardStyle}>
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Career stage funnel</h2>
-                    <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
-                      mocked mix
-                    </span>
-                  </div>
-                  <DonutDistributionChart
-                    data={universityCareerStageChartData}
-                    centerValue={`${partnerUniversityCount}`}
-                    centerLabel="universities"
-                  />
-                </div>
-
-                <div className="rounded-[28px] border border-black/5 p-5 sm:p-6 xl:col-span-7" style={cardStyle}>
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="font-heading text-2xl font-bold text-[var(--surface-text-primary)]">Faculty demand mix</h2>
-                    <span className="rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
-                      showcase
-                    </span>
-                  </div>
-                  <HorizontalDistributionBars data={universityFacultyMixChartData} />
                 </div>
               </div>
 
               <TrendAreaChart
-                data={universityPipelinePreviewData}
-                title="University growth trend"
-                subtitle="mock monthly activity"
-                strokeColor="#ef4444"
+                data={platformGrowthTrendData}
+                title="User growth trend"
+                subtitle="real monthly activity"
+                strokeColor="#2b6a4d"
               />
             </section>
           </section>

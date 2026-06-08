@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Briefcase,
   ClipboardList,
+  BarChart3,
   GraduationCap,
   MessageSquare,
   Search,
@@ -76,6 +77,12 @@ export const AppPage = () => {
       icon: Shield,
       title: t('app.quick.operations.title'),
       description: t('app.quick.operations.description'),
+    });
+    quickActions.push({
+      to: '/statistics',
+      icon: BarChart3,
+      title: t('app.quick.statistics.title'),
+      description: t('app.quick.statistics.description'),
     });
   }
 
