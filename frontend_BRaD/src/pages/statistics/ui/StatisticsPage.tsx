@@ -191,6 +191,34 @@ const getArray = (value: unknown): unknown[] => {
   return Array.isArray(value) ? value : [];
 };
 
+const isPrimitive = (value: unknown): value is string | number | boolean => {
+  return ['string', 'number', 'boolean'].includes(typeof value);
+};
+
+const humanizeKey = (key: string): string => {
+  const normalized = key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) {
+    return 'Field';
+  }
+
+  return normalized
+    .split(' ')
+    .map((part) => {
+      const upper = part.toUpperCase();
+      if (['ID', 'URL', 'API', 'CSV', 'JSON', 'PDF', 'KPI', 'HR', 'AI'].includes(upper)) {
+        return upper;
+      }
+
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(' ');
+};
+
 const formatNumber = (value: number | undefined | null): string => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return '—';
@@ -205,6 +233,71 @@ const formatPercent = (value: number | undefined | null): string => {
   }
 
   return `${Math.round(value * 10) / 10}%`;
+};
+
+const formatCompactValue = (value: unknown): string => {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  if (typeof value === 'number') {
+    return formatNumber(value);
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return '—';
+};
+
+const formatDetailSummary = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return '—';
+  }
+
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return '—';
+    }
+
+    if (value.every(isPrimitive)) {
+      return value.map((item) => String(item)).join(', ');
+    }
+
+    const preview = value.slice(0, 3).map((item) => {
+      const record = getRecord(item);
+      if (!record) {
+        return '—';
+      }
+
+      const label = getString(record.label) || getString(record.name) || getString(record.title) || getString(record.status) || 'Item';
+      const count = record.value ?? record.count ?? record.total ?? record.amount;
+      return count !== undefined ? `${label}: ${formatCompactValue(count)}` : label;
+    });
+
+    return preview.join(', ') + (value.length > 3 ? ` +${value.length - 3} more` : '');
+  }
+
+  if (typeof value === 'object') {
+    const record = getRecord(value);
+    if (!record) {
+      return '—';
+    }
+
+    const entries = Object.entries(record)
+      .filter(([key, entryValue]) => entryValue !== null && entryValue !== undefined && entryValue !== '' && !['color'].includes(key))
+      .slice(0, 4)
+      .map(([key, entryValue]) => `${humanizeKey(key)}: ${formatCompactValue(entryValue)}`);
+
+    return entries.length ? entries.join(' · ') : '—';
+  }
+
+  return formatCompactValue(value);
 };
 
 const exportJson = (filename: string, payload: unknown) => {
@@ -261,39 +354,19 @@ const toChartData = (value: unknown): ChartDatum[] => {
     }));
 };
 
-const formatDetailValue = (value: unknown): ReactNode => {
-  if (value === null || value === undefined) {
-    return '—';
-  }
-
-  if (Array.isArray(value)) {
-    if (!value.length) {
-      return '—';
-    }
-
-    return value.map((item, index) => (
-      <span key={`${index}-${String(item)}`} className="rounded-full bg-[var(--surface-chip)] px-2 py-1">
-        {String(item)}
-      </span>
-    ));
-  }
-
-  if (typeof value === 'object') {
-    return (
-      <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-[var(--surface-base)] p-3 text-xs text-[var(--surface-text-primary)]">
-        {JSON.stringify(value, null, 2)}
-      </pre>
-    );
-  }
-
-  return String(value);
-};
-
 const flattenTableRows = (tables: Record<string, unknown>): TableRow[] => {
   const firstArray = Object.values(tables).find((entry) => Array.isArray(entry));
   return Array.isArray(firstArray)
     ? (firstArray as TableRow[])
     : [];
+};
+
+const detailItemFromRow = (row: TableRow): Record<string, unknown> => {
+  const entries = Object.entries(row)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .slice(0, 8);
+
+  return Object.fromEntries(entries);
 };
 
 const MetricCard = ({
@@ -651,6 +724,13 @@ const AnalyticsModal = ({
   }
 
   const entries = Object.entries(item.body);
+  const humanRows = entries
+    .filter(([key, value]) => value !== null && value !== undefined && value !== '' && !['color'].includes(key))
+    .slice(0, 8)
+    .map(([key, value]) => ({
+      label: humanizeKey(key),
+      value: formatDetailSummary(value),
+    }));
 
   return (
     <div
@@ -677,19 +757,12 @@ const AnalyticsModal = ({
         <div className="grid gap-5 p-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-4 overflow-y-auto pr-1">
             <div className="grid gap-3 sm:grid-cols-2">
-              {entries.slice(0, 8).map(([key, value]) => (
-                <div key={key} className="rounded-2xl border bg-[var(--surface-base-soft)] p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">{key}</div>
-                  <div className="mt-2 text-sm text-[var(--surface-text-primary)]">{formatDetailValue(value)}</div>
+              {humanRows.map(({ label, value }) => (
+                <div key={label} className="rounded-2xl border bg-[var(--surface-base-soft)] p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">{label}</div>
+                  <div className="mt-2 text-sm text-[var(--surface-text-primary)]">{value}</div>
                 </div>
               ))}
-            </div>
-
-            <div className="rounded-2xl border bg-[var(--surface-base-soft)] p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">Raw payload</div>
-              <pre className="mt-3 max-h-[42vh] overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-white p-4 text-xs text-[var(--surface-text-primary)] dark:bg-[#0d120f]">
-                {JSON.stringify(item.body, null, 2)}
-              </pre>
             </div>
           </div>
 
@@ -697,10 +770,22 @@ const AnalyticsModal = ({
             <div className="rounded-2xl border bg-[var(--surface-base-soft)] p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">Quick facts</div>
               <div className="mt-3 grid gap-3">
-                {entries.slice(0, 6).map(([key, value]) => (
-                  <div key={key} className="rounded-2xl bg-white px-3 py-3 dark:bg-[#0d120f]">
-                    <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{key}</div>
-                    <div className="mt-1 text-sm font-medium text-[var(--surface-text-primary)]">{String(value ?? '—')}</div>
+                {humanRows.map(({ label, value }) => (
+                  <div key={label} className="rounded-2xl bg-white px-3 py-3 dark:bg-[#0d120f]">
+                    <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{label}</div>
+                    <div className="mt-1 text-sm font-medium text-[var(--surface-text-primary)]">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-[var(--surface-base-soft)] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--surface-text-soft)]">Data preview</div>
+              <div className="mt-3 space-y-2">
+                {entries.slice(0, 4).map(([key, value]) => (
+                  <div key={key} className="flex items-start justify-between gap-3 rounded-xl bg-white px-3 py-2 dark:bg-[#0d120f]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">{humanizeKey(key)}</span>
+                    <span className="max-w-[60%] text-right text-sm text-[var(--surface-text-primary)]">{formatDetailSummary(value)}</span>
                   </div>
                 ))}
               </div>
@@ -805,6 +890,10 @@ export const StatisticsPage = () => {
       Object.values(row).some((value) => String(value ?? '').toLowerCase().includes(needle)),
     );
   }, [mainRows, search]);
+  const tableHeaders = useMemo(
+    () => Object.keys(filteredRows[0] || { name: 1, status: 1, value: 1 }).slice(0, 4),
+    [filteredRows],
+  );
 
   const miniInternshipSummary = getRecord(data?.summary?.miniInternships) || {};
   const miniInternshipMetrics = useMemo(
@@ -988,7 +1077,7 @@ export const StatisticsPage = () => {
                   label={card.label}
                   value={card.value}
                   icon={card.icon}
-                  onClick={() => setSelectedDetail({ title: card.label, body: { value: card.value, ...data.summary } })}
+                  onClick={() => setSelectedDetail({ title: card.label, body: { metric: card.label, value: card.value, ...data.summary } })}
                 />
               ))}
             </section>
@@ -998,7 +1087,7 @@ export const StatisticsPage = () => {
                 <ChartCard title={t('statistics.chart.usersByRole')}>
                   <DonutChart
                     data={toChartData(data.charts.usersByRole)}
-                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: { segment: item.label, value: item.value, color: item.color } })}
                   />
                 </ChartCard>
               )}
@@ -1006,7 +1095,7 @@ export const StatisticsPage = () => {
                 <ChartCard title={t('statistics.chart.vacancyLifecycle')}>
                   <BarChart
                     data={toChartData(data.charts.vacancyLifecycle)}
-                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: { stage: item.label, value: item.value, color: item.color } })}
                   />
                 </ChartCard>
               )}
@@ -1014,7 +1103,7 @@ export const StatisticsPage = () => {
                 <ChartCard title={t('statistics.chart.growth')}>
                   <LineChart
                     data={data.charts.applicationGrowth as Array<{ label: string; value: number }>}
-                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: { date: item.label, value: item.value } })}
                   />
                 </ChartCard>
               )}
@@ -1022,7 +1111,7 @@ export const StatisticsPage = () => {
                 <ChartCard title={t('statistics.chart.funnel')}>
                   <FunnelChart
                     data={toChartData(data.charts.applicationFunnel)}
-                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                    onItemClick={(item) => setSelectedDetail({ title: item.label, body: { stage: item.label, value: item.value, color: item.color } })}
                   />
                 </ChartCard>
               )}
@@ -1044,22 +1133,22 @@ export const StatisticsPage = () => {
 
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {miniInternshipMetrics.map((card) => (
-                    <MetricCard
-                      key={card.key}
-                      label={card.label}
-                      value={card.value}
-                      icon={card.icon}
-                      onClick={() =>
-                        setSelectedDetail({
-                          title: card.label,
-                          body: {
-                            ...miniInternshipSummary,
-                            selectedMetric: card.label,
-                            selectedValue: card.value,
-                          },
-                        })
-                      }
-                    />
+                      <MetricCard
+                        key={card.key}
+                        label={card.label}
+                        value={card.value}
+                        icon={card.icon}
+                        onClick={() =>
+                          setSelectedDetail({
+                            title: card.label,
+                            body: {
+                              metric: card.label,
+                              value: card.value,
+                              ...miniInternshipSummary,
+                            },
+                          })
+                        }
+                      />
                   ))}
                 </section>
 
@@ -1068,7 +1157,7 @@ export const StatisticsPage = () => {
                     {miniInternshipDecisionMix.length ? (
                       <DonutChart
                         data={miniInternshipDecisionMix}
-                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: { decision: item.label, value: item.value, color: item.color } })}
                       />
                     ) : (
                       <EmptyState title="No submission decisions yet" description="Decision-level review data will appear here." />
@@ -1078,7 +1167,7 @@ export const StatisticsPage = () => {
                     {miniInternshipSubmissionMix.length ? (
                       <BarChart
                         data={miniInternshipSubmissionMix}
-                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: { status: item.label, value: item.value, color: item.color } })}
                       />
                     ) : (
                       <EmptyState title="No submissions yet" description="Submission states will appear once candidates start tasks." />
@@ -1088,7 +1177,7 @@ export const StatisticsPage = () => {
                     {miniInternshipCandidatePerformance.length ? (
                       <LineChart
                         data={miniInternshipCandidatePerformance as Array<{ label: string; value: number }>}
-                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: { candidate: item.label, value: item.value } })}
                       />
                     ) : (
                       <EmptyState title="No candidate activity yet" description="Top candidates will appear after submissions are received." />
@@ -1098,7 +1187,7 @@ export const StatisticsPage = () => {
                     {miniInternshipTaskChart.length ? (
                       <BarChart
                         data={miniInternshipTaskChart}
-                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: item as Record<string, unknown> })}
+                        onItemClick={(item) => setSelectedDetail({ title: item.label, body: { task: item.label, submissions: item.value, color: item.color } })}
                       />
                     ) : (
                       <EmptyState title="No task leaders yet" description="Mini-internships with submissions will appear here." />
@@ -1127,7 +1216,7 @@ export const StatisticsPage = () => {
                             <tr
                               key={String(row.id || row.email || row.name)}
                               className="cursor-pointer hover:bg-[var(--surface-base-soft)]"
-                              onClick={() => setSelectedDetail({ title: String(row.name || row.email || 'Candidate'), body: row })}
+                              onClick={() => setSelectedDetail({ title: String(row.name || row.email || 'Candidate'), body: detailItemFromRow(row) })}
                             >
                               <td className="px-4 py-3 text-[var(--surface-text-primary)]">{String(row.name || row.email || '—')}</td>
                               <td className="px-4 py-3 text-[var(--surface-text-primary)]">{String(row.submissionsCount ?? '—')}</td>
@@ -1161,7 +1250,7 @@ export const StatisticsPage = () => {
                             <tr
                               key={String(row.id || row.title || row.name)}
                               className="cursor-pointer hover:bg-[var(--surface-base-soft)]"
-                              onClick={() => setSelectedDetail({ title: String(row.title || row.name || 'Task'), body: row })}
+                              onClick={() => setSelectedDetail({ title: String(row.title || row.name || 'Task'), body: detailItemFromRow(row) })}
                             >
                               <td className="px-4 py-3 text-[var(--surface-text-primary)]">{String(row.title || row.name || '—')}</td>
                               <td className="px-4 py-3 text-[var(--surface-text-primary)]">{String(row.company || '—')}</td>
@@ -1194,9 +1283,9 @@ export const StatisticsPage = () => {
                   <table className="min-w-full divide-y divide-[var(--surface-border-soft)] text-sm">
                     <thead className="bg-[var(--surface-base-soft)]">
                       <tr>
-                        {Object.keys(filteredRows[0] || { name: 1, status: 1, value: 1 }).slice(0, 4).map((header) => (
+                        {tableHeaders.map((header) => (
                           <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                            {header}
+                            {humanizeKey(header)}
                           </th>
                         ))}
                       </tr>
@@ -1206,11 +1295,11 @@ export const StatisticsPage = () => {
                         <tr
                           key={`${String(row.id || index)}`}
                           className="cursor-pointer hover:bg-[var(--surface-base-soft)]"
-                          onClick={() => setSelectedDetail({ title: String(row.id || row.title || row.name || t('statistics.detail')), body: row })}
+                          onClick={() => setSelectedDetail({ title: String(row.id || row.title || row.name || t('statistics.detail')), body: detailItemFromRow(row) })}
                         >
-                          {Object.keys(filteredRows[0] || { name: 1, status: 1, value: 1 }).slice(0, 4).map((header) => (
+                          {tableHeaders.map((header) => (
                             <td key={header} className="px-4 py-3 text-[var(--surface-text-primary)]">
-                              {String(row[header] ?? '—')}
+                              {formatDetailSummary(row[header])}
                             </td>
                           ))}
                         </tr>
@@ -1223,14 +1312,14 @@ export const StatisticsPage = () => {
               <ChartCard title={t('statistics.detailTitle')}>
                 {selectedDetail ? (
                   <div className="space-y-3">
-                    {Object.entries(selectedDetail.body).slice(0, 12).map(([key, value]) => (
-                      <div key={key} className="rounded-2xl border bg-[var(--surface-base-soft)] p-3">
-                        <div className="text-xs uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{key}</div>
-                        <div className="mt-1 text-sm text-[var(--surface-text-primary)]">
-                          {typeof value === 'string' ? value : JSON.stringify(value)}
+                    {Object.entries(selectedDetail.body)
+                      .slice(0, 12)
+                      .map(([key, value]) => (
+                        <div key={key} className="rounded-2xl border bg-[var(--surface-base-soft)] p-3">
+                          <div className="text-xs uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{humanizeKey(key)}</div>
+                          <div className="mt-1 text-sm text-[var(--surface-text-primary)]">{formatDetailSummary(value)}</div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 ) : (
                   <EmptyState title={t('statistics.detailEmptyTitle')} description={t('statistics.detailEmptyDescription')} />
