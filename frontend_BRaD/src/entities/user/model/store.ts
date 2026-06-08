@@ -549,6 +549,17 @@ const loadFreshProfile = async () => {
   });
 };
 
+const resolveUpdatedProfile = async (
+  fallbackPayload: unknown,
+): Promise<Record<string, unknown> | null> => {
+  try {
+    const freshProfileResponse = await loadFreshProfile();
+    return normalizeProfilePayload(freshProfileResponse.data);
+  } catch {
+    return normalizeProfilePayload(fallbackPayload);
+  }
+};
+
 const storedAuthUser = getStoredAuthUser();
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -744,7 +755,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         };
 
         const response = await api.patch('/profile/candidate/me', candidatePayload);
-        const normalizedProfile = normalizeProfilePayload(response.data);
+        const normalizedProfile = await resolveUpdatedProfile(response.data);
         const nextAuthUser = syncCurrentUserProfile(currentUser, normalizedProfile);
 
         set({
@@ -770,7 +781,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         };
 
         const response = await api.patch('/profile/employer/me', employerPayload);
-        const normalizedProfile = normalizeProfilePayload(response.data);
+        const normalizedProfile = await resolveUpdatedProfile(response.data);
         const nextAuthUser = syncCurrentUserProfile(currentUser, normalizedProfile);
 
         set({

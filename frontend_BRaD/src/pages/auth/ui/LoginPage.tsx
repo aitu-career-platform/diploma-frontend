@@ -99,9 +99,6 @@ export const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <div className="mb-4 rounded-lg border border-[#2B3B23]/10 bg-[#F4F8EA] px-4 py-3 text-left text-sm text-[#4A5E3D]">
-              {t('auth.login.adminCredentials')}
-            </div>
             <p className="text-sm text-[#5E7253] dark:text-[#A2B0A6]">
               {t('auth.login.noAccount')}{' '}
               <Link to="/app/register" className="font-semibold text-[#2B6A4D] hover:underline">

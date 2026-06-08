@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
-import { useUISettings } from '@shared/lib/ui-settings';
+import { getLocaleLabel, useUISettings } from '@shared/lib/ui-settings';
 import api from '@shared/lib/api';
 import {
   complianceApi,
@@ -54,6 +54,7 @@ import { useInviteStore } from '@entities/invite';
 import { useNotificationsStore, type AppNotification } from '@entities/notification';
 import { useMediaStore, type MediaUploadTarget } from '@entities/media';
 import type { UploadedFile } from '@entities/media';
+import { buildSkillAssessment, type SkillAssessmentDefinition } from './skill-assessment-data';
 
 interface ProfileFormValues {
   bio: string;
@@ -88,6 +89,22 @@ type UniversityOption = {
   name: string;
   shortName?: string | null;
   city?: string | null;
+};
+type SkillVerificationStatus = 'UNVERIFIED' | 'VERIFIED' | 'FAILED';
+type SkillVerificationSummary = {
+  status: SkillVerificationStatus;
+  score?: number;
+  maxScore?: number;
+  attemptedAt?: string | null;
+  verifiedAt?: string | null;
+  locale?: string | null;
+  assessmentVersion?: string | null;
+  source?: 'local' | 'server';
+};
+type SkillAssessmentResult = {
+  passed: boolean;
+  score: number;
+  maxScore: number;
 };
 
 const privacyConsentTypes: ConsentType[] = ['PRIVACY', 'TERMS', 'MARKETING'];
@@ -166,6 +183,7 @@ const resumePortfolioMaxBytes = 40 * 1024 * 1024;
 const authStorageKey = 'authUser';
 const avatarCachePrefix = 'uploadedAvatar';
 const uploadedFilesCachePrefix = 'uploadedFiles';
+const skillVerificationCachePrefix = 'skillVerification';
 
 const getUploadLimitBytes = (target: MediaUploadTarget): number => {
   return target === 'USER_AVATAR' || target === 'COMPANY_LOGO'
@@ -220,6 +238,9 @@ const getUploadedFilesCacheKey = (
   kind: 'resumes' | 'portfolio',
 ): string => `${uploadedFilesCachePrefix}:${kind}:${userId}`;
 
+const getSkillVerificationCacheKey = (userId: string): string =>
+  `${skillVerificationCachePrefix}:${userId}`;
+
 const readCachedUploadedFiles = (
   userId: string,
   kind: 'resumes' | 'portfolio',
@@ -251,6 +272,163 @@ const writeCachedUploadedFiles = (
   }
 
   localStorage.setItem(getUploadedFilesCacheKey(userId, kind), JSON.stringify(files));
+};
+
+const normalizeSkillVerificationStatus = (value: unknown): SkillVerificationStatus => {
+  const normalized = String(value || '').trim().toUpperCase();
+
+  if (normalized === 'VERIFIED') {
+    return 'VERIFIED';
+  }
+
+  if (normalized === 'FAILED') {
+    return 'FAILED';
+  }
+
+  return 'UNVERIFIED';
+};
+
+const getOptionalNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+};
+
+const normalizeSkillVerificationEntry = (
+  value: unknown,
+  source: 'local' | 'server',
+): SkillVerificationSummary | null => {
+  const record = getRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const status = normalizeSkillVerificationStatus(record.status);
+  const score = getOptionalNumber(record.score);
+  const maxScore = getOptionalNumber(record.maxScore);
+  const verifiedAt = getString(record.verifiedAt) || null;
+  const attemptedAt =
+    getString(record.attemptedAt) ||
+    getString(record.submittedAt) ||
+    verifiedAt ||
+    null;
+  const locale = getString(record.locale) || null;
+  const assessmentVersion =
+    getString(record.assessmentVersion) ||
+    getString(record.version) ||
+    null;
+
+  return {
+    status,
+    score,
+    maxScore,
+    attemptedAt,
+    verifiedAt,
+    locale,
+    assessmentVersion,
+    source,
+  };
+};
+
+const normalizeSkillVerificationMap = (
+  value: unknown,
+  source: 'local' | 'server',
+): Record<string, SkillVerificationSummary> => {
+  const result: Record<string, SkillVerificationSummary> = {};
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => {
+      const record = getRecord(entry);
+      const skillName = normalizeSkill(
+        getString(record?.skill) ||
+          getString(record?.name) ||
+          getString(getRecord(record?.skillMeta)?.name),
+      ).toLowerCase();
+      const normalized = normalizeSkillVerificationEntry(record, source);
+
+      if (skillName && normalized) {
+        result[skillName] = normalized;
+      }
+    });
+
+    return result;
+  }
+
+  const record = getRecord(value);
+  if (!record) {
+    return result;
+  }
+
+  Object.entries(record).forEach(([rawSkill, entry]) => {
+    const skillName = normalizeSkill(rawSkill).toLowerCase();
+    const normalized = normalizeSkillVerificationEntry(entry, source);
+
+    if (skillName && normalized) {
+      result[skillName] = normalized;
+    }
+  });
+
+  return result;
+};
+
+const readCachedSkillVerifications = (
+  userId: string,
+): Record<string, SkillVerificationSummary> => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const raw = localStorage.getItem(getSkillVerificationCacheKey(userId));
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return normalizeSkillVerificationMap(JSON.parse(raw), 'local');
+  } catch {
+    return {};
+  }
+};
+
+const writeCachedSkillVerifications = (
+  userId: string,
+  value: Record<string, SkillVerificationSummary>,
+): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem(getSkillVerificationCacheKey(userId), JSON.stringify(value));
+};
+
+const getSkillVerificationStatusStyle = (
+  status: SkillVerificationStatus,
+): { backgroundColor: string; color: string } => {
+  if (status === 'VERIFIED') {
+    return {
+      backgroundColor: 'var(--tone-success-bg)',
+      color: 'var(--tone-success-text)',
+    };
+  }
+
+  if (status === 'FAILED') {
+    return {
+      backgroundColor: 'var(--tone-warning-bg)',
+      color: 'var(--tone-warning-text)',
+    };
+  }
+
+  return {
+    backgroundColor: 'var(--surface-soft)',
+    color: 'var(--surface-text-muted)',
+  };
 };
 
 const getString = (value: unknown): string => {
@@ -602,7 +780,7 @@ const getNotificationHref = (notification: AppNotification): string | null => {
 };
 
 export const ProfilePage = () => {
-  const { t } = useUISettings();
+  const { t, locale } = useUISettings();
   const { currentUser, updateProfile, loadProfile, currentProfile } = useUserStore();
   const {
     items: favoriteItems,
@@ -683,6 +861,13 @@ export const ProfilePage = () => {
   const [candidateSkills, setCandidateSkills] = useState<string[]>([]);
   const [candidateSkillDraft, setCandidateSkillDraft] = useState('');
   const [candidateSkillLevels, setCandidateSkillLevels] = useState<Record<string, string>>({});
+  const [cachedSkillVerifications, setCachedSkillVerifications] = useState<
+    Record<string, SkillVerificationSummary>
+  >({});
+  const [activeSkillVerificationName, setActiveSkillVerificationName] = useState<string | null>(null);
+  const [activeSkillVerificationAnswers, setActiveSkillVerificationAnswers] = useState<Record<string, string>>({});
+  const [activeSkillVerificationResult, setActiveSkillVerificationResult] =
+    useState<SkillAssessmentResult | null>(null);
   const [universities, setUniversities] = useState<UniversityOption[]>([]);
   const [isUniversitiesLoading, setIsUniversitiesLoading] = useState(false);
   const resumeFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -938,11 +1123,13 @@ export const ProfilePage = () => {
     if (!currentUserId) {
       setLocalResumeFiles([]);
       setLocalPortfolioFiles([]);
+      setCachedSkillVerifications({});
       return;
     }
 
     setLocalResumeFiles(readCachedUploadedFiles(currentUserId, 'resumes'));
     setLocalPortfolioFiles(readCachedUploadedFiles(currentUserId, 'portfolio'));
+    setCachedSkillVerifications(readCachedSkillVerifications(currentUserId));
   }, [currentUserId]);
 
   useEffect(() => {
@@ -960,6 +1147,14 @@ export const ProfilePage = () => {
 
     writeCachedUploadedFiles(currentUserId, 'portfolio', localPortfolioFiles);
   }, [currentUserId, localPortfolioFiles]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      return;
+    }
+
+    writeCachedSkillVerifications(currentUserId, cachedSkillVerifications);
+  }, [cachedSkillVerifications, currentUserId]);
 
   useEffect(() => {
     const serverResumesById = new Map<string, Record<string, unknown>>();
@@ -1179,6 +1374,28 @@ export const ProfilePage = () => {
     () => toSkillLevelsRecord(profile?.skillLevels),
     [profile],
   );
+  const serverSkillVerifications = useMemo(() => {
+    const candidateProfileRecord = getRecord(profile?.candidateProfile);
+
+    return normalizeSkillVerificationMap(
+      candidateProfileRecord?.skillVerifications || profile?.skillVerifications,
+      'server',
+    );
+  }, [profile]);
+  const candidateSkillVerifications = useMemo(
+    () => ({
+      ...cachedSkillVerifications,
+      ...serverSkillVerifications,
+    }),
+    [cachedSkillVerifications, serverSkillVerifications],
+  );
+  const activeSkillAssessment = useMemo<SkillAssessmentDefinition | null>(() => {
+    if (!activeSkillVerificationName) {
+      return null;
+    }
+
+    return buildSkillAssessment(activeSkillVerificationName, locale);
+  }, [activeSkillVerificationName, locale]);
   const candidateScoring = useMemo(() => {
     const candidateProfileRecord = getRecord(profile?.candidateProfile);
     const experiences = Array.isArray(candidateProfileRecord?.experiences)
@@ -1282,6 +1499,11 @@ export const ProfilePage = () => {
     setCandidateSkillDraft('');
   }, [savedCandidateSkillLevels, savedCandidateSkills]);
 
+  useEffect(() => {
+    setActiveSkillVerificationAnswers({});
+    setActiveSkillVerificationResult(null);
+  }, [activeSkillVerificationName, locale]);
+
   const togglePreferredOption = (field: PreferredFieldKey, value: string) => {
     const current = normalizePreferredList(
       field === 'preferredEmploymentTypesText'
@@ -1333,6 +1555,48 @@ export const ProfilePage = () => {
       }
       return next;
     });
+  };
+
+  const openSkillVerification = (skill: string) => {
+    setActiveSkillVerificationName(skill);
+  };
+
+  const closeSkillVerification = () => {
+    setActiveSkillVerificationName(null);
+    setActiveSkillVerificationAnswers({});
+    setActiveSkillVerificationResult(null);
+  };
+
+  const handleSkillVerificationSubmit = () => {
+    if (!activeSkillAssessment || !activeSkillVerificationName) {
+      return;
+    }
+
+    const score = activeSkillAssessment.questions.reduce((total, question) => {
+      return total + (activeSkillVerificationAnswers[question.id] === question.correctOptionId ? 1 : 0);
+    }, 0);
+    const passed = score >= activeSkillAssessment.passingScore;
+    const now = new Date().toISOString();
+
+    setActiveSkillVerificationResult({
+      passed,
+      score,
+      maxScore: activeSkillAssessment.questionCount,
+    });
+
+    setCachedSkillVerifications((prev) => ({
+      ...prev,
+      [activeSkillVerificationName.toLowerCase()]: {
+        status: passed ? 'VERIFIED' : 'FAILED',
+        score,
+        maxScore: activeSkillAssessment.questionCount,
+        attemptedAt: now,
+        verifiedAt: passed ? now : null,
+        locale,
+        assessmentVersion: activeSkillAssessment.version,
+        source: 'local',
+      },
+    }));
   };
 
   const onSubmit = async (data: ProfileFormValues) => {
@@ -2762,25 +3026,129 @@ export const ProfilePage = () => {
 
                       {savedCandidateSkills.length > 0 && (
                         <div className="mt-5">
-                          <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
-                            {t('profile.skills.title')}
-                          </p>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
+                                {t('profile.skills.title')}
+                              </p>
+                              <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
+                                {t('profile.skills.verificationDescription')}
+                              </p>
+                            </div>
+                            <span
+                              className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                              style={{ backgroundColor: 'var(--surface-base)', color: 'var(--surface-text-primary)' }}
+                            >
+                              {t('profile.skills.verificationBadge')}
+                            </span>
+                          </div>
                           <div className="mt-2 grid gap-2 sm:grid-cols-2">
                             {savedCandidateSkills.map((skill) => {
                               const level = savedCandidateSkillLevels[skill.toLowerCase()];
                               const levelLabelKey = candidateSkillLevelOptions.find((option) => option.value === level)?.labelKey;
+                              const verification =
+                                candidateSkillVerifications[skill.toLowerCase()] || ({
+                                  status: 'UNVERIFIED',
+                                } satisfies SkillVerificationSummary);
+                              const statusStyle = getSkillVerificationStatusStyle(verification.status);
+                              const verificationLabel =
+                                verification.status === 'VERIFIED'
+                                  ? t('profile.skills.verified')
+                                  : verification.status === 'FAILED'
+                                    ? t('profile.skills.failed')
+                                    : t('profile.skills.unverified');
+                              const verificationActionLabel =
+                                verification.status === 'UNVERIFIED'
+                                  ? t('profile.skills.verify')
+                                  : t('profile.skills.retake');
+                              const localeLabel = verification.locale
+                                ? getLocaleLabel(
+                                    verification.locale === 'ru' ||
+                                      verification.locale === 'kk' ||
+                                      verification.locale === 'en'
+                                      ? verification.locale
+                                      : locale,
+                                  )
+                                : getLocaleLabel(locale);
                               return (
                                 <div
                                   key={`candidate-skill-readonly-${skill}`}
-                                  className="rounded-xl border px-3 py-2"
+                                  className="rounded-xl border px-3 py-3"
                                   style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-base)' }}
                                 >
-                                  <p className="text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-                                    {skill}
-                                  </p>
-                                  <p className="text-xs mt-0.5" style={{ color: 'var(--surface-text-soft)' }}>
-                                    {(levelLabelKey ? t(levelLabelKey) : '') || t('profile.skills.levelNotSet')}
-                                  </p>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <p className="text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                                        {skill}
+                                      </p>
+                                      <p className="text-xs mt-0.5" style={{ color: 'var(--surface-text-soft)' }}>
+                                        {(levelLabelKey ? t(levelLabelKey) : '') || t('profile.skills.levelNotSet')}
+                                      </p>
+                                    </div>
+                                    <span
+                                      className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                      style={statusStyle}
+                                    >
+                                      {verificationLabel}
+                                    </span>
+                                  </div>
+                                  <div className="mt-3 rounded-xl border px-3 py-2" style={{ borderColor: 'var(--surface-border-soft)', backgroundColor: 'var(--surface-soft)' }}>
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
+                                      {t('profile.skills.verificationReady')}
+                                    </p>
+                                    <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-muted)' }}>
+                                      {t('profile.skills.verificationMeta', {
+                                        count: 5,
+                                        locale: getLocaleLabel(locale),
+                                      })}
+                                    </p>
+                                    {typeof verification.score === 'number' && typeof verification.maxScore === 'number' && (
+                                      <p className="mt-2 text-xs font-medium" style={{ color: 'var(--surface-text-primary)' }}>
+                                        {t('profile.skills.verificationScore', {
+                                          score: verification.score,
+                                          total: verification.maxScore,
+                                        })}
+                                      </p>
+                                    )}
+                                    {verification.verifiedAt && (
+                                      <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                                        {t('profile.skills.verificationPassedAt', {
+                                          date: formatDateTime(verification.verifiedAt),
+                                        })}
+                                      </p>
+                                    )}
+                                    {!verification.verifiedAt && verification.attemptedAt && (
+                                      <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                                        {t('profile.skills.verificationAttemptedAt', {
+                                          date: formatDateTime(verification.attemptedAt),
+                                        })}
+                                      </p>
+                                    )}
+                                    {(verification.verifiedAt || verification.attemptedAt) && (
+                                      <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                                        {t('profile.skills.verificationLocale', {
+                                          locale: localeLabel,
+                                        })}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="mt-3 flex justify-end">
+                                    <Button
+                                      type="button"
+                                      variant={verification.status === 'VERIFIED' ? 'outline' : 'hero'}
+                                      onClick={() => openSkillVerification(skill)}
+                                      style={
+                                        verification.status === 'VERIFIED'
+                                          ? {
+                                              borderColor: 'var(--surface-border-strong)',
+                                              color: 'var(--surface-text-primary)',
+                                            }
+                                          : undefined
+                                      }
+                                    >
+                                      {verificationActionLabel}
+                                    </Button>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -4043,6 +4411,174 @@ export const ProfilePage = () => {
             </section>
           )}
         </div>
+        {activeSkillAssessment && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+            <div
+              className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border p-5 sm:p-6"
+              style={{
+                borderColor: 'var(--surface-border-strong)',
+                backgroundColor: 'var(--surface-base)',
+                boxShadow: '0 30px 80px rgba(15, 23, 42, 0.28)',
+              }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('profile.skills.verificationBadge')}
+                  </p>
+                  <h3 className="mt-2 font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
+                    {activeSkillAssessment.title}
+                  </h3>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                    {t('profile.skills.verificationModalHint', {
+                      count: activeSkillAssessment.questionCount,
+                      score: activeSkillAssessment.passingScore,
+                      locale: getLocaleLabel(locale),
+                    })}
+                  </p>
+                  <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                    {t('profile.skills.verificationStorageHint')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSkillVerification}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border"
+                  style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
+                  aria-label={t('common.close')}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                {activeSkillAssessment.questions.map((question, index) => (
+                  <div
+                    key={question.id}
+                    className="rounded-2xl border p-4"
+                    style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)' }}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
+                      {t('profile.skills.verificationQuestion', { number: index + 1 })}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                      {question.prompt}
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {question.options.map((option) => {
+                        const checked = activeSkillVerificationAnswers[question.id] === option.id;
+                        const isLocked = activeSkillVerificationResult !== null;
+                        return (
+                          <label
+                            key={`${question.id}-${option.id}`}
+                            className="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2 text-sm"
+                            style={{
+                              borderColor: checked ? 'var(--surface-text-primary)' : 'var(--surface-border-soft)',
+                              backgroundColor: checked ? 'var(--surface-base)' : 'transparent',
+                              opacity: isLocked ? 0.86 : 1,
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              name={question.id}
+                              value={option.id}
+                              checked={checked}
+                              disabled={isLocked}
+                              onChange={() =>
+                                setActiveSkillVerificationAnswers((prev) => ({
+                                  ...prev,
+                                  [question.id]: option.id,
+                                }))
+                              }
+                            />
+                            <span style={{ color: 'var(--surface-text-primary)' }}>{option.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {activeSkillVerificationResult && (
+                <div
+                  className="mt-5 rounded-2xl border px-4 py-3"
+                  style={{
+                    borderColor: activeSkillVerificationResult.passed
+                      ? 'rgba(34, 197, 94, 0.24)'
+                      : 'rgba(245, 158, 11, 0.24)',
+                    backgroundColor: activeSkillVerificationResult.passed
+                      ? 'var(--tone-success-bg)'
+                      : 'var(--tone-warning-bg)',
+                  }}
+                >
+                  <p
+                    className="text-sm font-semibold"
+                    style={{
+                      color: activeSkillVerificationResult.passed
+                        ? 'var(--tone-success-text)'
+                        : 'var(--tone-warning-text)',
+                    }}
+                  >
+                    {activeSkillVerificationResult.passed
+                      ? t('profile.skills.verificationResultPassed')
+                      : t('profile.skills.verificationResultFailed')}
+                  </p>
+                  <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-primary)' }}>
+                    {t('profile.skills.verificationScore', {
+                      score: activeSkillVerificationResult.score,
+                      total: activeSkillVerificationResult.maxScore,
+                    })}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                {activeSkillVerificationResult ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setActiveSkillVerificationAnswers({});
+                        setActiveSkillVerificationResult(null);
+                      }}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
+                    >
+                      {t('profile.skills.retake')}
+                    </Button>
+                    <Button type="button" variant="hero" onClick={closeSkillVerification}>
+                      {t('common.close')}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={closeSkillVerification}
+                      style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)' }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="hero"
+                      onClick={handleSkillVerificationSubmit}
+                      disabled={
+                        activeSkillAssessment.questions.some(
+                          (question) => !activeSkillVerificationAnswers[question.id],
+                        )
+                      }
+                    >
+                      {t('profile.skills.verificationSubmit')}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
