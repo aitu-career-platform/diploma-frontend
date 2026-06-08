@@ -52,6 +52,7 @@ import { isCandidateRole, isEmployerRole, useUserStore } from '@entities/user';
 import { useFavoritesStore } from '@entities/favorite';
 import { useInviteStore } from '@entities/invite';
 import { useNotificationsStore, type AppNotification } from '@entities/notification';
+import { useMiniInternshipStore } from '@entities/mini-internship';
 import { useMediaStore, type MediaUploadTarget } from '@entities/media';
 import type { UploadedFile } from '@entities/media';
 import { buildSkillAssessment, type SkillAssessmentDefinition } from './skill-assessment-data';
@@ -82,7 +83,7 @@ interface ProfileFormValues {
   preferredWorkFormatsText: string;
 }
 
-type ProfileTab = 'profile' | 'documents' | 'activity' | 'notifications' | 'privacy';
+type ProfileTab = 'profile' | 'documents' | 'miniInternships' | 'activity' | 'notifications' | 'privacy';
 type PreferredFieldKey = 'preferredEmploymentTypesText' | 'preferredWorkFormatsText';
 type UniversityOption = {
   id: string;
@@ -700,7 +701,7 @@ const getInviteStatusStyle = (
   return { backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' };
 };
 
-const formatEnum = (value?: string): string => {
+const formatEnum = (value?: string | null): string => {
   if (!value) {
     return '—';
   }
@@ -806,6 +807,10 @@ export const ProfilePage = () => {
     updateTelegramSettings,
     createTelegramLink,
   } = useNotificationsStore();
+  const {
+    portfolioAchievements,
+    loadMyPortfolio,
+  } = useMiniInternshipStore();
   const {
     uploadAndAttach,
     deleteFile,
@@ -1073,6 +1078,7 @@ export const ProfilePage = () => {
       if (isCandidateRole(currentUserRole)) {
         tasks.push(loadMyFavorites({ limit: 100 }));
         tasks.push(loadMyInvites({ limit: 20, offset: 0 }));
+        tasks.push(loadMyPortfolio());
       }
 
       if (isEmployerRole(currentUserRole)) {
@@ -1293,6 +1299,11 @@ export const ProfilePage = () => {
           description: isCandidate
             ? t('profile.tabs.documents.descriptionCandidate')
             : t('profile.tabs.documents.descriptionHr'),
+        },
+        {
+          id: 'miniInternships' as const,
+          label: t('profile.tabs.miniInternships.label'),
+          description: t('profile.tabs.miniInternships.description'),
         },
         ...(isCandidate
           ? [{
@@ -3637,6 +3648,86 @@ export const ProfilePage = () => {
                 </div>
               )}
             </>
+          )}
+
+          {activeTab === 'miniInternships' && (
+            <section className="rounded-2xl p-6 sm:p-8" style={cardStyle}>
+              <div
+                className="rounded-2xl border p-4 sm:p-5"
+                style={{
+                  borderColor: 'var(--surface-border-strong)',
+                  background:
+                    'linear-gradient(145deg, var(--surface-subtle) 0%, var(--surface-base) 100%)',
+                }}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="font-heading text-2xl font-bold" style={{ color: 'var(--surface-text-primary)' }}>
+                      {t('profile.miniInternships.title')}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6" style={{ color: 'var(--surface-text-muted)' }}>
+                      {t('profile.miniInternships.description')}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
+                      {portfolioAchievements.length} item(s)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {portfolioAchievements.length === 0 ? (
+                <div className="mt-6 rounded-2xl border border-dashed p-6 text-sm" style={{ borderColor: 'var(--surface-border-strong)', backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-muted)' }}>
+                  <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                    {t('profile.miniInternships.emptyTitle')}
+                  </p>
+                  <p className="mt-2">{t('profile.miniInternships.emptyDescription')}</p>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {portfolioAchievements.map((achievement) => (
+                    <article
+                      key={achievement.id}
+                      className="rounded-2xl border p-4"
+                      style={{
+                        borderColor: 'var(--surface-border-soft)',
+                        background:
+                          'linear-gradient(145deg, var(--surface-subtle) 0%, var(--surface-base) 100%)',
+                      }}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
+                              <CheckCheck className="h-4 w-4" />
+                            </span>
+                            <p className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                              {achievement.title}
+                            </p>
+                          </div>
+                          <p className="mt-2 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                            {achievement.roleCategory} • {achievement.company?.name || t('common.company')}
+                          </p>
+                          <p className="mt-1 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                            {t('profile.miniInternships.reviewedAt')}: {formatDateTime(achievement.reviewedAt || achievement.completedAt || achievement.createdAt)}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium" style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}>
+                            {t('profile.miniInternships.decision')}: {formatEnum(achievement.decisionStatus)}
+                          </span>
+                          <span className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium" style={{ borderColor: 'var(--surface-border-strong)', color: 'var(--surface-text-primary)', backgroundColor: 'var(--surface-base)' }}>
+                            {t('profile.miniInternships.score')}: {achievement.weightedScore ?? achievement.averageScore ?? achievement.overallScore ?? 0}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
 
           {activeTab === 'activity' && isCandidate && (

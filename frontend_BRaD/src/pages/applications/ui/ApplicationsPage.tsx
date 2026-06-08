@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
+  Building2,
   CalendarDays,
   CheckCircle2,
   Clock3,
+  ChevronDown,
+  ChevronUp,
   Download,
   FileText,
   Filter,
   MessageSquare,
+  MapPin,
   RefreshCcw,
+  Search,
   Shield,
   UserRound,
   X,
@@ -22,6 +27,7 @@ import {
   type ApplicationFilters,
   type ApplicationStatus,
 } from '@entities/application';
+import { useVacancyStore, type Vacancy } from '@entities/vacancy';
 import { isAdminRole, isCandidateRole, isHrRole, useUserStore } from '@entities/user';
 import { useMediaStore } from '@entities/media';
 
@@ -80,6 +86,58 @@ const formatEnumLabel = (status?: string): string => {
     .split('_')
     .map((chunk) => `${chunk.slice(0, 1).toUpperCase()}${chunk.slice(1)}`)
     .join(' ');
+};
+
+const formatVacancySummary = (vacancy: Vacancy): string => {
+  const parts: string[] = [];
+
+  if (vacancy.status) {
+    parts.push(formatEnumLabel(vacancy.status));
+  }
+
+  if (vacancy.workAddress) {
+    parts.push(vacancy.workAddress);
+  }
+
+  const salaryFrom = typeof vacancy.salaryFrom === 'number' ? vacancy.salaryFrom.toLocaleString() : '';
+  const salaryTo = typeof vacancy.salaryTo === 'number' ? vacancy.salaryTo.toLocaleString() : '';
+  const salaryRange = salaryFrom && salaryTo ? `${salaryFrom}–${salaryTo}` : salaryFrom || salaryTo;
+
+  if (salaryRange) {
+    parts.push(`${salaryRange}${vacancy.currency ? ` ${vacancy.currency}` : ''}`);
+  }
+
+  return parts.join(' · ');
+};
+
+const getVacancySearchableText = (vacancy: Vacancy): string => {
+  return [
+    vacancy.title,
+    vacancy.status,
+    vacancy.workAddress || '',
+    vacancy.description || '',
+    formatVacancySummary(vacancy),
+  ]
+    .join(' ')
+    .toLowerCase();
+};
+
+const getApplicationCandidateName = (application: Application): string => {
+  const firstName = application.candidate?.firstName || '';
+  const lastName = application.candidate?.lastName || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  return fullName || application.candidate?.email || 'Unknown candidate';
+};
+
+const getApplicationCandidateSearchText = (application: Application): string => {
+  return [
+    getApplicationCandidateName(application),
+    application.candidate?.email || '',
+    application.candidate?.phone || '',
+  ]
+    .join(' ')
+    .toLowerCase();
 };
 
 const getCandidateName = (application: Application, fallback: string): string => {
@@ -176,6 +234,7 @@ export const ApplicationsPage = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams<{ applicationId?: string }>();
   const { currentUser, isAuthenticated } = useUserStore();
+  const { vacancies, loadMyVacancies, isLoading: isVacanciesLoading } = useVacancyStore();
   const {
     items,
     meta,
@@ -192,6 +251,7 @@ export const ApplicationsPage = () => {
     clearSelection,
   } = useApplicationStore();
   const { getDownloadUrl } = useMediaStore();
+  const vacancyDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const [statusNote, setStatusNote] = useState('');
   const [nextStatus, setNextStatus] = useState<ApplicationStatus>('REVIEWED');
@@ -200,6 +260,9 @@ export const ApplicationsPage = () => {
     limit: 20,
     offset: 0,
   });
+  const [vacancySearch, setVacancySearch] = useState('');
+  const [vacancyMenuOpen, setVacancyMenuOpen] = useState(false);
+  const [candidateSearch, setCandidateSearch] = useState('');
   const [pageError, setPageError] = useState<string | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [candidatePreviewApplication, setCandidatePreviewApplication] = useState<Application | null>(
@@ -239,6 +302,15 @@ export const ApplicationsPage = () => {
     return t('applications.status.unknown');
   };
 
+  const visibleApplications = useMemo(() => {
+    const needle = candidateSearch.trim().toLowerCase();
+    if (!needle) {
+      return items;
+    }
+
+    return items.filter((application) => getApplicationCandidateSearchText(application).includes(needle));
+  }, [candidateSearch, items]);
+
   const formatFlagLabel = (value: unknown): string => {
     if (value === true) {
       return t('common.yes');
@@ -261,6 +333,34 @@ export const ApplicationsPage = () => {
     return t('applications.scopeCandidate');
   }, [isAdmin, isHr, t]);
 
+  const selectedVacancy = useMemo(() => {
+    if (!filters.vacancyId) {
+      return null;
+    }
+
+    return vacancies.find((vacancy) => vacancy.id === filters.vacancyId) || null;
+  }, [filters.vacancyId, vacancies]);
+
+  const filteredVacancies = useMemo(() => {
+    const sortedVacancies = [...vacancies].sort((left, right) => {
+      const leftUpdatedAt = new Date(left.updatedAt || left.createdAt || 0).getTime();
+      const rightUpdatedAt = new Date(right.updatedAt || right.createdAt || 0).getTime();
+
+      if (rightUpdatedAt !== leftUpdatedAt) {
+        return rightUpdatedAt - leftUpdatedAt;
+      }
+
+      return left.title.localeCompare(right.title);
+    });
+
+    const needle = vacancySearch.trim().toLowerCase();
+    if (!needle) {
+      return sortedVacancies;
+    }
+
+    return sortedVacancies.filter((vacancy) => getVacancySearchableText(vacancy).includes(needle));
+  }, [vacancies, vacancySearch]);
+
   const activeFilters = useMemo(() => {
     const entries: Array<{ key: keyof ApplicationFilters; label: string; value: string }> = [];
 
@@ -268,7 +368,11 @@ export const ApplicationsPage = () => {
       entries.push({ key: 'status', label: t('applications.filter.status'), value: getStatusLabel(filters.status) });
     }
     if (filters.vacancyId) {
-      entries.push({ key: 'vacancyId', label: t('applications.filter.vacancyId'), value: filters.vacancyId });
+      entries.push({
+        key: 'vacancyId',
+        label: t('applications.filter.vacancy'),
+        value: selectedVacancy?.title || filters.vacancyId,
+      });
     }
     if (filters.candidateId) {
       entries.push({ key: 'candidateId', label: t('applications.filter.candidateId'), value: filters.candidateId });
@@ -284,13 +388,17 @@ export const ApplicationsPage = () => {
     }
 
     return entries;
-  }, [filters, t]);
+  }, [filters, selectedVacancy, t]);
 
   const removeFilter = (key: keyof ApplicationFilters) => {
     setFilters((prev) => ({
       ...prev,
       [key]: key === 'status' ? '' : undefined,
     }));
+
+    if (key === 'vacancyId') {
+      setVacancySearch('');
+    }
   };
 
   const closeCandidatePreview = () => {
@@ -324,6 +432,23 @@ export const ApplicationsPage = () => {
   }, [canViewPage, currentUser]);
 
   useEffect(() => {
+    if (!canViewPage || isCandidate) {
+      return;
+    }
+
+    void loadMyVacancies();
+  }, [canViewPage, isCandidate, loadMyVacancies]);
+
+  useEffect(() => {
+    if (!filters.vacancyId) {
+      setVacancySearch('');
+      return;
+    }
+
+    setVacancySearch(selectedVacancy?.title || '');
+  }, [filters.vacancyId, selectedVacancy]);
+
+  useEffect(() => {
     if (!canViewPage || !applicationId) {
       return;
     }
@@ -342,6 +467,32 @@ export const ApplicationsPage = () => {
 
     void loadFullApplication();
   }, [applicationId, canViewPage]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!vacancyDropdownRef.current) {
+        return;
+      }
+
+      if (!vacancyDropdownRef.current.contains(event.target as Node)) {
+        setVacancyMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setVacancyMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   useEffect(() => {
     if (!candidatePreviewApplication) {
@@ -537,6 +688,9 @@ export const ApplicationsPage = () => {
                 size="sm"
                 onClick={() => {
                   setFilters({ status: '', limit: 20, offset: 0 });
+                  setVacancySearch('');
+                  setCandidateSearch('');
+                  setVacancyMenuOpen(false);
                   clearSelection();
                 }}
               >
@@ -560,106 +714,248 @@ export const ApplicationsPage = () => {
           </section>
         )}
 
-        <section className="mb-6 grid gap-4 rounded-[28px] border border-black/5 p-5 sm:grid-cols-2 xl:grid-cols-6" style={cardStyle}>
-          <div className="xl:col-span-1">
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-              {t('applications.filter.status')}
-            </label>
-            <select
-              value={filters.status || ''}
-              onChange={(event) => handleFilterChange('status', event.target.value)}
-              className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
-            >
-              <option value="">{t('applications.allStatuses')}</option>
-              {applicationStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {getStatusLabel(status)}
-                </option>
-              ))}
-            </select>
+        <section className="mb-6 rounded-[28px] border border-black/5 p-5 sm:p-6" style={cardStyle}>
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div
+                className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-[var(--surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]"
+                style={{ color: 'var(--surface-text-soft)' }}
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                {t('applications.filter.vacancyPickerBadge')}
+              </div>
+              <h2 className="mt-3 text-xl font-semibold sm:text-2xl" style={{ color: 'var(--surface-text-primary)' }}>
+                {t('applications.filter.vacancyPickerTitle')}
+              </h2>
+              <p className="mt-1 text-sm sm:text-base" style={{ color: 'var(--surface-text-muted)' }}>
+                {t('applications.filter.vacancyPickerDescription')}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--surface-text-soft)' }}>
+              <span className="app-chip">
+                {filteredVacancies.length} {t('applications.filter.myVacanciesCount')}
+              </span>
+              {selectedVacancy ? (
+                <span className="app-chip">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {t('applications.filter.vacancySelected')}
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          {!isCandidate && (
+          <div className="grid gap-4 xl:grid-cols-6">
             <div className="xl:col-span-1">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                {t('applications.filter.vacancyId')}
+                {t('applications.filter.status')}
               </label>
-              <Input
-                value={filters.vacancyId || ''}
-                onChange={(event) => handleFilterChange('vacancyId', event.target.value)}
-                placeholder={t('applications.filter.uuidPlaceholder')}
-                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
-              />
+              <select
+                value={filters.status || ''}
+                onChange={(event) => handleFilterChange('status', event.target.value)}
+                className="h-11 w-full rounded-xl border border-black/10 bg-[var(--surface-soft)] px-3 text-sm"
+              >
+                <option value="">{t('applications.allStatuses')}</option>
+                {applicationStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {getStatusLabel(status)}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {!isCandidate && (
-            <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                {t('applications.filter.candidateId')}
-              </label>
-              <Input
-                value={filters.candidateId || ''}
-                onChange={(event) => handleFilterChange('candidateId', event.target.value)}
-                placeholder={t('applications.filter.uuidPlaceholder')}
-                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
-              />
-            </div>
-          )}
+            {!isCandidate && (
+              <div ref={vacancyDropdownRef} className="relative xl:col-span-2">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.vacancy')}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setVacancyMenuOpen((prev) => !prev)}
+                  className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-black/10 bg-[var(--surface-soft)] px-4 text-left transition-colors hover:border-[rgba(46,117,82,0.35)]"
+                >
+                  <span className="min-w-0 flex items-center gap-2">
+                    <Search className="h-4 w-4 flex-none text-[var(--surface-text-soft)]" />
+                    <span className="truncate text-sm" style={{ color: selectedVacancy ? 'var(--surface-text-primary)' : 'var(--surface-text-soft)' }}>
+                      {selectedVacancy?.title || t('applications.filter.vacancySearchPlaceholder')}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {selectedVacancy ? (
+                      <span className="hidden rounded-full bg-[var(--surface-chip)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] sm:inline-flex">
+                        {selectedVacancy.status}
+                      </span>
+                    ) : null}
+                    {vacancyMenuOpen ? <ChevronUp className="h-4 w-4 text-[var(--surface-text-soft)]" /> : <ChevronDown className="h-4 w-4 text-[var(--surface-text-soft)]" />}
+                  </span>
+                </button>
+                <p className="mt-2 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.vacancyPickerHint')}
+                </p>
 
-          {isAdmin && (
-            <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                {t('applications.filter.hrUserId')}
-              </label>
-              <Input
-                value={filters.hrUserId || ''}
-                onChange={(event) => handleFilterChange('hrUserId', event.target.value)}
-                placeholder={t('applications.filter.uuidPlaceholder')}
-                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
-              />
-            </div>
-          )}
+                {vacancyMenuOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
+                    <div className="border-b border-black/5 p-3">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--surface-text-soft)]" />
+                        <Input
+                          value={vacancySearch}
+                          onChange={(event) => setVacancySearch(event.target.value)}
+                          placeholder={t('applications.filter.vacancySearchPlaceholder')}
+                          className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)] pl-10"
+                        />
+                      </div>
+                    </div>
 
-          {!isCandidate && (
-            <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                {t('applications.filter.dateFrom')}
-              </label>
-              <Input
-                type="datetime-local"
-                value={toDateTimeLocalValue(filters.dateFrom)}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  handleFilterChange('dateFrom', value ? new Date(value).toISOString() : '');
-                }}
-                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
-              />
-            </div>
-          )}
+                    <div className="max-h-72 overflow-auto p-2">
+                      {isVacanciesLoading ? (
+                        <div className="rounded-2xl border border-dashed border-[#D6DED7] bg-[var(--surface-soft)] p-4 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                          {t('applications.filter.vacancyLoading')}
+                        </div>
+                      ) : filteredVacancies.length ? (
+                        filteredVacancies.map((vacancy) => {
+                          const isSelected = vacancy.id === filters.vacancyId;
 
-          {!isCandidate && (
-            <div className="xl:col-span-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
-                {t('applications.filter.dateTo')}
-              </label>
-              <Input
-                type="datetime-local"
-                value={toDateTimeLocalValue(filters.dateTo)}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  handleFilterChange('dateTo', value ? new Date(value).toISOString() : '');
-                }}
-                className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
-              />
-            </div>
-          )}
+                          return (
+                            <button
+                              key={vacancy.id}
+                              type="button"
+                              onClick={() => {
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  vacancyId: vacancy.id,
+                                  offset: 0,
+                                }));
+                                setVacancySearch(vacancy.title);
+                                setVacancyMenuOpen(false);
+                              }}
+                              className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                                isSelected
+                                  ? 'border-[rgba(46,117,82,0.35)] bg-[rgba(46,117,82,0.08)]'
+                                  : 'border-[#D6DED7] bg-white hover:border-[rgba(46,117,82,0.24)] hover:shadow-[0_10px_26px_rgba(17,24,39,0.06)]'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="truncate text-base font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                                      {vacancy.title}
+                                    </h3>
+                                    {isSelected ? (
+                                      <span className="app-chip">
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        {t('applications.filter.vacancySelected')}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                                    {formatVacancySummary(vacancy) || t('applications.filter.vacancyPreviewFallback')}
+                                  </p>
+                                  {vacancy.workAddress ? (
+                                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                                      <MapPin className="h-3.5 w-3.5" />
+                                      {vacancy.workAddress}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                          <div className="flex items-start gap-3">
+                            <Building2 className="mt-0.5 h-5 w-5 text-[var(--surface-text-soft)]" />
+                            <div>
+                              <h3 className="font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
+                                {t('applications.filter.vacancyNoMatchesTitle')}
+                              </h3>
+                              <p className="mt-1 text-sm" style={{ color: 'var(--surface-text-muted)' }}>
+                                {t('applications.filter.vacancyNoMatchesDescription')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
-          <div className="flex items-end gap-3 xl:col-span-1">
+            {!isCandidate && (
+              <div className="xl:col-span-1">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.candidate')}
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--surface-text-soft)]" />
+                  <Input
+                    value={candidateSearch}
+                    onChange={(event) => setCandidateSearch(event.target.value)}
+                    placeholder={t('applications.filter.candidateSearchPlaceholder')}
+                    className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)] pl-10"
+                  />
+                </div>
+                <p className="mt-2 text-xs" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.candidateSearchHint')}
+                </p>
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="xl:col-span-1">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.hrUserId')}
+                </label>
+                <Input
+                  value={filters.hrUserId || ''}
+                  onChange={(event) => handleFilterChange('hrUserId', event.target.value)}
+                  placeholder={t('applications.filter.uuidPlaceholder')}
+                  className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
+                />
+              </div>
+            )}
+
+            {!isCandidate && (
+              <div className="xl:col-span-1">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.dateFrom')}
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={toDateTimeLocalValue(filters.dateFrom)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    handleFilterChange('dateFrom', value ? new Date(value).toISOString() : '');
+                  }}
+                  className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
+                />
+              </div>
+            )}
+
+            {!isCandidate && (
+              <div className="xl:col-span-1">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--surface-text-soft)' }}>
+                  {t('applications.filter.dateTo')}
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={toDateTimeLocalValue(filters.dateTo)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    handleFilterChange('dateTo', value ? new Date(value).toISOString() : '');
+                  }}
+                  className="h-11 rounded-xl border-black/10 bg-[var(--surface-soft)]"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button
               onClick={() => void refreshList()}
               variant="hero"
-              className="h-11 flex-1 rounded-xl"
+              className="h-11 rounded-xl px-6"
               disabled={isLoading}
             >
               <RefreshCcw className="h-4 w-4" />
@@ -668,14 +964,34 @@ export const ApplicationsPage = () => {
             <Button
               onClick={() => {
                 setFilters({ status: '', limit: 20, offset: 0 });
+                setVacancySearch('');
+                setCandidateSearch('');
+                setVacancyMenuOpen(false);
                 void refreshList({ status: '', limit: 20, offset: 0 });
                 clearSelection();
               }}
               variant="outline"
-              className="h-11 rounded-xl"
+              className="h-11 rounded-xl px-6"
             >
               {t('applications.reset')}
             </Button>
+            {filters.vacancyId ? (
+              <Button
+                onClick={() => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    vacancyId: undefined,
+                    offset: 0,
+                  }));
+                  setVacancySearch('');
+                  setVacancyMenuOpen(false);
+                }}
+                variant="ghost"
+                className="h-11 rounded-xl px-6"
+              >
+                {t('applications.filter.vacancyClear')}
+              </Button>
+            ) : null}
           </div>
         </section>
 
@@ -702,18 +1018,20 @@ export const ApplicationsPage = () => {
               <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center text-sm" style={{ color: 'var(--surface-text-muted)' }}>
                   {t('applications.loading')}
                 </div>
-            ) : items.length === 0 ? (
+            ) : visibleApplications.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-black/10 bg-[var(--surface-soft)] p-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
                   <FileText className="h-6 w-6" style={{ color: 'var(--surface-text-primary)' }} />
                 </div>
                 <h3 className="mb-2 text-lg font-semibold" style={{ color: 'var(--surface-text-primary)' }}>
-                  {t('applications.emptyTitle')}
+                  {candidateSearch.trim() ? t('applications.filter.candidateSearchEmptyTitle') : t('applications.emptyTitle')}
                 </h3>
                 <p className="mx-auto mb-5 max-w-md text-sm" style={{ color: 'var(--surface-text-muted)' }}>
-                  {isCandidate
-                    ? t('applications.emptyDescriptionCandidate')
-                    : t('applications.emptyDescriptionTeam')}
+                  {candidateSearch.trim()
+                    ? t('applications.filter.candidateSearchEmptyDescription')
+                    : isCandidate
+                      ? t('applications.emptyDescriptionCandidate')
+                      : t('applications.emptyDescriptionTeam')}
                 </p>
                 {isCandidate && (
                   <Link to="/app/jobs">
@@ -723,7 +1041,7 @@ export const ApplicationsPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {items.map((application) => {
+                {visibleApplications.map((application) => {
                   const isSelected = selectedApplication?.id === application.id;
 
                   return (

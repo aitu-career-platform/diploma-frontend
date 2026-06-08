@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button } from '@shared/ui';
-import { isAdminRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
+import { isAdminRole, isCandidateRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
 import { useUISettings } from '@shared/lib/ui-settings';
 
 export const AppPage = () => {
@@ -46,12 +46,27 @@ export const AppPage = () => {
     });
   }
 
+  if (isCandidateRole(currentUser?.role)) {
+    quickActions.push({
+      to: '/app/mini-internships',
+      icon: Sparkles,
+      title: t('app.quick.miniInternships.title'),
+      description: t('app.quick.miniInternships.description'),
+    });
+  }
+
   if (isHr) {
     quickActions.push({
       to: '/app/employer',
       icon: Briefcase,
       title: t('app.quick.manageVacancies.title'),
       description: t('app.quick.manageVacancies.description'),
+    });
+    quickActions.push({
+      to: '/app/employer/mini-internships',
+      icon: Sparkles,
+      title: t('app.quick.manageMiniInternships.title'),
+      description: t('app.quick.manageMiniInternships.description'),
     });
   }
 

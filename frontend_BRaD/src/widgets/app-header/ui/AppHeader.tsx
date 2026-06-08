@@ -18,7 +18,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { isAdminRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
+import { isAdminRole, isCandidateRole, isHrRole, isUniversityRole, useUserStore } from '@entities/user';
 import { useNotificationsStore } from '@entities/notification';
 import { useMessageStore } from '@entities/message';
 import { useMediaStore } from '@entities/media';
@@ -455,11 +455,20 @@ export const AppHeader = () => {
       if (!isUniversity) {
         items.push({ to: '/app/applications', label: t('nav.applications'), icon: ClipboardList });
       }
+      if (isCandidateRole(currentUser?.role)) {
+        items.push({ to: '/app/mini-internships', label: t('nav.miniInternships'), icon: CheckCheck });
+        items.push({ to: '/app/my-submissions', label: t('nav.mySubmissions'), icon: ClipboardList });
+      }
       items.push({ to: '/app/profile', label: t('nav.profile'), icon: Users });
     }
 
     if (isHr) {
       items.push({ to: '/app/employer', label: t('nav.employer'), icon: Briefcase });
+      items.push({
+        to: '/app/employer/mini-internships',
+        label: t('nav.employerMiniInternships'),
+        icon: CheckCheck,
+      });
     }
 
     if (isAdmin) {

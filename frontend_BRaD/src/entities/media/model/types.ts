@@ -2,7 +2,17 @@ export type MediaUploadTarget =
   | 'USER_AVATAR'
   | 'COMPANY_LOGO'
   | 'CANDIDATE_RESUME'
-  | 'CANDIDATE_PORTFOLIO';
+  | 'CANDIDATE_PORTFOLIO'
+  | 'MINI_INTERNSHIP_TASK'
+  | 'TASK_SUBMISSION';
+
+export type MediaAttachEntityType =
+  | 'USER_AVATAR'
+  | 'COMPANY_LOGO'
+  | 'CANDIDATE_RESUME'
+  | 'CANDIDATE_PORTFOLIO'
+  | 'MINI_INTERNSHIP_FILE'
+  | 'TASK_SUBMISSION_FILE';
 
 export interface UploadedFile {
   id: string;
@@ -20,10 +30,13 @@ export interface UploadedFile {
 export interface UploadAndAttachInput {
   file: File;
   target: MediaUploadTarget;
-  entityType?: MediaUploadTarget;
+  entityType?: MediaAttachEntityType;
+  attachEntityType?: MediaAttachEntityType;
   resumeTitle?: string;
   isPrimary?: boolean;
   replaceResumeId?: string;
+  miniInternshipId?: string;
+  submissionId?: string;
 }
 
 export interface UploadAndAttachResult {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Edit, Gauge, Heart, Info, Plus, Search, Send, Trash2, TrendingUp, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Briefcase, Edit, Gauge, Heart, Info, Plus, Search, Send, Sparkles, Trash2, TrendingUp, Users } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
 import { Button, Input, Textarea } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
@@ -1034,6 +1035,27 @@ export const EmployerPage = () => {
             <div className="app-kpi-card p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">Suggested candidates</p>
               <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">{rankedSuggestedCandidates.length}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 app-section-card p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-chip)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)]">
+                <Sparkles className="h-3.5 w-3.5" />
+                {t('employerMiniInternships.badge')}
+              </div>
+              <h2 className="app-title mt-3 text-2xl">{t('employerMiniInternships.title')}</h2>
+              <p className="app-text-muted mt-2 text-sm">{t('employerMiniInternships.description')}</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/app/employer/mini-internships">
+                <Button variant="outline">{t('employerMiniInternships.open')}</Button>
+              </Link>
+              <Link to="/app/employer/mini-internships/create">
+                <Button variant="hero">{t('employerMiniInternships.create')}</Button>
+              </Link>
             </div>
           </div>
         </section>

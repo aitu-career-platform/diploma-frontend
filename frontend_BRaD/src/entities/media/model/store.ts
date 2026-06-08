@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import api, { getApiErrorMessage } from '@shared/lib/api';
-import type { UploadAndAttachInput, UploadAndAttachResult, UploadedFile } from './types';
+import type {
+  MediaAttachEntityType,
+  UploadAndAttachInput,
+  UploadAndAttachResult,
+  UploadedFile,
+} from './types';
 
 interface MediaStore {
   isUploading: boolean;
@@ -31,6 +36,72 @@ const normalizeUploadedFile = (payload: unknown): UploadedFile => {
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : undefined,
     updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : undefined,
   };
+};
+
+const isMiniInternshipUploadTarget = (target: string): boolean => {
+  return target === 'MINI_INTERNSHIP_TASK' || target === 'TASK_SUBMISSION';
+};
+
+const resolveAttachEntityType = (input: UploadAndAttachInput): MediaAttachEntityType | undefined => {
+  return input.attachEntityType || input.entityType;
+};
+
+const inferAttachEntityType = (target: string): MediaAttachEntityType | undefined => {
+  if (target === 'MINI_INTERNSHIP_TASK') {
+    return 'MINI_INTERNSHIP_FILE';
+  }
+
+  if (target === 'TASK_SUBMISSION') {
+    return 'TASK_SUBMISSION_FILE';
+  }
+
+  if (
+    target === 'USER_AVATAR' ||
+    target === 'COMPANY_LOGO' ||
+    target === 'CANDIDATE_RESUME' ||
+    target === 'CANDIDATE_PORTFOLIO'
+  ) {
+    return target;
+  }
+
+  return undefined;
+};
+
+const buildProxyUploadFormData = (
+  input: UploadAndAttachInput,
+  attachEntityType?: MediaAttachEntityType,
+): FormData => {
+  const formData = new FormData();
+  formData.append('target', input.target);
+  formData.append('file', input.file);
+
+  if (attachEntityType) {
+    formData.append('entityType', attachEntityType);
+  }
+
+  if (input.miniInternshipId) {
+    formData.append('miniInternshipId', input.miniInternshipId);
+  }
+
+  if (input.submissionId) {
+    formData.append('submissionId', input.submissionId);
+  }
+
+  if (input.resumeTitle?.trim()) {
+    const normalizedResumeTitle = input.resumeTitle.trim();
+    formData.append('resumeTitle', normalizedResumeTitle);
+    formData.append('title', normalizedResumeTitle);
+  }
+
+  if (input.replaceResumeId) {
+    formData.append('replaceResumeId', input.replaceResumeId);
+  }
+
+  if (input.isPrimary !== undefined) {
+    formData.append('isPrimary', String(input.isPrimary));
+  }
+
+  return formData;
 };
 
 const getResponseStatus = (error: unknown): number | undefined => {
@@ -83,11 +154,30 @@ export const useMediaStore = create<MediaStore>((set) => ({
     set({ isUploading: true, error: null });
 
     try {
+      const attachEntityType = resolveAttachEntityType(input) || inferAttachEntityType(input.target);
+
+      if (isMiniInternshipUploadTarget(input.target)) {
+        const response = await api.post('/uploads/proxy', buildProxyUploadFormData(input, attachEntityType));
+        const payload = isRecord(response.data) ? response.data : {};
+        const fileData = normalizeUploadedFile(payload.file ?? payload);
+        const attachment = isRecord(payload.attachment) ? payload.attachment : null;
+
+        if (!fileData.id) {
+          throw new Error('Uploaded file id is missing');
+        }
+
+        set({ isUploading: false });
+        return {
+          file: fileData,
+          attachment,
+        };
+      }
+
       const formData = new FormData();
       formData.append('target', input.target);
       formData.append('file', input.file);
-      if (input.entityType) {
-        formData.append('entityType', input.entityType);
+      if (attachEntityType) {
+        formData.append('entityType', attachEntityType);
       }
 
       if (input.resumeTitle?.trim()) {
