@@ -65,6 +65,10 @@ export const MyMiniInternshipSubmissionDetailPage = () => {
   };
 
   const aiLinks = useMemo(() => getSubmissionLinks(submission?.externalLinks), [submission?.externalLinks]);
+  const questionsById = useMemo(
+    () => new Map((submission?.miniInternship?.questions || []).map((question) => [question.id, question])),
+    [submission?.miniInternship?.questions],
+  );
 
   if (!isAuthenticated) {
     return <Navigate to="/app/login" replace />;
@@ -187,7 +191,7 @@ export const MyMiniInternshipSubmissionDetailPage = () => {
                   </div>
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                      {t('miniInternships.attemptNumber')}
+                      {t('miniInternships.attemptLabel')}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
                       {submission.attemptNumber}
@@ -237,6 +241,70 @@ export const MyMiniInternshipSubmissionDetailPage = () => {
                   </div>
                 </div>
               </div>
+
+              {submission.questionAnswers?.length ? (
+                <div className="app-section-card p-5 sm:p-6">
+                  <h2 className="app-title text-xl">{t('miniInternships.taskQuestionsTitle')}</h2>
+                  <div className="mt-4 space-y-3">
+                    {submission.questionAnswers.map((answer, index) => {
+                      const question = questionsById.get(answer.questionId);
+                      return (
+                        <div key={answer.questionId} className="rounded-2xl border border-[#D6DED7] p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                            {t('miniInternships.questionNumber', { number: index + 1 })}
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                            {question?.prompt || answer.questionId}
+                          </p>
+                          {answer.answerText ? (
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--surface-text-muted)]">
+                              {answer.answerText}
+                            </p>
+                          ) : null}
+                          {answer.selectedOptionIds?.length ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {answer.selectedOptionIds.map((optionId) => {
+                                const option = question?.options?.find((entry) => entry.id === optionId);
+                                return (
+                                  <span key={optionId} className="rounded-full border border-[#D6DED7] px-3 py-1 text-xs text-[var(--surface-text-muted)]">
+                                    {option?.text || optionId}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {submission.reflectionAnswers?.length ? (
+                <div className="app-section-card p-5 sm:p-6">
+                  <h2 className="app-title text-xl">{t('miniInternships.reflectionTitle')}</h2>
+                  <div className="mt-4 space-y-3">
+                    {submission.reflectionAnswers.map((answer, index) => {
+                      const question = questionsById.get(answer.questionId);
+                      return (
+                        <div key={answer.questionId} className="rounded-2xl border border-[#D6DED7] p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                            {t('miniInternships.questionNumber', { number: index + 1 })}
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                            {question?.prompt || answer.questionId}
+                          </p>
+                          {answer.answerText ? (
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--surface-text-muted)]">
+                              {answer.answerText}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               {submission.files?.length ? (
                 <div className="app-section-card p-5 sm:p-6">

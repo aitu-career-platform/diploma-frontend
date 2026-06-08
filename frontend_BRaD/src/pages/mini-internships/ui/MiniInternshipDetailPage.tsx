@@ -222,6 +222,19 @@ export const MiniInternshipDetailPage = () => {
                   <span className="rounded-full border border-[#D6DED7] px-3 py-1">
                     {t('miniInternships.criteriaCount', { count: miniInternship.skillCriteria.length })}
                   </span>
+                  {miniInternship.accessMode && (
+                    <span className="rounded-full border border-[#D6DED7] px-3 py-1">
+                      {formatEnumLabel(miniInternship.accessMode)}
+                    </span>
+                  )}
+                  <span className="rounded-full border border-[#D6DED7] px-3 py-1">
+                    {t('miniInternships.questionCount', {
+                      count:
+                        miniInternship.taskQuestions?.length ||
+                        miniInternship.questions?.filter((question) => question.scope === 'TASK').length ||
+                        0,
+                    })}
+                  </span>
                   {miniInternship.vacancy?.title && (
                     <span className="rounded-full border border-[#D6DED7] px-3 py-1">
                       {miniInternship.vacancy.title}
@@ -293,6 +306,29 @@ export const MiniInternshipDetailPage = () => {
                   )}
                 </div>
               </div>
+
+              {miniInternship.questions?.length ? (
+                <div className="app-section-card p-5 sm:p-6">
+                  <h2 className="app-title text-xl">{t('miniInternships.questionsTitle')}</h2>
+                  <div className="mt-4 space-y-3">
+                    {miniInternship.questions.map((question, index) => (
+                      <div key={question.id} className="rounded-2xl border border-[#D6DED7] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="app-chip">{t('miniInternships.questionNumber', { number: index + 1 })}</span>
+                          <span className="app-chip">{formatEnumLabel(question.scope)}</span>
+                          <span className="app-chip">{formatEnumLabel(question.type)}</span>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-[var(--surface-text-primary)]">
+                          {question.prompt}
+                        </p>
+                        {question.description && (
+                          <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{question.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {miniInternship.files.length > 0 && (
                 <div className="app-section-card p-5 sm:p-6">

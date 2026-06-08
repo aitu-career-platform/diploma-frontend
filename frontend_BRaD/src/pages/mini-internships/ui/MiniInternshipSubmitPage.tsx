@@ -4,8 +4,10 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Clock3,
   FileUp,
   Paperclip,
+  MessageSquare,
   PlayCircle,
   Send,
   ShieldAlert,
@@ -28,6 +30,43 @@ import {
   splitLines,
 } from './shared';
 
+const formatCountdown = (totalSeconds: number): string => {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
+type QuestionAnswerDraft = {
+  questionId: string;
+  answerText: string;
+  selectedOptionIds: string[];
+};
+
+const createAnswerDraft = (questionId: string): QuestionAnswerDraft => ({
+  questionId,
+  answerText: '',
+  selectedOptionIds: [],
+});
+
+const isMultipleChoice = (type?: string | null): boolean => type === 'MULTIPLE_CHOICE';
+const isSingleChoice = (type?: string | null): boolean => type === 'SINGLE_CHOICE';
+
+const normalizeAnswerDrafts = (
+  drafts: QuestionAnswerDraft[],
+): Array<{ questionId: string; answerText?: string; selectedOptionIds?: string[] }> =>
+  drafts.map((draft) => ({
+    questionId: draft.questionId,
+    answerText: draft.answerText.trim(),
+    selectedOptionIds: draft.selectedOptionIds,
+  }));
+
 export const MiniInternshipSubmitPage = () => {
   const { t } = useUISettings();
   const { id } = useParams<{ id: string }>();
@@ -42,6 +81,7 @@ export const MiniInternshipSubmitPage = () => {
     startMiniInternship,
     updateSubmission,
     submitSubmission,
+    submitReflection,
     addSubmissionToPortfolio,
     isLoading,
     isMutating,
@@ -49,10 +89,13 @@ export const MiniInternshipSubmitPage = () => {
   } = useMiniInternshipStore();
   const [answerText, setAnswerText] = useState('');
   const [externalLinksText, setExternalLinksText] = useState('');
+  const [taskAnswerDrafts, setTaskAnswerDrafts] = useState<QuestionAnswerDraft[]>([]);
+  const [reflectionAnswerDrafts, setReflectionAnswerDrafts] = useState<QuestionAnswerDraft[]>([]);
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const [pageSuccess, setPageSuccess] = useState<string | null>(null);
   const [localSelectedFile, setLocalSelectedFile] = useState<File | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const isAllowed = isAuthenticated && isCandidateRole(currentUser?.role);
   const miniInternship = selectedMiniInternship?.id === id ? selectedMiniInternship : null;
@@ -72,16 +115,68 @@ export const MiniInternshipSubmitPage = () => {
       applications.find(
         (application) =>
           application.vacancyId === miniInternship.vacancyId &&
-          application.status !== 'WITHDRAWN',
-      ) || null
+      application.status !== 'WITHDRAWN',
+    ) || null
     );
   }, [applications, miniInternship?.vacancyId]);
-
+  const taskQuestions = useMemo(
+    () => (miniInternship?.taskQuestions?.length ? miniInternship.taskQuestions : miniInternship?.questions?.filter((question) => question.scope === 'TASK') || []),
+    [miniInternship?.questions, miniInternship?.taskQuestions],
+  );
+  const reflectionQuestions = useMemo(
+    () =>
+      (miniInternship?.reflectionQuestions?.length
+        ? miniInternship.reflectionQuestions
+        : miniInternship?.questions?.filter((question) => question.scope === 'REFLECTION') || []),
+    [miniInternship?.questions, miniInternship?.reflectionQuestions],
+  );
   const canEditSubmission = Boolean(
     activeSubmission &&
       !['REVIEWED', 'REJECTED'].includes(String(activeSubmission.status || '').toUpperCase()) &&
       !activeSubmission.reviewedAt,
   );
+  const canEditReflection = Boolean(
+    activeSubmission &&
+      !activeSubmission.reflectionSubmittedAt &&
+      ['SUBMITTED', 'LATE'].includes(String(activeSubmission.status || '').toUpperCase()),
+  );
+  const taskQuestion =
+    miniInternship?.taskInstructions?.trim() ||
+    miniInternship?.description?.trim() ||
+    t('miniInternships.noQuestionText');
+  const configuredTimeLimitMinutes =
+    activeSubmission?.timeLimitMinutesSnapshot ?? miniInternship?.timeLimitMinutes ?? null;
+  const effectiveTimeLimitMinutes =
+    typeof configuredTimeLimitMinutes === 'number' && configuredTimeLimitMinutes > 0
+      ? configuredTimeLimitMinutes
+      : null;
+  const startedAtMs = activeSubmission?.startedAt ? Date.parse(activeSubmission.startedAt) : null;
+  const deadlineAtMs =
+    effectiveTimeLimitMinutes && startedAtMs !== null && !Number.isNaN(startedAtMs)
+      ? startedAtMs + effectiveTimeLimitMinutes * 60_000
+      : null;
+  const remainingSeconds =
+    deadlineAtMs !== null ? Math.max(0, Math.ceil((deadlineAtMs - now) / 1000)) : null;
+  const submittedSpentSeconds =
+    activeSubmission?.timeSpentSeconds ??
+    (activeSubmission?.startedAt && activeSubmission?.submittedAt
+      ? Math.max(
+          0,
+          Math.round(
+            (Date.parse(activeSubmission.submittedAt) - Date.parse(activeSubmission.startedAt)) /
+              1000,
+          ),
+        )
+      : null);
+  const showTimer = Boolean(effectiveTimeLimitMinutes && startedAtMs !== null);
+  const timerIsExpired = Boolean(showTimer && canEditSubmission && remainingSeconds === 0);
+  const shouldShowReflectionSection =
+    reflectionQuestions.length > 0 &&
+    (canEditReflection ||
+      Boolean(activeSubmission?.reflectionSubmittedAt) ||
+      ['SUBMITTED', 'LATE', 'REVIEWED', 'REJECTED'].includes(
+        String(activeSubmission?.status || '').toUpperCase(),
+      ));
 
   useEffect(() => {
     if (!isAllowed || !id) {
@@ -107,12 +202,40 @@ export const MiniInternshipSubmitPage = () => {
     if (!activeSubmission) {
       setAnswerText('');
       setExternalLinksText('');
+      setTaskAnswerDrafts([]);
+      setReflectionAnswerDrafts([]);
       return;
     }
 
     setAnswerText(activeSubmission.answerText || '');
     setExternalLinksText(getSubmissionLinks(activeSubmission.externalLinks).join('\n'));
-  }, [activeSubmission]);
+    setTaskAnswerDrafts(
+      taskQuestions.map((question) => {
+        const existing = activeSubmission.questionAnswers?.find(
+          (answer) => answer.questionId === question.id,
+        );
+
+        return {
+          questionId: question.id,
+          answerText: existing?.answerText || '',
+          selectedOptionIds: existing?.selectedOptionIds || [],
+        };
+      }),
+    );
+    setReflectionAnswerDrafts(
+      reflectionQuestions.map((question) => {
+        const existing = activeSubmission.reflectionAnswers?.find(
+          (answer) => answer.questionId === question.id,
+        );
+
+        return {
+          questionId: question.id,
+          answerText: existing?.answerText || '',
+          selectedOptionIds: existing?.selectedOptionIds || [],
+        };
+      }),
+    );
+  }, [activeSubmission, reflectionQuestions, taskQuestions]);
 
   useEffect(() => {
     if (!activeSubmission?.id) {
@@ -121,6 +244,60 @@ export const MiniInternshipSubmitPage = () => {
 
     void loadSubmission(activeSubmission.id);
   }, [activeSubmission?.id, loadSubmission]);
+
+  useEffect(() => {
+    if (!showTimer) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [showTimer]);
+
+  const updateDraftAnswerText = (
+    setter: typeof setTaskAnswerDrafts,
+    questionId: string,
+    value: string,
+  ) => {
+    setter((prev) =>
+      prev.map((draft) =>
+        draft.questionId === questionId ? { ...draft, answerText: value } : draft,
+      ),
+    );
+  };
+
+  const toggleDraftOption = (
+    setter: typeof setTaskAnswerDrafts,
+    questionId: string,
+    optionId: string,
+    multiple: boolean,
+  ) => {
+    setter((prev) =>
+      prev.map((draft) => {
+        if (draft.questionId !== questionId) {
+          return draft;
+        }
+
+        if (!multiple) {
+          return {
+            ...draft,
+            selectedOptionIds: [optionId],
+          };
+        }
+
+        const exists = draft.selectedOptionIds.includes(optionId);
+        return {
+          ...draft,
+          selectedOptionIds: exists
+            ? draft.selectedOptionIds.filter((id) => id !== optionId)
+            : [...draft.selectedOptionIds, optionId],
+        };
+      }),
+    );
+  };
 
   const handleStart = async () => {
     if (!id || !miniInternship) {
@@ -152,6 +329,7 @@ export const MiniInternshipSubmitPage = () => {
       await updateSubmission(activeSubmission.id, {
         answerText: answerText.trim(),
         externalLinks: splitLines(externalLinksText),
+        questionAnswers: normalizeAnswerDrafts(taskAnswerDrafts),
       });
       setPageSuccess(t('miniInternships.savedDraft'));
     } catch (saveError) {
@@ -171,11 +349,32 @@ export const MiniInternshipSubmitPage = () => {
       await updateSubmission(activeSubmission.id, {
         answerText: answerText.trim(),
         externalLinks: splitLines(externalLinksText),
+        questionAnswers: normalizeAnswerDrafts(taskAnswerDrafts),
       });
       await submitSubmission(activeSubmission.id);
       setPageSuccess(t('miniInternships.submitSuccess'));
     } catch (submitError) {
       setActionError(submitError instanceof Error ? submitError.message : t('miniInternships.submitFailed'));
+    }
+  };
+
+  const handleSaveReflection = async () => {
+    if (!activeSubmission || !canEditReflection) {
+      return;
+    }
+
+    setActionError(null);
+    setPageSuccess(null);
+
+    try {
+      await submitReflection(activeSubmission.id, {
+        questionAnswers: normalizeAnswerDrafts(reflectionAnswerDrafts),
+      });
+      setPageSuccess(t('miniInternships.reflectionSaved'));
+    } catch (reflectionError) {
+      setActionError(
+        reflectionError instanceof Error ? reflectionError.message : t('miniInternships.saveFailed'),
+      );
     }
   };
 
@@ -386,6 +585,49 @@ export const MiniInternshipSubmitPage = () => {
                         {formatDateTime(activeSubmission.submittedAt || undefined)}
                       </p>
                     </div>
+                    {showTimer && (
+                      <div
+                        className="rounded-2xl p-4"
+                        style={{
+                          backgroundColor: timerIsExpired
+                            ? 'var(--tone-danger-bg)'
+                            : 'var(--surface-soft)',
+                        }}
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {canEditSubmission
+                            ? t('miniInternships.timeRemaining')
+                            : t('miniInternships.timeSpent')}
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Clock3
+                            className={`h-4 w-4 ${
+                              timerIsExpired
+                                ? 'text-[var(--tone-danger-text)]'
+                                : 'text-[var(--surface-text-primary)]'
+                            }`}
+                          />
+                          <p
+                            className={`text-sm font-semibold ${
+                              timerIsExpired
+                                ? 'text-[var(--tone-danger-text)]'
+                                : 'text-[var(--surface-text-primary)]'
+                            }`}
+                          >
+                            {canEditSubmission
+                              ? timerIsExpired
+                                ? t('miniInternships.timeExpired')
+                                : formatCountdown(remainingSeconds || 0)
+                              : formatCountdown(submittedSpentSeconds || 0)}
+                          </p>
+                        </div>
+                        {effectiveTimeLimitMinutes && (
+                          <p className="mt-2 text-xs text-[var(--surface-text-muted)]">
+                            {effectiveTimeLimitMinutes} {t('miniInternships.minutes')}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -395,9 +637,98 @@ export const MiniInternshipSubmitPage = () => {
                     <h2 className="app-title text-xl">{t('miniInternships.answerTitle')}</h2>
                   </div>
                   <div className="mt-4 space-y-4">
+                    {taskQuestions.length ? (
+                      taskQuestions.map((question, index) => {
+                        const draft =
+                          taskAnswerDrafts.find((entry) => entry.questionId === question.id) ||
+                          createAnswerDraft(question.id);
+                        const multiple = isMultipleChoice(question.type);
+                        const single = isSingleChoice(question.type);
+
+                        return (
+                          <div key={question.id} className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <MessageSquare className="h-4 w-4 text-[var(--surface-text-soft)]" />
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                                {t('miniInternships.taskQuestion')}
+                              </p>
+                              <span className="app-chip">
+                                {t('miniInternships.questionNumber', { number: index + 1 })}
+                              </span>
+                              <span className="app-chip">{formatEnumLabel(question.type)}</span>
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--surface-text-primary)]">
+                              {question.prompt}
+                            </p>
+                            {question.description && (
+                              <p className="mt-2 text-xs text-[var(--surface-text-muted)]">
+                                {question.description}
+                              </p>
+                            )}
+                            {question.type === 'OPEN_ANSWER' ? (
+                              <Textarea
+                                className="mt-4"
+                                value={draft.answerText}
+                                onChange={(event) =>
+                                  updateDraftAnswerText(setTaskAnswerDrafts, question.id, event.target.value)
+                                }
+                                placeholder={t('miniInternships.answerTextPlaceholder')}
+                                disabled={!canEditSubmission}
+                              />
+                            ) : (
+                              <div className="mt-4 space-y-2">
+                                {question.options.map((option) => {
+                                  const checked = draft.selectedOptionIds.includes(option.id);
+                                  return (
+                                    <label
+                                      key={option.id}
+                                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#D6DED7] bg-white px-4 py-3 text-sm text-[var(--surface-text-primary)] transition-colors hover:border-[rgba(46,117,82,0.24)] dark:border-[#314036] dark:bg-[#111814]"
+                                    >
+                                      <input
+                                        type={single ? 'radio' : 'checkbox'}
+                                        name={`question-${question.id}`}
+                                        checked={checked}
+                                        onChange={() =>
+                                          toggleDraftOption(setTaskAnswerDrafts, question.id, option.id, multiple)
+                                        }
+                                        disabled={!canEditSubmission}
+                                      />
+                                      <span className="flex-1">{option.text}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {miniInternship?.submissionRequirements && index === 0 && (
+                              <p className="mt-3 text-xs text-[var(--surface-text-muted)]">
+                                {miniInternship.submissionRequirements}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-[var(--surface-text-soft)]" />
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                            {t('miniInternships.taskQuestion')}
+                          </p>
+                        </div>
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--surface-text-primary)]">
+                          {taskQuestion}
+                        </p>
+                        {miniInternship?.submissionRequirements && (
+                          <p className="mt-3 text-xs text-[var(--surface-text-muted)]">
+                            {miniInternship.submissionRequirements}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-[var(--surface-text-primary)]">
-                        {t('miniInternships.answerTextLabel')}
+                        {t('miniInternships.additionalAnswerLabel')}
                       </label>
                       <Textarea
                         value={answerText}
@@ -420,10 +751,18 @@ export const MiniInternshipSubmitPage = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <Button variant="outline" onClick={() => void handleSave()} disabled={!canEditSubmission || isMutating}>
+                      <Button
+                        variant="outline"
+                        onClick={() => void handleSave()}
+                        disabled={!canEditSubmission || isMutating}
+                      >
                         {t('miniInternships.saveDraft')}
                       </Button>
-                      <Button variant="hero" onClick={() => void handleSubmit()} disabled={!canEditSubmission || isMutating}>
+                      <Button
+                        variant="hero"
+                        onClick={() => void handleSubmit()}
+                        disabled={!canEditSubmission || isMutating}
+                      >
                         <Send className="h-4 w-4" />
                         {t('miniInternships.submitAttempt')}
                       </Button>
@@ -437,61 +776,168 @@ export const MiniInternshipSubmitPage = () => {
                     <h2 className="app-title text-xl">{t('miniInternships.submissionFiles')}</h2>
                   </div>
                   <div className="mt-4 space-y-4">
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <Input
-                        type="file"
-                        onChange={(event) => setLocalSelectedFile(event.target.files?.[0] || null)}
-                        disabled={!canEditSubmission}
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={() => void handleUploadFile()}
-                        disabled={!canEditSubmission || !localSelectedFile || isUploading}
-                      >
-                        {t('miniInternships.uploadFile')}
-                      </Button>
-                    </div>
-                    {localSelectedFile && (
-                      <p className="text-sm text-[var(--surface-text-muted)]">
-                        {t('miniInternships.selectedFile')}: {localSelectedFile.name}
-                      </p>
-                    )}
-
-                    <div className="grid gap-3">
-                      {activeSubmission.files?.length ? (
-                        activeSubmission.files.map((file) => (
-                          <div key={file.id} className="rounded-2xl border border-[#D6DED7] p-4">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <p className="font-semibold text-[var(--surface-text-primary)]">
-                                  {getFileLabel(file)}
-                                </p>
-                                <p className="text-sm text-[var(--surface-text-muted)]">
-                                  {file.mimeType || t('miniInternships.fileAttached')}
-                                </p>
-                              </div>
-                              {file.downloadUrl ? (
-                                <a
-                                  href={file.downloadUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
-                                >
-                                  {t('common.open')}
-                                  <ArrowRight className="h-4 w-4" />
-                                </a>
-                              ) : null}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-[var(--surface-text-muted)]">
-                          {t('miniInternships.noSubmissionFiles')}
-                        </p>
+                    <div className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                        <div className="flex flex-1 items-center gap-3 rounded-2xl border border-[#D6DED7] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(18,24,19,0.03)] dark:border-[#314036] dark:bg-[#111814]">
+                          <Paperclip className="h-4 w-4 shrink-0 text-[var(--surface-text-soft)]" />
+                          <Input
+                            type="file"
+                            onChange={(event) => setLocalSelectedFile(event.target.files?.[0] || null)}
+                            disabled={!canEditSubmission}
+                            className="h-auto border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => void handleUploadFile()}
+                          disabled={!canEditSubmission || !localSelectedFile || isUploading}
+                          className="shrink-0"
+                        >
+                          <FileUp className="h-4 w-4" />
+                          {t('miniInternships.uploadFile')}
+                        </Button>
+                      </div>
+                      {localSelectedFile && (
+                        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-[var(--surface-text-muted)] shadow-[0_1px_2px_rgba(18,24,19,0.03)] dark:bg-[#111814]">
+                          <FileUp className="h-4 w-4 text-[var(--surface-text-soft)]" />
+                          <span>
+                            {t('miniInternships.selectedFile')}: {localSelectedFile.name}
+                          </span>
+                        </div>
                       )}
+
+                      <div className="grid gap-3">
+                        {activeSubmission.files?.length ? (
+                          activeSubmission.files.map((file) => (
+                            <div key={file.id} className="rounded-2xl border border-[#D6DED7] p-4">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className="font-semibold text-[var(--surface-text-primary)]">
+                                    {getFileLabel(file)}
+                                  </p>
+                                  <p className="text-sm text-[var(--surface-text-muted)]">
+                                    {file.mimeType || t('miniInternships.fileAttached')}
+                                  </p>
+                                </div>
+                                {file.downloadUrl ? (
+                                  <a
+                                    href={file.downloadUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
+                                  >
+                                    {t('common.open')}
+                                    <ArrowRight className="h-4 w-4" />
+                                  </a>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-[var(--surface-text-muted)]">
+                            {t('miniInternships.noSubmissionFiles')}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {shouldShowReflectionSection && (
+                  <div className="app-section-card p-5 sm:p-6">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-[var(--tone-info-text)]" />
+                      <h2 className="app-title text-xl">{t('miniInternships.reflectionTitle')}</h2>
+                    </div>
+                    <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
+                      {t('miniInternships.reflectionDescription')}
+                    </p>
+                    <div className="mt-4 space-y-4">
+                      {reflectionQuestions.map((question, index) => {
+                        const draft =
+                          reflectionAnswerDrafts.find((entry) => entry.questionId === question.id) ||
+                          createAnswerDraft(question.id);
+                        const multiple = isMultipleChoice(question.type);
+                        const single = isSingleChoice(question.type);
+
+                        return (
+                          <div key={question.id} className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <MessageSquare className="h-4 w-4 text-[var(--surface-text-soft)]" />
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                                {t('miniInternships.reflectionQuestion')}
+                              </p>
+                              <span className="app-chip">
+                                {t('miniInternships.questionNumber', { number: index + 1 })}
+                              </span>
+                              <span className="app-chip">{formatEnumLabel(question.type)}</span>
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--surface-text-primary)]">
+                              {question.prompt}
+                            </p>
+                            {question.description && (
+                              <p className="mt-2 text-xs text-[var(--surface-text-muted)]">
+                                {question.description}
+                              </p>
+                            )}
+                            {question.type === 'OPEN_ANSWER' ? (
+                              <Textarea
+                                className="mt-4"
+                                value={draft.answerText}
+                                onChange={(event) =>
+                                  updateDraftAnswerText(
+                                    setReflectionAnswerDrafts,
+                                    question.id,
+                                    event.target.value,
+                                  )
+                                }
+                                placeholder={t('miniInternships.answerTextPlaceholder')}
+                                disabled={!canEditReflection}
+                              />
+                            ) : (
+                              <div className="mt-4 space-y-2">
+                                {question.options.map((option) => {
+                                  const checked = draft.selectedOptionIds.includes(option.id);
+                                  return (
+                                    <label
+                                      key={option.id}
+                                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#D6DED7] bg-white px-4 py-3 text-sm text-[var(--surface-text-primary)] transition-colors hover:border-[rgba(46,117,82,0.24)] dark:border-[#314036] dark:bg-[#111814]"
+                                    >
+                                      <input
+                                        type={single ? 'radio' : 'checkbox'}
+                                        name={`reflection-question-${question.id}`}
+                                        checked={checked}
+                                        onChange={() =>
+                                          toggleDraftOption(
+                                            setReflectionAnswerDrafts,
+                                            question.id,
+                                            option.id,
+                                            multiple,
+                                          )
+                                        }
+                                        disabled={!canEditReflection}
+                                      />
+                                      <span className="flex-1">{option.text}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => void handleSaveReflection()}
+                        disabled={!canEditReflection || isMutating}
+                      >
+                        {t('miniInternships.saveReflection')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>

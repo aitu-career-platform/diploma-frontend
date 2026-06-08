@@ -1,4 +1,7 @@
 export type MiniInternshipStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';
+export type MiniInternshipAccessMode = 'PUBLIC' | 'INVITE_ONLY' | 'VACANCY_LINKED';
+export type MiniInternshipQuestionType = 'OPEN_ANSWER' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
+export type MiniInternshipQuestionScope = 'TASK' | 'REFLECTION';
 export type TaskSubmissionStatus =
   | 'DRAFT'
   | 'IN_PROGRESS'
@@ -36,6 +39,24 @@ export interface MiniInternshipSkillCriterion {
   sortOrder?: number;
 }
 
+export interface MiniInternshipQuestionOption {
+  id: string;
+  text: string;
+  isCorrect?: boolean;
+  sortOrder?: number;
+}
+
+export interface MiniInternshipQuestion {
+  id: string;
+  scope: MiniInternshipQuestionScope;
+  type: MiniInternshipQuestionType;
+  prompt: string;
+  description?: string | null;
+  required?: boolean;
+  sortOrder?: number;
+  options: MiniInternshipQuestionOption[];
+}
+
 export interface MiniInternshipFile {
   id: string;
   type?: string;
@@ -53,6 +74,7 @@ export interface MiniInternshipSummary {
   id: string;
   companyId: string;
   vacancyId?: string | null;
+  accessMode?: MiniInternshipAccessMode;
   title: string;
   roleCategory: string;
   status: MiniInternshipStatus;
@@ -69,11 +91,16 @@ export interface MiniInternshipSummary {
   vacancy?: MiniInternshipVacancy | null;
   author?: MiniInternshipAuthor | null;
   skillCriteria: MiniInternshipSkillCriterion[];
+  questions?: MiniInternshipQuestion[];
+  questionCount?: number;
+  reflectionQuestionCount?: number;
   submissionCount?: number;
 }
 
 export interface MiniInternshipDetail extends MiniInternshipSummary {
   files: MiniInternshipFile[];
+  taskQuestions?: MiniInternshipQuestion[];
+  reflectionQuestions?: MiniInternshipQuestion[];
   submissionStatus?: TaskSubmissionStatus | null;
   currentSubmission?: TaskSubmissionDetail | null;
   attemptsUsed?: number | null;
@@ -167,6 +194,10 @@ export interface TaskSubmissionSummary {
   overallScore?: number | null;
   averageScore?: number | null;
   weightedScore?: number | null;
+  autoScore?: number | null;
+  questionAnswers?: MiniInternshipQuestionAnswer[];
+  reflectionAnswers?: MiniInternshipQuestionAnswer[];
+  reflectionSubmittedAt?: string | null;
   allowCandidateToAddToPortfolio?: boolean;
   reviewedAt?: string | null;
   miniInternship?: MiniInternshipSummary | null;
@@ -187,6 +218,15 @@ export interface TaskSubmissionDetail extends TaskSubmissionSummary {
   overallComment?: string | null;
   history?: TaskSubmissionHistoryEntry[];
   files?: MiniInternshipFile[];
+}
+
+export interface MiniInternshipQuestionAnswer {
+  questionId: string;
+  answerText?: string | null;
+  selectedOptionIds?: string[];
+  answeredAt?: string | null;
+  isCorrect?: boolean | null;
+  score?: number | null;
 }
 
 export interface PortfolioAchievement {
@@ -245,7 +285,9 @@ export interface CreateMiniInternshipPayload {
   allowedAttempts?: number;
   submissionRequirements: string;
   vacancyId?: string;
+  accessMode?: MiniInternshipAccessMode;
   skillCriteria: MiniInternshipSkillCriterion[];
+  questions?: MiniInternshipQuestion[];
 }
 
 export type UpdateMiniInternshipPayload = Partial<CreateMiniInternshipPayload>;
@@ -257,6 +299,11 @@ export interface StartTaskSubmissionPayload {
 export interface UpdateTaskSubmissionPayload {
   answerText?: string;
   externalLinks?: string[];
+  questionAnswers?: MiniInternshipQuestionAnswer[];
+}
+
+export interface SubmitTaskReflectionPayload {
+  questionAnswers?: MiniInternshipQuestionAnswer[];
 }
 
 export interface ReviewTaskSubmissionScorePayload {

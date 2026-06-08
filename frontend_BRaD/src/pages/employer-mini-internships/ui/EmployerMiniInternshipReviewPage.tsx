@@ -44,12 +44,28 @@ const makeScoreDraft = (
   maxScore: criterion.maxScore,
 });
 
+const FEEDBACK_TEMPLATES = [
+  'Strong technical solution',
+  'Needs better documentation',
+  'Improve testing',
+  'Good communication',
+  'Weak problem understanding',
+];
+
 export const EmployerMiniInternshipReviewPage = () => {
   const { t } = useUISettings();
   const { id } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useUserStore();
-  const { selectedSubmission, loadSubmission, reviewSubmission, isLoading, isMutating, error } =
-    useMiniInternshipStore();
+  const {
+    selectedSubmission,
+    miniInternshipSubmissions,
+    loadSubmission,
+    loadSubmissionsForMiniInternship,
+    reviewSubmission,
+    isLoading,
+    isMutating,
+    error,
+  } = useMiniInternshipStore();
   const [decisionStatus, setDecisionStatus] = useState<'reviewed' | 'accepted' | 'rejected' | 'shortlisted'>('reviewed');
   const [overallComment, setOverallComment] = useState('');
   const [allowCandidateToAddToPortfolio, setAllowCandidateToAddToPortfolio] = useState(false);
@@ -68,6 +84,14 @@ export const EmployerMiniInternshipReviewPage = () => {
 
     void loadSubmission(id);
   }, [id, isAllowed, loadSubmission]);
+
+  useEffect(() => {
+    if (!submission?.miniInternshipId || !isAllowed) {
+      return;
+    }
+
+    void loadSubmissionsForMiniInternship(submission.miniInternshipId);
+  }, [isAllowed, loadSubmissionsForMiniInternship, submission?.miniInternshipId]);
 
   useEffect(() => {
     if (!submission) {
@@ -97,6 +121,41 @@ export const EmployerMiniInternshipReviewPage = () => {
   }, [criteria, submission, t]);
 
   const aiLinks = useMemo(() => getSubmissionLinks(submission?.externalLinks), [submission?.externalLinks]);
+  const analytics = useMemo(() => {
+    const items = miniInternshipSubmissions || [];
+    const submittedItems = items.filter((item) => ['SUBMITTED', 'LATE', 'REVIEWED', 'REJECTED'].includes(String(item.status || '').toUpperCase()));
+    const reviewedItems = items.filter((item) => Boolean(item.reviewedAt));
+    const averageScore =
+      reviewedItems.length > 0
+        ? reviewedItems.reduce((sum, item) => sum + (item.weightedScore ?? item.averageScore ?? item.overallScore ?? 0), 0) /
+          reviewedItems.length
+        : 0;
+    const averageTime =
+      submittedItems.length > 0
+        ? submittedItems.reduce((sum, item) => sum + (item.timeSpentSeconds || 0), 0) / submittedItems.length
+        : 0;
+    return {
+      total: items.length,
+      submitted: submittedItems.length,
+      reviewed: reviewedItems.length,
+      averageScore,
+      averageTime,
+      dropOffRate:
+        items.length > 0 ? Math.max(0, 100 - Math.round((submittedItems.length / items.length) * 100)) : 0,
+    };
+  }, [miniInternshipSubmissions]);
+
+  const candidateComparison = useMemo(() => {
+    const scored = (miniInternshipSubmissions || [])
+      .map((item) => ({
+        submission: item,
+        score: item.weightedScore ?? item.averageScore ?? item.overallScore ?? 0,
+      }))
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 2);
+
+    return scored;
+  }, [miniInternshipSubmissions]);
 
   const updateScoreDraft = (index: number, field: keyof Pick<ScoreDraft, 'score' | 'comment'>, value: string) => {
     setScoreDrafts((prev) =>
@@ -109,6 +168,10 @@ export const EmployerMiniInternshipReviewPage = () => {
           : entry,
       ),
     );
+  };
+
+  const applyFeedbackTemplate = (template: string) => {
+    setOverallComment((prev) => (prev ? `${prev}\n${template}` : template));
   };
 
   const handleSubmit = async () => {
@@ -293,6 +356,18 @@ export const EmployerMiniInternshipReviewPage = () => {
                       onChange={(event) => setOverallComment(event.target.value)}
                       placeholder={t('employerMiniInternships.overallCommentPlaceholder')}
                     />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {FEEDBACK_TEMPLATES.map((template) => (
+                        <button
+                          key={template}
+                          type="button"
+                          onClick={() => applyFeedbackTemplate(template)}
+                          className="rounded-full border border-[#D6DED7] bg-[var(--surface-soft)] px-3 py-1 text-xs font-semibold text-[var(--surface-text-primary)] transition-colors hover:border-[rgba(46,117,82,0.24)]"
+                        >
+                          {template}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <label className="inline-flex items-center gap-3 text-sm font-semibold text-[var(--surface-text-primary)]">
@@ -413,6 +488,85 @@ export const EmployerMiniInternshipReviewPage = () => {
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
                       {submission.allowCandidateToAddToPortfolio ? t('common.yes') : t('common.no')}
                     </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                    {t('employerMiniInternships.analyticsBadge')}
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                        {t('employerMiniInternships.submissionCount')}
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
+                        {analytics.total}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                        {t('employerMiniInternships.reviewedCount')}
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
+                        {analytics.reviewed}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                        {t('employerMiniInternships.averageScore')}
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
+                        {analytics.averageScore.toFixed(1)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                        {t('employerMiniInternships.averageTime')}
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
+                        {Math.round(analytics.averageTime / 60)}m
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-[var(--surface-text-muted)]">
+                    {t('employerMiniInternships.dropOffHint', { value: analytics.dropOffRate })}
+                  </p>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                    {t('employerMiniInternships.compareCandidates')}
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {candidateComparison.length ? (
+                      candidateComparison.map(({ submission: candidateSubmission, score }, index) => (
+                        <div key={candidateSubmission.id} className="rounded-2xl bg-[var(--surface-soft)] p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                                {index === 0 ? t('employerMiniInternships.candidateA') : t('employerMiniInternships.candidateB')}
+                              </p>
+                              <p className="text-sm text-[var(--surface-text-muted)]">
+                                {getPersonName(candidateSubmission.student, t('common.candidate'))}
+                              </p>
+                            </div>
+                            <p className="text-lg font-extrabold text-[var(--surface-text-primary)]">{score.toFixed(1)}</p>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--surface-text-muted)]">
+                            {(candidateSubmission.skillScores || []).map((skillScore) => (
+                              <span key={skillScore.skillCriterionId} className="rounded-full border border-[#D6DED7] px-2.5 py-1">
+                                {skillScore.skillCriterion?.name || skillScore.skillCriterionId}: {skillScore.score}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-[var(--surface-text-muted)]">
+                        {t('employerMiniInternships.compareEmpty')}
+                      </p>
+                    )}
                   </div>
                 </div>
 

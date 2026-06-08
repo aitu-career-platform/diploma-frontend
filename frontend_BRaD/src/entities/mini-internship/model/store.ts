@@ -9,6 +9,7 @@ import type {
   PortfolioAchievement,
   ReviewTaskSubmissionPayload,
   StartTaskSubmissionPayload,
+  SubmitTaskReflectionPayload,
   TaskSubmissionDetail,
   TaskSubmissionSummary,
   UpdateMiniInternshipPayload,
@@ -40,6 +41,7 @@ interface MiniInternshipStore {
   loadSubmissionsForMiniInternship: (id: string) => Promise<void>;
   updateSubmission: (submissionId: string, payload: UpdateTaskSubmissionPayload) => Promise<TaskSubmissionDetail>;
   submitSubmission: (submissionId: string) => Promise<TaskSubmissionDetail>;
+  submitReflection: (submissionId: string, payload: SubmitTaskReflectionPayload) => Promise<TaskSubmissionDetail>;
   reviewSubmission: (submissionId: string, payload: ReviewTaskSubmissionPayload) => Promise<TaskSubmissionDetail>;
   addSubmissionToPortfolio: (submissionId: string) => Promise<PortfolioAchievement>;
   loadMyPortfolio: () => Promise<void>;
@@ -64,32 +66,37 @@ const replaceTaskSubmissionInList = (
   return upsertById(items, updated as TaskSubmissionSummary);
 };
 
+const toMiniInternshipSummary = (miniInternship: MiniInternshipDetail): MiniInternshipSummary => ({
+  id: miniInternship.id,
+  companyId: miniInternship.companyId,
+  vacancyId: miniInternship.vacancyId,
+  accessMode: miniInternship.accessMode,
+  title: miniInternship.title,
+  roleCategory: miniInternship.roleCategory,
+  status: miniInternship.status,
+  description: miniInternship.description,
+  taskInstructions: miniInternship.taskInstructions,
+  deadline: miniInternship.deadline,
+  timeLimitMinutes: miniInternship.timeLimitMinutes,
+  allowedAttempts: miniInternship.allowedAttempts,
+  submissionRequirements: miniInternship.submissionRequirements,
+  publishedAt: miniInternship.publishedAt,
+  createdAt: miniInternship.createdAt,
+  updatedAt: miniInternship.updatedAt,
+  company: miniInternship.company,
+  vacancy: miniInternship.vacancy,
+  author: miniInternship.author,
+  skillCriteria: miniInternship.skillCriteria,
+  questionCount: miniInternship.questionCount,
+  reflectionQuestionCount: miniInternship.reflectionQuestionCount,
+  submissionCount: miniInternship.submissionCount,
+});
+
 const applyMiniInternshipToLists = (
   state: MiniInternshipStore,
   miniInternship: MiniInternshipDetail,
 ): Partial<MiniInternshipStore> => {
-  const summary: MiniInternshipSummary = {
-    id: miniInternship.id,
-    companyId: miniInternship.companyId,
-    vacancyId: miniInternship.vacancyId,
-    title: miniInternship.title,
-    roleCategory: miniInternship.roleCategory,
-    status: miniInternship.status,
-    description: miniInternship.description,
-    taskInstructions: miniInternship.taskInstructions,
-    deadline: miniInternship.deadline,
-    timeLimitMinutes: miniInternship.timeLimitMinutes,
-    allowedAttempts: miniInternship.allowedAttempts,
-    submissionRequirements: miniInternship.submissionRequirements,
-    publishedAt: miniInternship.publishedAt,
-    createdAt: miniInternship.createdAt,
-    updatedAt: miniInternship.updatedAt,
-    company: miniInternship.company,
-    vacancy: miniInternship.vacancy,
-    author: miniInternship.author,
-    skillCriteria: miniInternship.skillCriteria,
-    submissionCount: miniInternship.submissionCount,
-  };
+  const summary = toMiniInternshipSummary(miniInternship);
 
   return {
     selectedMiniInternship: miniInternship,
@@ -429,6 +436,28 @@ export const useMiniInternshipStore = create<MiniInternshipStore>((set) => ({
       return submission;
     } catch (error) {
       const message = getApiErrorMessage(error, 'Failed to submit task');
+      set({ isMutating: false, error: message });
+      throw new Error(message);
+    }
+  },
+
+  submitReflection: async (submissionId, payload) => {
+    set({ isMutating: true, error: null });
+
+    try {
+      const submission = await miniInternshipApi.submitReflection(submissionId, payload);
+      set((state) => ({
+        isMutating: false,
+        selectedSubmission: submission,
+        mySubmissions: replaceTaskSubmissionInList(state.mySubmissions, submission),
+        miniInternshipSubmissions: replaceTaskSubmissionInList(
+          state.miniInternshipSubmissions,
+          submission,
+        ),
+      }));
+      return submission;
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Failed to save reflection');
       set({ isMutating: false, error: message });
       throw new Error(message);
     }

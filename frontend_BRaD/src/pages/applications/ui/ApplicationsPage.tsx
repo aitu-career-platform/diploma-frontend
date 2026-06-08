@@ -341,6 +341,17 @@ export const ApplicationsPage = () => {
     return vacancies.find((vacancy) => vacancy.id === filters.vacancyId) || null;
   }, [filters.vacancyId, vacancies]);
 
+  const selectedCandidateApplication = useMemo(() => {
+    if (!filters.candidateId) {
+      return null;
+    }
+
+    return (
+      items.find((application) => application.candidate?.id === filters.candidateId) ||
+      (selectedApplication?.candidate?.id === filters.candidateId ? selectedApplication : null)
+    );
+  }, [filters.candidateId, items, selectedApplication]);
+
   const filteredVacancies = useMemo(() => {
     const sortedVacancies = [...vacancies].sort((left, right) => {
       const leftUpdatedAt = new Date(left.updatedAt || left.createdAt || 0).getTime();
@@ -375,7 +386,13 @@ export const ApplicationsPage = () => {
       });
     }
     if (filters.candidateId) {
-      entries.push({ key: 'candidateId', label: t('applications.filter.candidateId'), value: filters.candidateId });
+      entries.push({
+        key: 'candidateId',
+        label: t('applications.filter.candidate'),
+        value: selectedCandidateApplication
+          ? getCandidateName(selectedCandidateApplication, t('common.candidate'))
+          : filters.candidateId,
+      });
     }
     if (filters.hrUserId) {
       entries.push({ key: 'hrUserId', label: t('applications.filter.hrUserId'), value: filters.hrUserId });

@@ -3,6 +3,8 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
+  ChevronDown,
+  ChevronUp,
   CheckCheck,
   MapPin,
   Plus,
@@ -18,7 +20,14 @@ import { useUISettings } from '@shared/lib/ui-settings';
 import { isEmployerRole, useUserStore } from '@entities/user';
 import { useMediaStore } from '@entities/media';
 import { useVacancyStore, type Vacancy } from '@entities/vacancy';
-import { useMiniInternshipStore, type MiniInternshipSkillCriterion } from '@entities/mini-internship';
+import {
+  useMiniInternshipStore,
+  type MiniInternshipAccessMode,
+  type MiniInternshipQuestion,
+  type MiniInternshipQuestionScope,
+  type MiniInternshipQuestionType,
+  type MiniInternshipSkillCriterion,
+} from '@entities/mini-internship';
 import { cardStyle, formatDateTime, formatEnumLabel } from '@pages/mini-internships/ui/shared';
 
 type CriterionDraft = {
@@ -29,12 +38,48 @@ type CriterionDraft = {
   sortOrder: string;
 };
 
+type QuestionOptionDraft = {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  sortOrder: string;
+};
+
+type QuestionDraft = {
+  id: string;
+  scope: MiniInternshipQuestionScope;
+  type: MiniInternshipQuestionType;
+  prompt: string;
+  description: string;
+  required: boolean;
+  sortOrder: string;
+  options: QuestionOptionDraft[];
+};
+
 const createEmptyCriterion = (): CriterionDraft => ({
   name: '',
   description: '',
   maxScore: '10',
   weight: '1',
   sortOrder: '',
+});
+
+const createEmptyQuestionOption = (sortOrder: number): QuestionOptionDraft => ({
+  id: `option-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${sortOrder}`,
+  text: '',
+  isCorrect: false,
+  sortOrder: String(sortOrder),
+});
+
+const createEmptyQuestion = (scope: MiniInternshipQuestionScope = 'TASK'): QuestionDraft => ({
+  id: `question-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  scope,
+  type: 'OPEN_ANSWER',
+  prompt: '',
+  description: '',
+  required: true,
+  sortOrder: '',
+  options: [],
 });
 
 const toDateTimeLocalValue = (value?: string | null): string => {
@@ -57,6 +102,22 @@ const toCriterionDraft = (criterion: MiniInternshipSkillCriterion): CriterionDra
   maxScore: String(criterion.maxScore ?? 10),
   weight: String(criterion.weight ?? 1),
   sortOrder: criterion.sortOrder === undefined || criterion.sortOrder === null ? '' : String(criterion.sortOrder),
+});
+
+const toQuestionDraft = (question: MiniInternshipQuestion): QuestionDraft => ({
+  id: question.id || `question-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  scope: question.scope,
+  type: question.type,
+  prompt: question.prompt || '',
+  description: question.description || '',
+  required: question.required ?? true,
+  sortOrder: question.sortOrder === undefined || question.sortOrder === null ? '' : String(question.sortOrder),
+  options: (question.options || []).map((option, index) => ({
+    id: option.id || `option-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${index}`,
+    text: option.text || '',
+    isCorrect: Boolean(option.isCorrect),
+    sortOrder: option.sortOrder === undefined || option.sortOrder === null ? String(index) : String(option.sortOrder),
+  })),
 });
 
 const formatVacancyPreview = (
@@ -112,9 +173,12 @@ export const EmployerMiniInternshipEditorPage = () => {
   const [timeLimitMinutes, setTimeLimitMinutes] = useState('');
   const [allowedAttempts, setAllowedAttempts] = useState('1');
   const [submissionRequirements, setSubmissionRequirements] = useState('');
+  const [accessMode, setAccessMode] = useState<MiniInternshipAccessMode>('PUBLIC');
   const [selectedVacancyId, setSelectedVacancyId] = useState<string | null>(null);
   const [vacancySearch, setVacancySearch] = useState('');
+  const [showVacancyPicker, setShowVacancyPicker] = useState(true);
   const [criteria, setCriteria] = useState<CriterionDraft[]>([createEmptyCriterion()]);
+  const [questionDrafts, setQuestionDrafts] = useState<QuestionDraft[]>([]);
   const [taskFile, setTaskFile] = useState<File | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [pageSuccess, setPageSuccess] = useState<string | null>(null);
@@ -152,8 +216,11 @@ export const EmployerMiniInternshipEditorPage = () => {
     setTimeLimitMinutes(detail.timeLimitMinutes ? String(detail.timeLimitMinutes) : '');
     setAllowedAttempts(String(detail.allowedAttempts || 1));
     setSubmissionRequirements(detail.submissionRequirements || '');
+    setAccessMode((detail.accessMode || 'PUBLIC') as MiniInternshipAccessMode);
     setSelectedVacancyId(detail.vacancyId || null);
     setVacancySearch(detail.vacancy?.title || '');
+    setQuestionDrafts((detail.questions || []).map(toQuestionDraft));
+    setShowVacancyPicker(false);
     setCriteria(
       detail.skillCriteria.length ? detail.skillCriteria.map(toCriterionDraft) : [createEmptyCriterion()],
     );
@@ -222,11 +289,145 @@ export const EmployerMiniInternshipEditorPage = () => {
     );
   };
 
+  const handleAddQuestion = (scope: MiniInternshipQuestionScope = 'TASK') => {
+    setQuestionDrafts((prev) => [...prev, createEmptyQuestion(scope)]);
+    setShowVacancyPicker(false);
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    setQuestionDrafts((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const updateQuestion = (index: number, field: keyof QuestionDraft, value: string | boolean) => {
+    setQuestionDrafts((prev) =>
+      prev.map((entry, itemIndex) => (itemIndex === index ? { ...entry, [field]: value } : entry)),
+    );
+  };
+
+  const handleQuestionTypeChange = (index: number, type: MiniInternshipQuestionType) => {
+    setQuestionDrafts((prev) =>
+      prev.map((entry, itemIndex) => {
+        if (itemIndex !== index) {
+          return entry;
+        }
+
+        if (type === 'OPEN_ANSWER') {
+          return {
+            ...entry,
+            type,
+            options: [],
+          };
+        }
+
+        const options =
+          entry.options.length > 0
+            ? entry.options
+            : [createEmptyQuestionOption(0), createEmptyQuestionOption(1)];
+
+        return {
+          ...entry,
+          type,
+          options: options.map((option, optionIndex) => ({
+            ...option,
+            sortOrder: String(optionIndex),
+            isCorrect:
+              type === 'SINGLE_CHOICE'
+                ? optionIndex === 0
+                : option.isCorrect,
+          })),
+        };
+      }),
+    );
+  };
+
+  const handleAddQuestionOption = (questionIndex: number) => {
+    setQuestionDrafts((prev) =>
+      prev.map((question, itemIndex) => {
+        if (itemIndex !== questionIndex) {
+          return question;
+        }
+
+        const nextIndex = question.options.length;
+        return {
+          ...question,
+          options: [...question.options, createEmptyQuestionOption(nextIndex)],
+        };
+      }),
+    );
+  };
+
+  const handleRemoveQuestionOption = (questionIndex: number, optionIndex: number) => {
+    setQuestionDrafts((prev) =>
+      prev.map((question, itemIndex) => {
+        if (itemIndex !== questionIndex) {
+          return question;
+        }
+
+        return {
+          ...question,
+          options: question.options.filter((_, currentIndex) => currentIndex !== optionIndex),
+        };
+      }),
+    );
+  };
+
+  const updateQuestionOption = (
+    questionIndex: number,
+    optionIndex: number,
+    field: keyof QuestionOptionDraft,
+    value: string | boolean,
+  ) => {
+    setQuestionDrafts((prev) =>
+      prev.map((question, itemIndex) => {
+        if (itemIndex !== questionIndex) {
+          return question;
+        }
+
+        return {
+          ...question,
+          options: question.options.map((option, currentIndex) =>
+            currentIndex === optionIndex ? { ...option, [field]: value } : option,
+          ),
+        };
+      }),
+    );
+  };
+
+  const handleSelectCorrectOption = (questionIndex: number, optionIndex: number) => {
+    setQuestionDrafts((prev) =>
+      prev.map((question, itemIndex) => {
+        if (itemIndex !== questionIndex) {
+          return question;
+        }
+
+        if (question.type === 'SINGLE_CHOICE') {
+          return {
+            ...question,
+            options: question.options.map((option, currentIndex) => ({
+              ...option,
+              isCorrect: currentIndex === optionIndex,
+            })),
+          };
+        }
+
+        return {
+          ...question,
+          options: question.options.map((option, currentIndex) =>
+            currentIndex === optionIndex
+              ? { ...option, isCorrect: !option.isCorrect }
+              : option,
+          ),
+        };
+      }),
+    );
+  };
+
   const buildPayload = () => ({
     title: title.trim(),
     description: description.trim(),
     taskInstructions: taskInstructions.trim(),
     roleCategory: roleCategory.trim(),
+    accessMode,
     deadline: new Date(deadline).toISOString(),
     timeLimitMinutes: timeLimitMinutes.trim() ? Number(timeLimitMinutes) : undefined,
     allowedAttempts: allowedAttempts.trim() ? Number(allowedAttempts) : undefined,
@@ -241,6 +442,28 @@ export const EmployerMiniInternshipEditorPage = () => {
         sortOrder: criterion.sortOrder.trim() ? Number(criterion.sortOrder) : index,
       }))
       .filter((criterion) => criterion.name.length > 0),
+    questions: questionDrafts
+      .map((question, index) => ({
+        id: question.id,
+        scope: question.scope,
+        type: question.type,
+        prompt: question.prompt.trim(),
+        description: question.description.trim() || undefined,
+        required: question.required,
+        sortOrder: question.sortOrder.trim() ? Number(question.sortOrder) : index,
+        options:
+          question.type === 'OPEN_ANSWER'
+            ? []
+            : question.options.map((option, optionIndex) => ({
+                id: option.id,
+                text: option.text.trim(),
+                isCorrect: option.isCorrect,
+                sortOrder: option.sortOrder.trim()
+                  ? Number(option.sortOrder)
+                  : optionIndex,
+              })),
+      }))
+      .filter((question) => question.prompt.length > 0),
   });
 
   const handleSave = async () => {
@@ -500,6 +723,20 @@ export const EmployerMiniInternshipEditorPage = () => {
                   </label>
                   <Input type="number" min={0} value={timeLimitMinutes} onChange={(event) => setTimeLimitMinutes(event.target.value)} placeholder={t('miniInternships.unlimited')} />
                 </div>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[var(--surface-text-primary)]">
+                    {t('employerMiniInternships.accessMode')}
+                  </label>
+                  <select
+                    value={accessMode}
+                    onChange={(event) => setAccessMode(event.target.value as MiniInternshipAccessMode)}
+                    className="flex h-11 w-full rounded-2xl border border-[#D6DED7] bg-white px-4 py-2 text-sm text-[#1D261F] dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
+                  >
+                    <option value="PUBLIC">{t('miniInternships.accessMode.public')}</option>
+                    <option value="INVITE_ONLY">{t('miniInternships.accessMode.inviteOnly')}</option>
+                    <option value="VACANCY_LINKED">{t('miniInternships.accessMode.vacancyLinked')}</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -520,6 +757,181 @@ export const EmployerMiniInternshipEditorPage = () => {
                 </label>
                 <Textarea value={submissionRequirements} onChange={(event) => setSubmissionRequirements(event.target.value)} placeholder={t('employerMiniInternships.submissionRequirementsPlaceholder')} />
               </div>
+            </div>
+
+            <div className="app-section-card p-5 sm:p-6">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                    {t('employerMiniInternships.questionsBadge')}
+                  </p>
+                  <h2 className="app-title text-xl">{t('employerMiniInternships.questionsTitle')}</h2>
+                  <p className="app-text-muted mt-1 text-sm">
+                    {t('employerMiniInternships.questionsDescription')}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => handleAddQuestion('TASK')}>
+                    <Plus className="h-4 w-4" />
+                    {t('employerMiniInternships.addTaskQuestion')}
+                  </Button>
+                  <Button variant="outline" onClick={() => handleAddQuestion('REFLECTION')}>
+                    <Plus className="h-4 w-4" />
+                    {t('employerMiniInternships.addReflectionQuestion')}
+                  </Button>
+                </div>
+              </div>
+
+              {!questionDrafts.length ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-[#D6DED7] bg-[var(--surface-soft)] p-4 text-sm text-[var(--surface-text-muted)]">
+                  {t('employerMiniInternships.noQuestions')}
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {questionDrafts.map((question, index) => {
+                    const isChoice = question.type !== 'OPEN_ANSWER';
+
+                    return (
+                      <div key={question.id} className="rounded-2xl border border-[#D6DED7] p-4">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="grid flex-1 gap-3 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                {t('employerMiniInternships.questionScope')}
+                              </label>
+                              <select
+                                value={question.scope}
+                                onChange={(event) =>
+                                  updateQuestion(index, 'scope', event.target.value as MiniInternshipQuestionScope)
+                                }
+                                className="flex h-11 w-full rounded-2xl border border-[#D6DED7] bg-white px-4 py-2 text-sm text-[#1D261F] dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
+                              >
+                                <option value="TASK">{t('miniInternships.questionScope.task')}</option>
+                                <option value="REFLECTION">{t('miniInternships.questionScope.reflection')}</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                {t('employerMiniInternships.questionType')}
+                              </label>
+                              <select
+                                value={question.type}
+                                onChange={(event) =>
+                                  handleQuestionTypeChange(index, event.target.value as MiniInternshipQuestionType)
+                                }
+                                className="flex h-11 w-full rounded-2xl border border-[#D6DED7] bg-white px-4 py-2 text-sm text-[#1D261F] dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
+                              >
+                                <option value="OPEN_ANSWER">{t('miniInternships.questionType.openAnswer')}</option>
+                                <option value="SINGLE_CHOICE">{t('miniInternships.questionType.singleChoice')}</option>
+                                <option value="MULTIPLE_CHOICE">{t('miniInternships.questionType.multipleChoice')}</option>
+                              </select>
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                {t('employerMiniInternships.questionPrompt')}
+                              </label>
+                              <Textarea
+                                value={question.prompt}
+                                onChange={(event) => updateQuestion(index, 'prompt', event.target.value)}
+                                placeholder={t('employerMiniInternships.questionPromptPlaceholder')}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                {t('employerMiniInternships.questionDescription')}
+                              </label>
+                              <Textarea
+                                value={question.description}
+                                onChange={(event) => updateQuestion(index, 'description', event.target.value)}
+                                placeholder={t('employerMiniInternships.questionDescriptionPlaceholder')}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                {t('employerMiniInternships.questionSortOrder')}
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                value={question.sortOrder}
+                                onChange={(event) => updateQuestion(index, 'sortOrder', event.target.value)}
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                                <input
+                                  type="checkbox"
+                                  checked={question.required}
+                                  onChange={(event) => updateQuestion(index, 'required', event.target.checked)}
+                                />
+                                {t('employerMiniInternships.questionRequired')}
+                              </label>
+                            </div>
+                          </div>
+
+                          <Button variant="outline" size="icon" onClick={() => handleRemoveQuestion(index)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {isChoice && (
+                          <div className="mt-4 rounded-2xl bg-[var(--surface-soft)] p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <h3 className="font-semibold text-[var(--surface-text-primary)]">
+                                  {t('employerMiniInternships.questionOptions')}
+                                </h3>
+                                <p className="text-sm text-[var(--surface-text-muted)]">
+                                  {t('employerMiniInternships.questionOptionsDescription')}
+                                </p>
+                              </div>
+                              <Button variant="outline" size="sm" onClick={() => handleAddQuestionOption(index)}>
+                                <Plus className="h-4 w-4" />
+                                {t('employerMiniInternships.addOption')}
+                              </Button>
+                            </div>
+
+                            <div className="mt-4 space-y-3">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={option.id} className="rounded-2xl border border-[#D6DED7] bg-white p-3 dark:border-[#314036] dark:bg-[#111814]">
+                                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                    <div className="grid flex-1 gap-3 md:grid-cols-[1fr_auto]">
+                                      <div>
+                                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
+                                          {t('employerMiniInternships.optionText')}
+                                        </label>
+                                        <Input
+                                          value={option.text}
+                                          onChange={(event) => updateQuestionOption(index, optionIndex, 'text', event.target.value)}
+                                          placeholder={t('employerMiniInternships.optionTextPlaceholder')}
+                                        />
+                                      </div>
+                                      <div className="flex items-end">
+                                        <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                                          <input
+                                            type="checkbox"
+                                            checked={option.isCorrect}
+                                            onChange={() => handleSelectCorrectOption(index, optionIndex)}
+                                          />
+                                          {t('employerMiniInternships.optionCorrect')}
+                                        </label>
+                                      </div>
+                                    </div>
+
+                                    <Button variant="outline" size="icon" onClick={() => handleRemoveQuestionOption(index, optionIndex)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="app-section-card p-5 sm:p-6">
@@ -577,9 +989,9 @@ export const EmployerMiniInternshipEditorPage = () => {
           </section>
 
           <aside className="space-y-4">
-            <div className="app-section-card p-5 sm:p-6 sticky top-28">
+            <div className="app-section-card sticky top-28 p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
                     {t('employerMiniInternships.vacancyPickerBadge')}
                   </p>
@@ -600,106 +1012,126 @@ export const EmployerMiniInternshipEditorPage = () => {
                 </Button>
               </div>
 
-              <div className="mt-4 relative">
-                <Input
-                  value={vacancySearch}
-                  onChange={(event) => setVacancySearch(event.target.value)}
-                  placeholder={t('employerMiniInternships.vacancySearchPlaceholder')}
-                  className="h-12 rounded-2xl border-black/10 bg-[var(--surface-soft)] pl-11"
-                />
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--surface-text-soft)]" />
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="app-chip">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {selectedVacancy ? t('employerMiniInternships.vacancySelected') : t('employerMiniInternships.standaloneTask')}
-                </span>
-                <span className="app-chip">
-                  {filteredVacancies.length} {t('employerMiniInternships.myVacanciesCount')}
-                </span>
-              </div>
-
-              {selectedVacancy ? (
-                <div className="mt-4 rounded-2xl border border-[rgba(46,117,82,0.16)] bg-[rgba(46,117,82,0.06)] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tone-success-text)]">
-                    {t('employerMiniInternships.selectedVacancyTitle')}
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold text-[var(--surface-text-primary)]">{selectedVacancy.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--surface-text-muted)]">
-                    {formatVacancyPreview(selectedVacancy) || t('employerMiniInternships.selectedVacancyDescription')}
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-[#D6DED7] bg-[var(--surface-soft)] p-4 text-sm text-[var(--surface-text-muted)]">
-                  {t('employerMiniInternships.noVacancySelected')}
-                </div>
-              )}
-
-              <div className="mt-4 space-y-3">
-                {isVacanciesLoading ? (
-                  <div className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4 text-sm text-[var(--surface-text-muted)]">
-                    {t('employerMiniInternships.vacancyPickerLoading')}
+              <div className="mt-4 rounded-3xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
+                <button
+                  type="button"
+                  onClick={() => setShowVacancyPicker((prev) => !prev)}
+                  className="flex w-full items-start justify-between gap-4 text-left"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="app-chip">
+                        <Building2 className="h-3.5 w-3.5" />
+                        {selectedVacancy
+                          ? t('employerMiniInternships.vacancySelected')
+                          : t('employerMiniInternships.standaloneTask')}
+                      </span>
+                      <span className="app-chip">
+                        {filteredVacancies.length} {t('employerMiniInternships.myVacanciesCount')}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold text-[var(--surface-text-primary)]">
+                      {selectedVacancy?.title || t('employerMiniInternships.noVacancySelected')}
+                    </h3>
+                    <p className="mt-1 text-sm text-[var(--surface-text-muted)]">
+                      {selectedVacancy
+                        ? formatVacancyPreview(selectedVacancy) || t('employerMiniInternships.selectedVacancyDescription')
+                        : t('employerMiniInternships.selectedVacancyDescription')}
+                    </p>
                   </div>
-                ) : filteredVacancies.length ? (
-                  filteredVacancies.map((vacancy) => {
-                    const isSelected = vacancy.id === selectedVacancyId;
+                  <span className="mt-1 inline-flex items-center gap-2 rounded-full border border-[#D6DED7] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-muted)]">
+                    {showVacancyPicker
+                      ? t('employerMiniInternships.hideVacancyPicker')
+                      : t('employerMiniInternships.showVacancyPicker')}
+                    {showVacancyPicker ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </span>
+                </button>
 
-                    return (
-                      <button
-                        type="button"
-                        key={vacancy.id}
-                        onClick={() => {
-                          setSelectedVacancyId(vacancy.id);
-                          setVacancySearch(vacancy.title);
-                        }}
-                        className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                          isSelected
-                            ? 'border-[rgba(46,117,82,0.35)] bg-[rgba(46,117,82,0.08)] shadow-[0_8px_24px_rgba(46,117,82,0.08)]'
-                            : 'border-[#D6DED7] bg-white hover:border-[rgba(46,117,82,0.24)] hover:shadow-[0_10px_26px_rgba(17,24,39,0.06)]'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="truncate text-base font-semibold text-[var(--surface-text-primary)]">{vacancy.title}</h3>
-                              {isSelected ? (
-                                <span className="app-chip">{t('employerMiniInternships.vacancySelected')}</span>
-                              ) : null}
-                            </div>
+                {showVacancyPicker && (
+                  <div className="mt-4 space-y-4 border-t border-[#D6DED7] pt-4">
+                    <div className="relative">
+                      <Input
+                        value={vacancySearch}
+                        onChange={(event) => setVacancySearch(event.target.value)}
+                        placeholder={t('employerMiniInternships.vacancySearchPlaceholder')}
+                        className="h-12 rounded-2xl border-black/10 bg-white pl-11"
+                      />
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--surface-text-soft)]" />
+                    </div>
+
+                    {isVacanciesLoading ? (
+                      <div className="rounded-2xl border border-[#D6DED7] bg-white p-4 text-sm text-[var(--surface-text-muted)]">
+                        {t('employerMiniInternships.vacancyPickerLoading')}
+                      </div>
+                    ) : filteredVacancies.length ? (
+                      <div className="max-h-80 space-y-3 overflow-auto pr-1">
+                        {filteredVacancies.map((vacancy) => {
+                          const isSelected = vacancy.id === selectedVacancyId;
+
+                          return (
+                            <button
+                              type="button"
+                              key={vacancy.id}
+                              onClick={() => {
+                                setSelectedVacancyId(vacancy.id);
+                                setVacancySearch(vacancy.title);
+                              }}
+                              className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                                isSelected
+                                  ? 'border-[rgba(46,117,82,0.35)] bg-[rgba(46,117,82,0.08)] shadow-[0_8px_24px_rgba(46,117,82,0.08)]'
+                                  : 'border-[#D6DED7] bg-white hover:border-[rgba(46,117,82,0.24)] hover:shadow-[0_10px_26px_rgba(17,24,39,0.06)]'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="truncate text-base font-semibold text-[var(--surface-text-primary)]">
+                                      {vacancy.title}
+                                    </h3>
+                                    {isSelected ? (
+                                      <span className="app-chip">{t('employerMiniInternships.vacancySelected')}</span>
+                                    ) : null}
+                                  </div>
+                                  <p className="mt-1 text-sm text-[var(--surface-text-muted)]">
+                                    {formatVacancyPreview(vacancy) || t('employerMiniInternships.vacancyPreviewFallback')}
+                                  </p>
+                                  {vacancy.workAddress ? (
+                                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[var(--surface-text-soft)]">
+                                      <MapPin className="h-3.5 w-3.5" />
+                                      {vacancy.workAddress}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-[#D6DED7] bg-white p-4">
+                        <div className="flex items-start gap-3">
+                          <Building2 className="mt-0.5 h-5 w-5 text-[var(--surface-text-soft)]" />
+                          <div>
+                            <h3 className="font-semibold text-[var(--surface-text-primary)]">
+                              {t('employerMiniInternships.noVacanciesTitle')}
+                            </h3>
                             <p className="mt-1 text-sm text-[var(--surface-text-muted)]">
-                              {formatVacancyPreview(vacancy) || t('employerMiniInternships.vacancyPreviewFallback')}
+                              {t('employerMiniInternships.noVacanciesDescription')}
                             </p>
-                            {vacancy.workAddress ? (
-                              <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[var(--surface-text-soft)]">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {vacancy.workAddress}
-                              </p>
-                            ) : null}
+                            <Link
+                              to="/app/employer"
+                              className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
+                            >
+                              {t('employerMiniInternships.openEmployerDashboard')}
+                            </Link>
                           </div>
                         </div>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-[#D6DED7] bg-[var(--surface-soft)] p-4">
-                    <div className="flex items-start gap-3">
-                      <Building2 className="mt-0.5 h-5 w-5 text-[var(--surface-text-soft)]" />
-                      <div>
-                        <h3 className="font-semibold text-[var(--surface-text-primary)]">
-                          {t('employerMiniInternships.noVacanciesTitle')}
-                        </h3>
-                        <p className="mt-1 text-sm text-[var(--surface-text-muted)]">
-                          {t('employerMiniInternships.noVacanciesDescription')}
-                        </p>
-                        <Link
-                          to="/app/employer"
-                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
-                        >
-                          {t('employerMiniInternships.openEmployerDashboard')}
-                        </Link>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

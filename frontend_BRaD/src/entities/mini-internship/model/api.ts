@@ -9,6 +9,7 @@ import type {
   StartTaskSubmissionPayload,
   TaskSubmissionDetail,
   TaskSubmissionListResponse,
+  SubmitTaskReflectionPayload,
   UpdateMiniInternshipPayload,
   UpdateTaskSubmissionPayload,
 } from './types';
@@ -103,6 +104,14 @@ export const miniInternshipApi = {
 
   async submitSubmission(submissionId: string): Promise<TaskSubmissionDetail> {
     const response = await api.post(`/mini-internships/submissions/${submissionId}/submit`);
+    return response.data as TaskSubmissionDetail;
+  },
+
+  async submitReflection(
+    submissionId: string,
+    payload: SubmitTaskReflectionPayload,
+  ): Promise<TaskSubmissionDetail> {
+    const response = await api.post(`/mini-internships/submissions/${submissionId}/reflection`, payload);
     return response.data as TaskSubmissionDetail;
   },
 
