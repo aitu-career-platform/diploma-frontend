@@ -55,9 +55,6 @@ const createAnswerDraft = (questionId: string): QuestionAnswerDraft => ({
   selectedOptionIds: [],
 });
 
-const isMultipleChoice = (type?: string | null): boolean => type === 'MULTIPLE_CHOICE';
-const isSingleChoice = (type?: string | null): boolean => type === 'SINGLE_CHOICE';
-
 const normalizeAnswerDrafts = (
   drafts: QuestionAnswerDraft[],
 ): Array<{ questionId: string; answerText?: string; selectedOptionIds?: string[] }> =>
@@ -119,16 +116,57 @@ export const MiniInternshipSubmitPage = () => {
     ) || null
     );
   }, [applications, miniInternship?.vacancyId]);
+  const allQuestions =
+    miniInternship?.questions ||
+    activeSubmission?.questions ||
+    activeSubmission?.miniInternship?.questions ||
+    [];
   const taskQuestions = useMemo(
-    () => (miniInternship?.taskQuestions?.length ? miniInternship.taskQuestions : miniInternship?.questions?.filter((question) => question.scope === 'TASK') || []),
-    [miniInternship?.questions, miniInternship?.taskQuestions],
+    () => {
+      if (miniInternship?.taskQuestions?.length) {
+        return miniInternship.taskQuestions;
+      }
+
+      if (activeSubmission?.taskQuestions?.length) {
+        return activeSubmission.taskQuestions;
+      }
+
+      if (activeSubmission?.miniInternship?.taskQuestions?.length) {
+        return activeSubmission.miniInternship.taskQuestions;
+      }
+
+      const scoped = allQuestions.filter((question) => question.scope === 'TASK');
+      return scoped.length ? scoped : allQuestions;
+    },
+    [
+      allQuestions,
+      activeSubmission?.miniInternship?.taskQuestions,
+      activeSubmission?.taskQuestions,
+      miniInternship?.taskQuestions,
+    ],
   );
   const reflectionQuestions = useMemo(
-    () =>
-      (miniInternship?.reflectionQuestions?.length
-        ? miniInternship.reflectionQuestions
-        : miniInternship?.questions?.filter((question) => question.scope === 'REFLECTION') || []),
-    [miniInternship?.questions, miniInternship?.reflectionQuestions],
+    () => {
+      if (miniInternship?.reflectionQuestions?.length) {
+        return miniInternship.reflectionQuestions;
+      }
+
+      if (activeSubmission?.reflectionQuestions?.length) {
+        return activeSubmission.reflectionQuestions;
+      }
+
+      if (activeSubmission?.miniInternship?.reflectionQuestions?.length) {
+        return activeSubmission.miniInternship.reflectionQuestions;
+      }
+
+      return allQuestions.filter((question) => question.scope === 'REFLECTION');
+    },
+    [
+      allQuestions,
+      activeSubmission?.miniInternship?.reflectionQuestions,
+      activeSubmission?.reflectionQuestions,
+      miniInternship?.reflectionQuestions,
+    ],
   );
   const canEditSubmission = Boolean(
     activeSubmission &&
@@ -642,8 +680,11 @@ export const MiniInternshipSubmitPage = () => {
                         const draft =
                           taskAnswerDrafts.find((entry) => entry.questionId === question.id) ||
                           createAnswerDraft(question.id);
-                        const multiple = isMultipleChoice(question.type);
-                        const single = isSingleChoice(question.type);
+                        const hasOptions = Boolean(question.options?.length);
+                        const multiple =
+                          question.type === 'MULTIPLE_CHOICE' ||
+                          (hasOptions && question.options.filter((option) => option.isCorrect).length > 1);
+                        const single = !multiple;
 
                         return (
                           <div key={question.id} className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
@@ -665,7 +706,7 @@ export const MiniInternshipSubmitPage = () => {
                                 {question.description}
                               </p>
                             )}
-                            {question.type === 'OPEN_ANSWER' ? (
+                            {!hasOptions || question.type === 'OPEN_ANSWER' ? (
                               <Textarea
                                 className="mt-4"
                                 value={draft.answerText}
@@ -857,8 +898,11 @@ export const MiniInternshipSubmitPage = () => {
                         const draft =
                           reflectionAnswerDrafts.find((entry) => entry.questionId === question.id) ||
                           createAnswerDraft(question.id);
-                        const multiple = isMultipleChoice(question.type);
-                        const single = isSingleChoice(question.type);
+                        const hasOptions = Boolean(question.options?.length);
+                        const multiple =
+                          question.type === 'MULTIPLE_CHOICE' ||
+                          (hasOptions && question.options.filter((option) => option.isCorrect).length > 1);
+                        const single = !multiple;
 
                         return (
                           <div key={question.id} className="rounded-2xl border border-[#D6DED7] bg-[var(--surface-soft)] p-4">
@@ -880,7 +924,7 @@ export const MiniInternshipSubmitPage = () => {
                                 {question.description}
                               </p>
                             )}
-                            {question.type === 'OPEN_ANSWER' ? (
+                            {!hasOptions || question.type === 'OPEN_ANSWER' ? (
                               <Textarea
                                 className="mt-4"
                                 value={draft.answerText}

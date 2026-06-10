@@ -308,26 +308,51 @@ export const MiniInternshipDetailPage = () => {
               </div>
 
               {miniInternship.questions?.length ? (
-                <div className="app-section-card p-5 sm:p-6">
-                  <h2 className="app-title text-xl">{t('miniInternships.questionsTitle')}</h2>
-                  <div className="mt-4 space-y-3">
-                    {miniInternship.questions.map((question, index) => (
-                      <div key={question.id} className="rounded-2xl border border-[#D6DED7] p-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="app-chip">{t('miniInternships.questionNumber', { number: index + 1 })}</span>
-                          <span className="app-chip">{formatEnumLabel(question.scope)}</span>
-                          <span className="app-chip">{formatEnumLabel(question.type)}</span>
+                miniInternship.currentSubmission ? (
+                  <div className="app-section-card p-5 sm:p-6">
+                    <h2 className="app-title text-xl">{t('miniInternships.questionsTitle')}</h2>
+                    <div className="mt-4 space-y-3">
+                      {miniInternship.questions.map((question, index) => (
+                        <div key={question.id} className="rounded-2xl border border-[#D6DED7] p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="app-chip">
+                              {t('miniInternships.questionNumber', { number: index + 1 })}
+                            </span>
+                            <span className="app-chip">{formatEnumLabel(question.scope)}</span>
+                            <span className="app-chip">{formatEnumLabel(question.type)}</span>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-[var(--surface-text-primary)]">
+                            {question.prompt}
+                          </p>
+                          {question.description && (
+                            <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
+                              {question.description}
+                            </p>
+                          )}
+                          {Boolean(question.options?.length) ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {question.options.map((option) => (
+                                <span
+                                  key={option.id}
+                                  className="rounded-full border border-[#D6DED7] bg-[var(--surface-soft)] px-3 py-1 text-xs text-[var(--surface-text-muted)]"
+                                >
+                                  {option.text}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
-                        <p className="mt-3 text-sm font-semibold text-[var(--surface-text-primary)]">
-                          {question.prompt}
-                        </p>
-                        {question.description && (
-                          <p className="mt-2 text-sm text-[var(--surface-text-muted)]">{question.description}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="app-section-card p-5 sm:p-6">
+                    <h2 className="app-title text-xl">{t('miniInternships.questionsTitle')}</h2>
+                    <p className="mt-3 text-sm text-[var(--surface-text-muted)]">
+                      {t('miniInternships.questionsHiddenUntilStart')}
+                    </p>
+                  </div>
+                )
               ) : null}
 
               {miniInternship.files.length > 0 && (

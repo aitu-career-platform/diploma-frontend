@@ -92,6 +92,8 @@ export interface MiniInternshipSummary {
   author?: MiniInternshipAuthor | null;
   skillCriteria: MiniInternshipSkillCriterion[];
   questions?: MiniInternshipQuestion[];
+  taskQuestions?: MiniInternshipQuestion[];
+  reflectionQuestions?: MiniInternshipQuestion[];
   questionCount?: number;
   reflectionQuestionCount?: number;
   submissionCount?: number;
@@ -218,6 +220,11 @@ export interface TaskSubmissionDetail extends TaskSubmissionSummary {
   overallComment?: string | null;
   history?: TaskSubmissionHistoryEntry[];
   files?: MiniInternshipFile[];
+  questions?: MiniInternshipQuestion[];
+  taskQuestions?: MiniInternshipQuestion[];
+  reflectionQuestions?: MiniInternshipQuestion[];
+  questionCount?: number;
+  reflectionQuestionCount?: number;
 }
 
 export interface MiniInternshipQuestionAnswer {

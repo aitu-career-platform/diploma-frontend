@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCheck,
@@ -7,17 +7,17 @@ import {
   ShieldAlert,
   Sparkles,
   Star,
-} from 'lucide-react';
-import { AppHeader } from '@widgets/app-header';
-import { Button, Input, Textarea } from '@shared/ui';
-import { useUISettings } from '@shared/lib/ui-settings';
-import { isEmployerRole, useUserStore } from '@entities/user';
+} from "lucide-react";
+import { AppHeader } from "@widgets/app-header";
+import { Button, Input, Textarea } from "@shared/ui";
+import { useUISettings } from "@shared/lib/ui-settings";
+import { isEmployerRole, useUserStore } from "@entities/user";
 import {
   useMiniInternshipStore,
   type MiniInternshipSkillCriterion,
   type ReviewTaskSubmissionScorePayload,
   type SubmissionSkillScore,
-} from '@entities/mini-internship';
+} from "@entities/mini-internship";
 import {
   cardStyle,
   formatDateTime,
@@ -26,7 +26,7 @@ import {
   getPersonName,
   getSubmissionLinks,
   normalizeDecisionStatus,
-} from '@pages/mini-internships/ui/shared';
+} from "@pages/mini-internships/ui/shared";
 
 type ScoreDraft = ReviewTaskSubmissionScorePayload & {
   name: string;
@@ -39,17 +39,17 @@ const makeScoreDraft = (
 ): ScoreDraft => ({
   skillCriterionId: criterion.id || criterion.name,
   score: existing?.score ?? 0,
-  comment: existing?.comment ?? '',
+  comment: existing?.comment ?? "",
   name: criterion.name,
   maxScore: criterion.maxScore,
 });
 
 const FEEDBACK_TEMPLATES = [
-  'Strong technical solution',
-  'Needs better documentation',
-  'Improve testing',
-  'Good communication',
-  'Weak problem understanding',
+  "Strong technical solution",
+  "Needs better documentation",
+  "Improve testing",
+  "Good communication",
+  "Weak problem understanding",
 ];
 
 export const EmployerMiniInternshipReviewPage = () => {
@@ -66,15 +66,22 @@ export const EmployerMiniInternshipReviewPage = () => {
     isMutating,
     error,
   } = useMiniInternshipStore();
-  const [decisionStatus, setDecisionStatus] = useState<'reviewed' | 'accepted' | 'rejected' | 'shortlisted'>('reviewed');
-  const [overallComment, setOverallComment] = useState('');
-  const [allowCandidateToAddToPortfolio, setAllowCandidateToAddToPortfolio] = useState(false);
+  const [decisionStatus, setDecisionStatus] = useState<
+    "reviewed" | "accepted" | "rejected" | "shortlisted"
+  >("reviewed");
+  const [overallComment, setOverallComment] = useState("");
+  const [allowCandidateToAddToPortfolio, setAllowCandidateToAddToPortfolio] =
+    useState(false);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDraft[]>([]);
   const [pageError, setPageError] = useState<string | null>(null);
   const [pageSuccess, setPageSuccess] = useState<string | null>(null);
+  const [showAiReview, setShowAiReview] = useState(false);
 
   const isAllowed = isAuthenticated && isEmployerRole(currentUser?.role);
   const submission = selectedSubmission?.id === id ? selectedSubmission : null;
+  const hasAiReview = Boolean(
+    submission?.aiEvaluation || submission?.aiEvaluationError,
+  );
   const criteria = submission?.miniInternship?.skillCriteria || [];
 
   useEffect(() => {
@@ -91,7 +98,11 @@ export const EmployerMiniInternshipReviewPage = () => {
     }
 
     void loadSubmissionsForMiniInternship(submission.miniInternshipId);
-  }, [isAllowed, loadSubmissionsForMiniInternship, submission?.miniInternshipId]);
+  }, [
+    isAllowed,
+    loadSubmissionsForMiniInternship,
+    submission?.miniInternshipId,
+  ]);
 
   useEffect(() => {
     if (!submission) {
@@ -99,40 +110,72 @@ export const EmployerMiniInternshipReviewPage = () => {
     }
 
     setDecisionStatus(normalizeDecisionStatus(submission.decisionStatus));
-    setOverallComment(submission.overallComment || '');
-    setAllowCandidateToAddToPortfolio(Boolean(submission.allowCandidateToAddToPortfolio));
+    setOverallComment(submission.overallComment || "");
+    setAllowCandidateToAddToPortfolio(
+      Boolean(submission.allowCandidateToAddToPortfolio),
+    );
 
     const existingScores = new Map<string, SubmissionSkillScore>(
-      (submission.skillScores || []).map((score) => [score.skillCriterionId, score]),
+      (submission.skillScores || []).map((score) => [
+        score.skillCriterionId,
+        score,
+      ]),
     );
 
     const nextDrafts =
       criteria.length > 0
-        ? criteria.map((criterion) => makeScoreDraft(criterion, existingScores.get(criterion.id || criterion.name)))
+        ? criteria.map((criterion) =>
+            makeScoreDraft(
+              criterion,
+              existingScores.get(criterion.id || criterion.name),
+            ),
+          )
         : (submission.skillScores || []).map((score, index) => ({
             skillCriterionId: score.skillCriterionId,
             score: score.score,
-            comment: score.comment || '',
-            name: score.skillCriterion?.name || score.skillCriterionId || t('employerMiniInternships.criterionFallback', { index: index + 1 }),
+            comment: score.comment || "",
+            name:
+              score.skillCriterion?.name ||
+              score.skillCriterionId ||
+              t("employerMiniInternships.criterionFallback", {
+                index: index + 1,
+              }),
             maxScore: score.skillCriterion?.maxScore || 10,
           }));
 
     setScoreDrafts(nextDrafts);
   }, [criteria, submission, t]);
 
-  const aiLinks = useMemo(() => getSubmissionLinks(submission?.externalLinks), [submission?.externalLinks]);
+  const aiLinks = useMemo(
+    () => getSubmissionLinks(submission?.externalLinks),
+    [submission?.externalLinks],
+  );
   const analytics = useMemo(() => {
     const items = miniInternshipSubmissions || [];
-    const submittedItems = items.filter((item) => ['SUBMITTED', 'LATE', 'REVIEWED', 'REJECTED'].includes(String(item.status || '').toUpperCase()));
+    const submittedItems = items.filter((item) =>
+      ["SUBMITTED", "LATE", "REVIEWED", "REJECTED"].includes(
+        String(item.status || "").toUpperCase(),
+      ),
+    );
     const reviewedItems = items.filter((item) => Boolean(item.reviewedAt));
     const averageScore =
       reviewedItems.length > 0
-        ? reviewedItems.reduce((sum, item) => sum + (item.weightedScore ?? item.averageScore ?? item.overallScore ?? 0), 0) /
-          reviewedItems.length
+        ? reviewedItems.reduce(
+            (sum, item) =>
+              sum +
+              (item.weightedScore ??
+                item.averageScore ??
+                item.overallScore ??
+                0),
+            0,
+          ) / reviewedItems.length
         : 0;
     const averageTime =
       submittedItems.length > 0
-        ? submittedItems.reduce((sum, item) => sum + (item.timeSpentSeconds || 0), 0) / submittedItems.length
+        ? submittedItems.reduce(
+            (sum, item) => sum + (item.timeSpentSeconds || 0),
+            0,
+          ) / submittedItems.length
         : 0;
     return {
       total: items.length,
@@ -141,7 +184,12 @@ export const EmployerMiniInternshipReviewPage = () => {
       averageScore,
       averageTime,
       dropOffRate:
-        items.length > 0 ? Math.max(0, 100 - Math.round((submittedItems.length / items.length) * 100)) : 0,
+        items.length > 0
+          ? Math.max(
+              0,
+              100 - Math.round((submittedItems.length / items.length) * 100),
+            )
+          : 0,
     };
   }, [miniInternshipSubmissions]);
 
@@ -149,7 +197,8 @@ export const EmployerMiniInternshipReviewPage = () => {
     const scored = (miniInternshipSubmissions || [])
       .map((item) => ({
         submission: item,
-        score: item.weightedScore ?? item.averageScore ?? item.overallScore ?? 0,
+        score:
+          item.weightedScore ?? item.averageScore ?? item.overallScore ?? 0,
       }))
       .sort((left, right) => right.score - left.score)
       .slice(0, 2);
@@ -157,13 +206,17 @@ export const EmployerMiniInternshipReviewPage = () => {
     return scored;
   }, [miniInternshipSubmissions]);
 
-  const updateScoreDraft = (index: number, field: keyof Pick<ScoreDraft, 'score' | 'comment'>, value: string) => {
+  const updateScoreDraft = (
+    index: number,
+    field: keyof Pick<ScoreDraft, "score" | "comment">,
+    value: string,
+  ) => {
     setScoreDrafts((prev) =>
       prev.map((entry, itemIndex) =>
         itemIndex === index
           ? {
               ...entry,
-              [field]: field === 'score' ? Number(value) : value,
+              [field]: field === "score" ? Number(value) : value,
             }
           : entry,
       ),
@@ -193,9 +246,13 @@ export const EmployerMiniInternshipReviewPage = () => {
           comment: comment?.trim() || undefined,
         })),
       });
-      setPageSuccess(t('employerMiniInternships.reviewSaved'));
+      setPageSuccess(t("employerMiniInternships.reviewSaved"));
     } catch (reviewError) {
-      setPageError(reviewError instanceof Error ? reviewError.message : t('employerMiniInternships.reviewFailed'));
+      setPageError(
+        reviewError instanceof Error
+          ? reviewError.message
+          : t("employerMiniInternships.reviewFailed"),
+      );
     }
   };
 
@@ -210,8 +267,12 @@ export const EmployerMiniInternshipReviewPage = () => {
         <main className="app-page-main">
           <section className="app-section-card p-8 text-center">
             <ShieldAlert className="mx-auto h-12 w-12 text-[var(--surface-text-soft)]" />
-            <h1 className="app-title mt-4 text-3xl">{t('employerMiniInternships.accessDeniedTitle')}</h1>
-            <p className="app-text-muted mt-2">{t('employerMiniInternships.accessDeniedDescription')}</p>
+            <h1 className="app-title mt-4 text-3xl">
+              {t("employerMiniInternships.accessDeniedTitle")}
+            </h1>
+            <p className="app-text-muted mt-2">
+              {t("employerMiniInternships.accessDeniedDescription")}
+            </p>
           </section>
         </main>
       </div>
@@ -225,11 +286,17 @@ export const EmployerMiniInternshipReviewPage = () => {
         <main className="app-page-main">
           <section className="app-section-card p-8 text-center">
             <FileText className="mx-auto h-12 w-12 text-[var(--surface-text-soft)]" />
-            <h1 className="app-title mt-4 text-3xl">{t('miniInternships.notFoundTitle')}</h1>
-            <p className="app-text-muted mt-2">{t('employerMiniInternships.submissionNotFoundDescription')}</p>
+            <h1 className="app-title mt-4 text-3xl">
+              {t("miniInternships.notFoundTitle")}
+            </h1>
+            <p className="app-text-muted mt-2">
+              {t("employerMiniInternships.submissionNotFoundDescription")}
+            </p>
             <div className="mt-6">
               <Link to="/app/employer/mini-internships">
-                <Button variant="outline">{t('employerMiniInternships.backToList')}</Button>
+                <Button variant="outline">
+                  {t("employerMiniInternships.backToList")}
+                </Button>
               </Link>
             </div>
           </section>
@@ -248,7 +315,7 @@ export const EmployerMiniInternshipReviewPage = () => {
           className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--surface-text-muted)] transition-colors hover:text-[var(--surface-text-primary)]"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t('employerMiniInternships.backToSubmissions')}
+          {t("employerMiniInternships.backToSubmissions")}
         </Link>
 
         <section className="app-section-card app-page-hero app-grid-backdrop relative overflow-hidden p-6 sm:p-8">
@@ -256,22 +323,26 @@ export const EmployerMiniInternshipReviewPage = () => {
             <div className="max-w-3xl">
               <p className="app-chip mb-4">
                 <CheckCheck className="h-3.5 w-3.5" />
-                {t('employerMiniInternships.reviewBadge')}
+                {t("employerMiniInternships.reviewBadge")}
               </p>
               <h1 className="app-title text-3xl sm:text-4xl">
-                {submission?.miniInternship?.title || t('miniInternships.untitledTask')}
+                {submission?.miniInternship?.title ||
+                  t("miniInternships.untitledTask")}
               </h1>
               <p className="app-text-muted mt-3 max-w-2xl text-sm sm:text-base">
-                {getPersonName(submission?.student, t('common.candidate'))}
+                {getPersonName(submission?.student, t("common.candidate"))}
               </p>
             </div>
 
             <div className="app-kpi-card p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                {t('miniInternships.score')}
+                {t("miniInternships.score")}
               </p>
               <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">
-                {submission?.weightedScore ?? submission?.averageScore ?? submission?.overallScore ?? 0}
+                {submission?.weightedScore ??
+                  submission?.averageScore ??
+                  submission?.overallScore ??
+                  0}
               </p>
             </div>
           </div>
@@ -280,23 +351,47 @@ export const EmployerMiniInternshipReviewPage = () => {
         {(error || pageError || pageSuccess || isLoading || isMutating) && (
           <div className="mt-4 space-y-2">
             {error && (
-              <div className="rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-danger-bg)', color: 'var(--tone-danger-text)' }}>
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "var(--tone-danger-bg)",
+                  color: "var(--tone-danger-text)",
+                }}
+              >
                 {error}
               </div>
             )}
             {pageError && (
-              <div className="rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-warning-bg)', color: 'var(--tone-warning-text)' }}>
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "var(--tone-warning-bg)",
+                  color: "var(--tone-warning-text)",
+                }}
+              >
                 {pageError}
               </div>
             )}
             {pageSuccess && (
-              <div className="rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-success-bg)', color: 'var(--tone-success-text)' }}>
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "var(--tone-success-bg)",
+                  color: "var(--tone-success-text)",
+                }}
+              >
                 {pageSuccess}
               </div>
             )}
             {isLoading && (
-              <div className="rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--surface-soft)', color: 'var(--surface-text-primary)' }}>
-                {t('employerMiniInternships.loading')}
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "var(--surface-soft)",
+                  color: "var(--surface-text-primary)",
+                }}
+              >
+                {t("employerMiniInternships.loading")}
               </div>
             )}
           </div>
@@ -308,19 +403,25 @@ export const EmployerMiniInternshipReviewPage = () => {
               <div className="app-section-card p-5 sm:p-6" style={cardStyle}>
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{t('miniInternships.status')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                      {t("miniInternships.status")}
+                    </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
                       {formatEnumLabel(submission.status)}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{t('miniInternships.decisionStatus')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                      {t("miniInternships.decisionStatus")}
+                    </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
                       {formatEnumLabel(decisionStatus)}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">{t('miniInternships.submittedAt')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                      {t("miniInternships.submittedAt")}
+                    </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
                       {formatDateTime(submission.submittedAt || undefined)}
                     </p>
@@ -329,32 +430,50 @@ export const EmployerMiniInternshipReviewPage = () => {
               </div>
 
               <div className="app-section-card p-5 sm:p-6">
-                <h2 className="app-title text-xl">{t('employerMiniInternships.reviewFormTitle')}</h2>
+                <h2 className="app-title text-xl">
+                  {t("employerMiniInternships.reviewFormTitle")}
+                </h2>
                 <div className="mt-4 grid gap-4">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[var(--surface-text-primary)]">
-                      {t('employerMiniInternships.decisionStatus')}
+                      {t("employerMiniInternships.decisionStatus")}
                     </label>
                     <select
                       value={decisionStatus}
-                      onChange={(event) => setDecisionStatus(event.target.value as typeof decisionStatus)}
+                      onChange={(event) =>
+                        setDecisionStatus(
+                          event.target.value as typeof decisionStatus,
+                        )
+                      }
                       className="flex h-11 w-full rounded-2xl border border-[#D6DED7] bg-white px-4 py-2 text-sm text-[#1D261F] dark:border-[#314036] dark:bg-[#111814] dark:text-[#E7EFE8]"
                     >
-                      <option value="reviewed">{t('miniInternships.decision.reviewed')}</option>
-                      <option value="accepted">{t('miniInternships.decision.accepted')}</option>
-                      <option value="rejected">{t('miniInternships.decision.rejected')}</option>
-                      <option value="shortlisted">{t('miniInternships.decision.shortlisted')}</option>
+                      <option value="reviewed">
+                        {t("miniInternships.decision.reviewed")}
+                      </option>
+                      <option value="accepted">
+                        {t("miniInternships.decision.accepted")}
+                      </option>
+                      <option value="rejected">
+                        {t("miniInternships.decision.rejected")}
+                      </option>
+                      <option value="shortlisted">
+                        {t("miniInternships.decision.shortlisted")}
+                      </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[var(--surface-text-primary)]">
-                      {t('employerMiniInternships.overallComment')}
+                      {t("employerMiniInternships.overallComment")}
                     </label>
                     <Textarea
                       value={overallComment}
-                      onChange={(event) => setOverallComment(event.target.value)}
-                      placeholder={t('employerMiniInternships.overallCommentPlaceholder')}
+                      onChange={(event) =>
+                        setOverallComment(event.target.value)
+                      }
+                      placeholder={t(
+                        "employerMiniInternships.overallCommentPlaceholder",
+                      )}
                     />
                     <div className="mt-3 flex flex-wrap gap-2">
                       {FEEDBACK_TEMPLATES.map((template) => (
@@ -374,9 +493,11 @@ export const EmployerMiniInternshipReviewPage = () => {
                     <input
                       type="checkbox"
                       checked={allowCandidateToAddToPortfolio}
-                      onChange={(event) => setAllowCandidateToAddToPortfolio(event.target.checked)}
+                      onChange={(event) =>
+                        setAllowCandidateToAddToPortfolio(event.target.checked)
+                      }
                     />
-                    {t('employerMiniInternships.allowPortfolio')}
+                    {t("employerMiniInternships.allowPortfolio")}
                   </label>
                 </div>
               </div>
@@ -384,64 +505,103 @@ export const EmployerMiniInternshipReviewPage = () => {
               <div className="app-section-card p-5 sm:p-6">
                 <div className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-[var(--tone-info-text)]" />
-                  <h2 className="app-title text-xl">{t('employerMiniInternships.criteriaScoring')}</h2>
+                  <h2 className="app-title text-xl">
+                    {t("employerMiniInternships.criteriaScoring")}
+                  </h2>
                 </div>
                 <div className="mt-4 space-y-4">
                   {scoreDrafts.length ? (
                     scoreDrafts.map((scoreDraft, index) => (
-                      <div key={scoreDraft.skillCriterionId} className="rounded-2xl border border-[#D6DED7] p-4">
+                      <div
+                        key={scoreDraft.skillCriterionId}
+                        className="rounded-2xl border border-[#D6DED7] p-4"
+                      >
                         <div className="grid gap-3 md:grid-cols-2">
                           <div>
-                            <p className="text-sm font-semibold text-[var(--surface-text-primary)]">{scoreDraft.name}</p>
+                            <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                              {scoreDraft.name}
+                            </p>
                             <p className="text-xs text-[var(--surface-text-muted)]">
-                              {t('employerMiniInternships.maxScore')}: {scoreDraft.maxScore}
+                              {t("employerMiniInternships.maxScore")}:{" "}
+                              {scoreDraft.maxScore}
                             </p>
                           </div>
                           <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                              {t('employerMiniInternships.score')}
+                              {t("employerMiniInternships.score")}
                             </label>
                             <Input
                               type="number"
                               min={0}
                               max={scoreDraft.maxScore}
                               value={scoreDraft.score}
-                              onChange={(event) => updateScoreDraft(index, 'score', event.target.value)}
+                              onChange={(event) =>
+                                updateScoreDraft(
+                                  index,
+                                  "score",
+                                  event.target.value,
+                                )
+                              }
                             />
                           </div>
                         </div>
                         <div className="mt-3">
                           <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                            {t('employerMiniInternships.scoreComment')}
+                            {t("employerMiniInternships.scoreComment")}
                           </label>
                           <Textarea
-                            value={scoreDraft.comment || ''}
-                            onChange={(event) => updateScoreDraft(index, 'comment', event.target.value)}
-                            placeholder={t('employerMiniInternships.scoreCommentPlaceholder')}
+                            value={scoreDraft.comment || ""}
+                            onChange={(event) =>
+                              updateScoreDraft(
+                                index,
+                                "comment",
+                                event.target.value,
+                              )
+                            }
+                            placeholder={t(
+                              "employerMiniInternships.scoreCommentPlaceholder",
+                            )}
                           />
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-[var(--surface-text-muted)]">{t('employerMiniInternships.noCriteriaToScore')}</p>
+                    <p className="text-sm text-[var(--surface-text-muted)]">
+                      {t("employerMiniInternships.noCriteriaToScore")}
+                    </p>
                   )}
                 </div>
 
-                <Button variant="hero" className="mt-5" onClick={() => void handleSubmit()} disabled={isMutating}>
-                  {t('employerMiniInternships.saveReview')}
+                <Button
+                  variant="hero"
+                  className="mt-5"
+                  onClick={() => void handleSubmit()}
+                  disabled={isMutating}
+                >
+                  {t("employerMiniInternships.saveReview")}
                 </Button>
               </div>
 
               {submission.files?.length ? (
                 <div className="app-section-card p-5 sm:p-6">
-                  <h2 className="app-title text-xl">{t('miniInternships.submissionFiles')}</h2>
+                  <h2 className="app-title text-xl">
+                    {t("miniInternships.submissionFiles")}
+                  </h2>
                   <div className="mt-4 grid gap-3">
                     {submission.files.map((file) => (
-                      <div key={file.id} className="rounded-2xl border border-[#D6DED7] p-4">
+                      <div
+                        key={file.id}
+                        className="rounded-2xl border border-[#D6DED7] p-4"
+                      >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="font-semibold text-[var(--surface-text-primary)]">{getFileLabel(file)}</p>
-                            <p className="text-sm text-[var(--surface-text-muted)]">{file.mimeType || t('miniInternships.fileAttached')}</p>
+                            <p className="font-semibold text-[var(--surface-text-primary)]">
+                              {getFileLabel(file)}
+                            </p>
+                            <p className="text-sm text-[var(--surface-text-muted)]">
+                              {file.mimeType ||
+                                t("miniInternships.fileAttached")}
+                            </p>
                           </div>
                           {file.downloadUrl ? (
                             <a
@@ -450,7 +610,7 @@ export const EmployerMiniInternshipReviewPage = () => {
                               rel="noreferrer"
                               className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
                             >
-                              {t('common.open')}
+                              {t("common.open")}
                             </a>
                           ) : null}
                         </div>
@@ -463,42 +623,49 @@ export const EmployerMiniInternshipReviewPage = () => {
 
             <aside className="space-y-4">
               <div className="app-section-card p-5 sm:p-6 sticky top-28">
-                <h2 className="app-title text-xl">{t('employerMiniInternships.submissionSummary')}</h2>
+                <h2 className="app-title text-xl">
+                  {t("employerMiniInternships.submissionSummary")}
+                </h2>
                 <div className="mt-4 space-y-3">
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                      {t('common.candidate')}
+                      {t("common.candidate")}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
-                      {getPersonName(submission.student, t('common.candidate'))}
+                      {getPersonName(submission.student, t("common.candidate"))}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                      {t('miniInternships.score')}
+                      {t("miniInternships.score")}
                     </p>
                     <p className="mt-2 text-2xl font-extrabold text-[var(--surface-text-primary)]">
-                      {submission.weightedScore ?? submission.averageScore ?? submission.overallScore ?? 0}
+                      {submission.weightedScore ??
+                        submission.averageScore ??
+                        submission.overallScore ??
+                        0}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                      {t('miniInternships.portfolioEligibility')}
+                      {t("miniInternships.portfolioEligibility")}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
-                      {submission.allowCandidateToAddToPortfolio ? t('common.yes') : t('common.no')}
+                      {submission.allowCandidateToAddToPortfolio
+                        ? t("common.yes")
+                        : t("common.no")}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                    {t('employerMiniInternships.analyticsBadge')}
+                    {t("employerMiniInternships.analyticsBadge")}
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
                       <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                        {t('employerMiniInternships.submissionCount')}
+                        {t("employerMiniInternships.submissionCount")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
                         {analytics.total}
@@ -506,7 +673,7 @@ export const EmployerMiniInternshipReviewPage = () => {
                     </div>
                     <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
                       <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                        {t('employerMiniInternships.reviewedCount')}
+                        {t("employerMiniInternships.reviewedCount")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
                         {analytics.reviewed}
@@ -514,7 +681,7 @@ export const EmployerMiniInternshipReviewPage = () => {
                     </div>
                     <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
                       <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                        {t('employerMiniInternships.averageScore')}
+                        {t("employerMiniInternships.averageScore")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
                         {analytics.averageScore.toFixed(1)}
@@ -522,7 +689,7 @@ export const EmployerMiniInternshipReviewPage = () => {
                     </div>
                     <div className="rounded-2xl bg-[var(--surface-soft)] p-3">
                       <p className="text-xs uppercase tracking-[0.12em] text-[var(--surface-text-soft)]">
-                        {t('employerMiniInternships.averageTime')}
+                        {t("employerMiniInternships.averageTime")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold text-[var(--surface-text-primary)]">
                         {Math.round(analytics.averageTime / 60)}m
@@ -530,60 +697,159 @@ export const EmployerMiniInternshipReviewPage = () => {
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-[var(--surface-text-muted)]">
-                    {t('employerMiniInternships.dropOffHint', { value: analytics.dropOffRate })}
+                    {t("employerMiniInternships.dropOffHint", {
+                      value: analytics.dropOffRate,
+                    })}
                   </p>
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                    {t('employerMiniInternships.compareCandidates')}
+                    {t("employerMiniInternships.compareCandidates")}
                   </p>
                   <div className="mt-3 space-y-3">
                     {candidateComparison.length ? (
-                      candidateComparison.map(({ submission: candidateSubmission, score }, index) => (
-                        <div key={candidateSubmission.id} className="rounded-2xl bg-[var(--surface-soft)] p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
-                                {index === 0 ? t('employerMiniInternships.candidateA') : t('employerMiniInternships.candidateB')}
-                              </p>
-                              <p className="text-sm text-[var(--surface-text-muted)]">
-                                {getPersonName(candidateSubmission.student, t('common.candidate'))}
+                      candidateComparison.map(
+                        ({ submission: candidateSubmission, score }, index) => (
+                          <div
+                            key={candidateSubmission.id}
+                            className="rounded-2xl bg-[var(--surface-soft)] p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                                  {index === 0
+                                    ? t("employerMiniInternships.candidateA")
+                                    : t("employerMiniInternships.candidateB")}
+                                </p>
+                                <p className="text-sm text-[var(--surface-text-muted)]">
+                                  {getPersonName(
+                                    candidateSubmission.student,
+                                    t("common.candidate"),
+                                  )}
+                                </p>
+                              </div>
+                              <p className="text-lg font-extrabold text-[var(--surface-text-primary)]">
+                                {score.toFixed(1)}
                               </p>
                             </div>
-                            <p className="text-lg font-extrabold text-[var(--surface-text-primary)]">{score.toFixed(1)}</p>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--surface-text-muted)]">
+                              {(candidateSubmission.skillScores || []).map(
+                                (skillScore) => (
+                                  <span
+                                    key={skillScore.skillCriterionId}
+                                    className="rounded-full border border-[#D6DED7] px-2.5 py-1"
+                                  >
+                                    {skillScore.skillCriterion?.name ||
+                                      skillScore.skillCriterionId}
+                                    : {skillScore.score}
+                                  </span>
+                                ),
+                              )}
+                            </div>
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--surface-text-muted)]">
-                            {(candidateSubmission.skillScores || []).map((skillScore) => (
-                              <span key={skillScore.skillCriterionId} className="rounded-full border border-[#D6DED7] px-2.5 py-1">
-                                {skillScore.skillCriterion?.name || skillScore.skillCriterionId}: {skillScore.score}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))
+                        ),
+                      )
                     ) : (
                       <p className="text-sm text-[var(--surface-text-muted)]">
-                        {t('employerMiniInternships.compareEmpty')}
+                        {t("employerMiniInternships.compareEmpty")}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {submission.aiEvaluation && (
+                {showAiReview && hasAiReview && (
                   <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-[var(--tone-info-text)]" />
-                      <p className="text-sm font-semibold text-[var(--surface-text-primary)]">{t('miniInternships.aiEvaluation')}</p>
+                      <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                        {t("miniInternships.aiEvaluation")}
+                      </p>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {t("miniInternships.aiOverallScore")}
+                        </p>
+                        <p className="mt-2 text-lg font-extrabold text-[var(--surface-text-primary)]">
+                          {submission.aiEvaluation?.overallScore ?? "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {t("miniInternships.aiEvaluatedAt")}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                          {formatDateTime(
+                            submission.aiEvaluatedAt || undefined,
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {t("miniInternships.aiProvider")}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                          {submission.aiEvaluation?.provider || "Gemini"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {t("miniInternships.aiModel")}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
+                          {submission.aiEvaluation?.model || "—"}
+                        </p>
+                      </div>
                     </div>
                     <p className="mt-3 whitespace-pre-wrap text-sm text-[var(--surface-text-muted)]">
-                      {submission.aiEvaluation.summary || t('miniInternships.aiSummaryFallback')}
+                      {submission.aiEvaluation?.summary ||
+                        t("miniInternships.aiSummaryFallback")}
                     </p>
+                    {submission.aiEvaluation?.criterionResults?.length ? (
+                      <div className="mt-4 space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
+                          {t("miniInternships.aiCriteriaBreakdown")}
+                        </p>
+                        {submission.aiEvaluation?.criterionResults?.map(
+                          (criterion) => (
+                            <div
+                              key={criterion.skillCriterionId}
+                              className="rounded-2xl bg-[var(--surface-soft)] p-4"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                                  {criteria.find(
+                                    (item) =>
+                                      (item.id || item.name) ===
+                                      criterion.skillCriterionId,
+                                  )?.name || criterion.skillCriterionId}
+                                </p>
+                                <p className="text-sm font-extrabold text-[var(--tone-info-text)]">
+                                  {criterion.score}
+                                </p>
+                              </div>
+                              {criterion.comment ? (
+                                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
+                                  {criterion.comment}
+                                </p>
+                              ) : null}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 )}
 
                 {submission.aiEvaluationError && (
-                  <div className="mt-5 rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--tone-warning-bg)', color: 'var(--tone-warning-text)' }}>
+                  <div
+                    className="mt-5 rounded-2xl px-4 py-3 text-sm"
+                    style={{
+                      backgroundColor: "var(--tone-warning-bg)",
+                      color: "var(--tone-warning-text)",
+                    }}
+                  >
                     {submission.aiEvaluationError}
                   </div>
                 )}
@@ -591,8 +857,16 @@ export const EmployerMiniInternshipReviewPage = () => {
                 {submission.integrityIndicators?.length ? (
                   <div className="mt-5 space-y-3">
                     {submission.integrityIndicators.map((indicator, index) => (
-                      <div key={indicator.id || `${indicator.code || 'indicator'}-${index}`} className="rounded-2xl border border-[#D6DED7] p-4">
-                        <p className="text-sm font-semibold text-[var(--surface-text-primary)]">{indicator.reason}</p>
+                      <div
+                        key={
+                          indicator.id ||
+                          `${indicator.code || "indicator"}-${index}`
+                        }
+                        className="rounded-2xl border border-[#D6DED7] p-4"
+                      >
+                        <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
+                          {indicator.reason}
+                        </p>
                         <p className="mt-1 text-xs text-[var(--surface-text-muted)]">
                           {indicator.severity}
                         </p>
@@ -602,14 +876,39 @@ export const EmployerMiniInternshipReviewPage = () => {
                 ) : null}
 
                 <div className="mt-5 flex flex-col gap-3">
+                  {hasAiReview && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      onClick={() => setShowAiReview((current) => !current)}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        {showAiReview
+                          ? t("miniInternships.hideAiReview")
+                          : t("miniInternships.openAiReview")}
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--tone-info-text)]">
+                        {submission?.aiEvaluation
+                          ? t("miniInternships.aiStatusReady")
+                          : t("miniInternships.aiStatusUnavailable")}
+                      </span>
+                    </Button>
+                  )}
                   {submission.externalLinks?.length ? (
                     <div className="rounded-2xl border border-[#D6DED7] p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                        {t('miniInternships.externalLinksLabel')}
+                        {t("miniInternships.externalLinksLabel")}
                       </p>
                       <div className="mt-3 flex flex-col gap-2">
                         {aiLinks.map((link) => (
-                          <a key={link} href={link} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[var(--tone-info-text)] hover:underline">
+                          <a
+                            key={link}
+                            href={link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-semibold text-[var(--tone-info-text)] hover:underline"
+                          >
                             {link}
                           </a>
                         ))}
@@ -617,9 +916,11 @@ export const EmployerMiniInternshipReviewPage = () => {
                     </div>
                   ) : null}
 
-                  <Link to={`/app/mini-internships/${submission.miniInternshipId}/submit`}>
+                  <Link
+                    to={`/app/mini-internships/${submission.miniInternshipId}/submit`}
+                  >
                     <Button variant="outline" className="w-full">
-                      {t('employerMiniInternships.openCandidateFlow')}
+                      {t("employerMiniInternships.openCandidateFlow")}
                     </Button>
                   </Link>
                 </div>

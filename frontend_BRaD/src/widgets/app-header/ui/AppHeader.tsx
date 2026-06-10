@@ -8,7 +8,6 @@ import {
   BarChart3,
   GripHorizontal,
   GraduationCap,
-  LayoutDashboard,
   LogOut,
   Menu,
   MessageSquare,
@@ -26,9 +25,10 @@ import { useMediaStore } from '@entities/media';
 import { ChatWindow } from '@features/chat';
 import { BrandLogo, PreferencesControls } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
+import { cn } from '@shared/lib/utils';
 
 const navLinkBase =
-  'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all duration-200';
+  'inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 text-sm font-semibold leading-none transition-all duration-200';
 
 const navLinkState = ({ isActive }: { isActive: boolean }) =>
   isActive
@@ -448,7 +448,6 @@ export const AppHeader = () => {
 
   const navItems = useMemo(() => {
     const items = [
-      { to: '/app', label: t('nav.dashboard'), icon: LayoutDashboard },
       { to: '/app/jobs', label: t('nav.jobs'), icon: Briefcase },
     ];
 
@@ -487,7 +486,7 @@ export const AppHeader = () => {
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4">
       <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2 rounded-[20px] border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2.5 shadow-[0_12px_30px_rgba(16,24,18,0.06)] sm:gap-3 sm:px-4">
-        <Link to="/app" className="shrink-0">
+        <Link to="/app" aria-label={t('nav.dashboard')} className="shrink-0 inline-flex items-center">
           <BrandLogo className="h-12 sm:h-14" />
         </Link>
 
@@ -497,8 +496,8 @@ export const AppHeader = () => {
 
             return (
               <NavLink key={item.to} to={item.to} className={navLinkState} end={item.to === '/app'}>
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <Icon className="h-5 w-5" />
+                <span className="whitespace-nowrap">{item.label}</span>
               </NavLink>
             );
           })}
@@ -514,7 +513,7 @@ export const AppHeader = () => {
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
                 title={t('header.notifications')}
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                   <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[#D6462E] px-1 text-center text-[10px] font-bold text-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -528,7 +527,7 @@ export const AppHeader = () => {
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821]"
                 title={t('header.messages')}
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-5 w-5" />
                 {unreadChatCount > 0 && (
                   <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[#1E6648] px-1 text-center text-[10px] font-bold text-white">
                     {unreadChatCount > 9 ? '9+' : unreadChatCount}
@@ -544,7 +543,7 @@ export const AppHeader = () => {
                   <img src={avatarSrc} alt={currentUser?.name || 'User'} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[#2B3B23] dark:text-[#E7EFE8]">
-                    <User className="h-4 w-4" />
+                    <User className="h-5 w-5" />
                   </div>
                 )}
               </Link>
@@ -553,7 +552,7 @@ export const AppHeader = () => {
                 onClick={() => void handleLogout()}
                 className="hidden items-center gap-2 rounded-xl border border-[#E3E9E4] bg-white dark:border-[#314036] dark:bg-[#161D18] px-3 py-2 text-sm font-semibold text-[#26362B] dark:text-[#E7EFE8] transition-colors hover:bg-[#F5F8F5] dark:hover:bg-[#1D2821] md:inline-flex"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
                 {t('nav.logout')}
               </button>
             </>
@@ -602,8 +601,8 @@ export const AppHeader = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   end={item.to === '/app'}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <Icon className="h-5 w-5" />
+                  <span className="whitespace-nowrap">{item.label}</span>
                 </NavLink>
               );
             })}
@@ -615,7 +614,7 @@ export const AppHeader = () => {
                   className={navLinkState}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Bell className="h-4 w-4" />
+                  <Bell className="h-5 w-5" />
                   {t('nav.notifications')} {unreadCount > 0 ? `(${unreadCount})` : ''}
                 </NavLink>
 
@@ -624,7 +623,7 @@ export const AppHeader = () => {
                   className={navLinkState}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-5 w-5" />
                   {t('nav.messages')} {unreadChatCount > 0 ? `(${unreadChatCount})` : ''}
                 </NavLink>
 
@@ -635,7 +634,7 @@ export const AppHeader = () => {
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-[#324338] dark:text-[#C1D0C6] hover:border-[#E2E9E3] hover:bg-[#F8FAF8] dark:hover:bg-[#1B241E]"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-5 w-5" />
                   {t('nav.logout')}
                 </button>
               </>
