@@ -25,8 +25,6 @@ import { useMediaStore } from '@entities/media';
 import { ChatWindow } from '@features/chat';
 import { BrandLogo, PreferencesControls } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
-import { cn } from '@shared/lib/utils';
-
 const navLinkBase =
   'inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 text-sm font-semibold leading-none transition-all duration-200';
 
