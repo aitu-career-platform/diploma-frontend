@@ -5,7 +5,6 @@ import {
   CheckCheck,
   FileText,
   ShieldAlert,
-  Sparkles,
   Star,
 } from "lucide-react";
 import { AppHeader } from "@widgets/app-header";
@@ -75,13 +74,9 @@ export const EmployerMiniInternshipReviewPage = () => {
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDraft[]>([]);
   const [pageError, setPageError] = useState<string | null>(null);
   const [pageSuccess, setPageSuccess] = useState<string | null>(null);
-  const [showAiReview, setShowAiReview] = useState(false);
 
   const isAllowed = isAuthenticated && isEmployerRole(currentUser?.role);
   const submission = selectedSubmission?.id === id ? selectedSubmission : null;
-  const hasAiReview = Boolean(
-    submission?.aiEvaluation || submission?.aiEvaluationError,
-  );
   const criteria = submission?.miniInternship?.skillCriteria || [];
 
   useEffect(() => {
@@ -758,102 +753,6 @@ export const EmployerMiniInternshipReviewPage = () => {
                   </div>
                 </div>
 
-                {showAiReview && hasAiReview && (
-                  <div className="mt-5 rounded-2xl border border-[#D6DED7] p-4">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-[var(--tone-info-text)]" />
-                      <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
-                        {t("miniInternships.aiEvaluation")}
-                      </p>
-                    </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                          {t("miniInternships.aiOverallScore")}
-                        </p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--surface-text-primary)]">
-                          {submission.aiEvaluation?.overallScore ?? "—"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                          {t("miniInternships.aiEvaluatedAt")}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
-                          {formatDateTime(
-                            submission.aiEvaluatedAt || undefined,
-                          )}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                          {t("miniInternships.aiProvider")}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
-                          {submission.aiEvaluation?.provider || "Gemini"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                          {t("miniInternships.aiModel")}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[var(--surface-text-primary)]">
-                          {submission.aiEvaluation?.model || "—"}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="mt-3 whitespace-pre-wrap text-sm text-[var(--surface-text-muted)]">
-                      {submission.aiEvaluation?.summary ||
-                        t("miniInternships.aiSummaryFallback")}
-                    </p>
-                    {submission.aiEvaluation?.criterionResults?.length ? (
-                      <div className="mt-4 space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
-                          {t("miniInternships.aiCriteriaBreakdown")}
-                        </p>
-                        {submission.aiEvaluation?.criterionResults?.map(
-                          (criterion) => (
-                            <div
-                              key={criterion.skillCriterionId}
-                              className="rounded-2xl bg-[var(--surface-soft)] p-4"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <p className="text-sm font-semibold text-[var(--surface-text-primary)]">
-                                  {criteria.find(
-                                    (item) =>
-                                      (item.id || item.name) ===
-                                      criterion.skillCriterionId,
-                                  )?.name || criterion.skillCriterionId}
-                                </p>
-                                <p className="text-sm font-extrabold text-[var(--tone-info-text)]">
-                                  {criterion.score}
-                                </p>
-                              </div>
-                              {criterion.comment ? (
-                                <p className="mt-2 text-sm text-[var(--surface-text-muted)]">
-                                  {criterion.comment}
-                                </p>
-                              ) : null}
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {submission.aiEvaluationError && (
-                  <div
-                    className="mt-5 rounded-2xl px-4 py-3 text-sm"
-                    style={{
-                      backgroundColor: "var(--tone-warning-bg)",
-                      color: "var(--tone-warning-text)",
-                    }}
-                  >
-                    {submission.aiEvaluationError}
-                  </div>
-                )}
-
                 {submission.integrityIndicators?.length ? (
                   <div className="mt-5 space-y-3">
                     {submission.integrityIndicators.map((indicator, index) => (
@@ -876,25 +775,6 @@ export const EmployerMiniInternshipReviewPage = () => {
                 ) : null}
 
                 <div className="mt-5 flex flex-col gap-3">
-                  {hasAiReview && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between"
-                      onClick={() => setShowAiReview((current) => !current)}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <Sparkles className="h-4 w-4" />
-                        {showAiReview
-                          ? t("miniInternships.hideAiReview")
-                          : t("miniInternships.openAiReview")}
-                      </span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--tone-info-text)]">
-                        {submission?.aiEvaluation
-                          ? t("miniInternships.aiStatusReady")
-                          : t("miniInternships.aiStatusUnavailable")}
-                      </span>
-                    </Button>
-                  )}
                   {submission.externalLinks?.length ? (
                     <div className="rounded-2xl border border-[#D6DED7] p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--surface-text-soft)]">
