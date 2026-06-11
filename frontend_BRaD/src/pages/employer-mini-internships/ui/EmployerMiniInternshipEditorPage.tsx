@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -182,6 +182,7 @@ export const EmployerMiniInternshipEditorPage = () => {
   const [taskFile, setTaskFile] = useState<File | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [pageSuccess, setPageSuccess] = useState<string | null>(null);
+  const taskFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isAllowed = isAuthenticated && isEmployerRole(currentUser?.role);
   const detail = selectedMiniInternship?.id === currentId ? selectedMiniInternship : null;
@@ -519,8 +520,19 @@ export const EmployerMiniInternshipEditorPage = () => {
     }
   };
 
+  const ensureMiniInternshipForUpload = async (): Promise<string> => {
+    if (effectiveMiniInternshipId) {
+      return effectiveMiniInternshipId;
+    }
+
+    const saved = await createMiniInternship(buildPayload());
+    setCurrentId(saved.id);
+    navigate(`/app/employer/mini-internships/${saved.id}/edit`, { replace: true });
+    return saved.id;
+  };
+
   const handleUploadTaskFile = async () => {
-    if (!taskFile || !effectiveMiniInternshipId) {
+    if (!taskFile) {
       setPageError(t('employerMiniInternships.missingMiniInternshipId'));
       return;
     }
@@ -529,17 +541,29 @@ export const EmployerMiniInternshipEditorPage = () => {
     setPageSuccess(null);
 
     try {
+      const miniInternshipId = await ensureMiniInternshipForUpload();
       await uploadAndAttach({
         file: taskFile,
         target: 'MINI_INTERNSHIP_TASK',
-        miniInternshipId: effectiveMiniInternshipId,
+        miniInternshipId,
       });
-      await loadMiniInternship(effectiveMiniInternshipId);
+      await loadMiniInternship(miniInternshipId);
       setTaskFile(null);
+      if (taskFileInputRef.current) {
+        taskFileInputRef.current.value = '';
+      }
       setPageSuccess(t('employerMiniInternships.fileUploaded'));
     } catch (uploadError) {
       setPageError(uploadError instanceof Error ? uploadError.message : t('employerMiniInternships.uploadFailed'));
     }
+  };
+
+  const handleTaskFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+    setPageError(null);
+    setPageSuccess(null);
+    setTaskFile(file);
   };
 
   const handleDeleteTaskFile = async (fileId: string) => {
@@ -1140,11 +1164,29 @@ export const EmployerMiniInternshipEditorPage = () => {
             <div className="app-section-card p-5 sm:p-6 sticky top-28">
               <h2 className="app-title text-xl">{t('employerMiniInternships.taskFiles')}</h2>
               <p className="app-text-muted mt-2 text-sm">
-                {currentId ? t('employerMiniInternships.fileUploadHint') : t('employerMiniInternships.saveBeforeUpload')}
+                {t('employerMiniInternships.fileUploadHint')}
               </p>
               <div className="mt-4 flex flex-col gap-3">
-                <Input type="file" onChange={(event) => setTaskFile(event.target.files?.[0] || null)} disabled={!currentId} />
-                <Button variant="outline" onClick={() => void handleUploadTaskFile()} disabled={!currentId || !taskFile || isUploading}>
+                <input
+                  ref={taskFileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleTaskFileChange}
+                />
+                <div className="flex items-center gap-3 rounded-2xl border border-[#D6DED7] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(18,24,19,0.03)] dark:border-[#314036] dark:bg-[#111814]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => taskFileInputRef.current?.click()}
+                    className="h-auto min-h-0 rounded-xl border-0 bg-transparent px-0 py-0 shadow-none hover:bg-transparent"
+                  >
+                    {taskFile ? t('profile.actions.changeFile') : t('profile.actions.chooseFile')}
+                  </Button>
+                  <span className="truncate text-sm text-[var(--surface-text-muted)]">
+                    {taskFile ? taskFile.name : t('profile.empty.noFileSelected')}
+                  </span>
+                </div>
+                <Button variant="outline" onClick={() => void handleUploadTaskFile()} disabled={!taskFile || isUploading || isMutating}>
                   <UploadCloud className="h-4 w-4" />
                   {t('employerMiniInternships.uploadFile')}
                 </Button>

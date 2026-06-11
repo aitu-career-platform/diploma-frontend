@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,7 +13,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { AppHeader } from '@widgets/app-header';
-import { Button, Input, Textarea } from '@shared/ui';
+import { Button, Textarea } from '@shared/ui';
 import { useUISettings } from '@shared/lib/ui-settings';
 import { isCandidateRole, useUserStore } from '@entities/user';
 import { useApplicationStore } from '@entities/application';
@@ -93,6 +93,7 @@ export const MiniInternshipSubmitPage = () => {
   const [localSelectedFile, setLocalSelectedFile] = useState<File | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isAllowed = isAuthenticated && isCandidateRole(currentUser?.role);
   const miniInternship = selectedMiniInternship?.id === id ? selectedMiniInternship : null;
@@ -428,10 +429,14 @@ export const MiniInternshipSubmitPage = () => {
       await uploadAndAttach({
         file: localSelectedFile,
         target: 'TASK_SUBMISSION',
+        miniInternshipId: miniInternship?.id || id,
         submissionId: activeSubmission.id,
       });
       await loadSubmission(activeSubmission.id);
       setLocalSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setPageSuccess(t('miniInternships.fileUploaded'));
     } catch (uploadError) {
       setFileUploadError(uploadError instanceof Error ? uploadError.message : t('miniInternships.uploadFailed'));
@@ -453,6 +458,14 @@ export const MiniInternshipSubmitPage = () => {
         portfolioError instanceof Error ? portfolioError.message : t('miniInternships.portfolioFailed'),
       );
     }
+  };
+
+  const handleSelectFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+    setFileUploadError(null);
+    setPageSuccess(null);
+    setLocalSelectedFile(file);
   };
 
   if (!isAuthenticated) {
@@ -821,14 +834,28 @@ export const MiniInternshipSubmitPage = () => {
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div className="flex flex-1 items-center gap-3 rounded-2xl border border-[#D6DED7] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(18,24,19,0.03)] dark:border-[#314036] dark:bg-[#111814]">
                           <Paperclip className="h-4 w-4 shrink-0 text-[var(--surface-text-soft)]" />
-                          <Input
+                          <input
+                            ref={fileInputRef}
                             type="file"
-                            onChange={(event) => setLocalSelectedFile(event.target.files?.[0] || null)}
+                            className="hidden"
+                            onChange={handleSelectFile}
                             disabled={!canEditSubmission}
-                            className="h-auto border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={!canEditSubmission}
+                            className="h-auto min-h-0 rounded-xl border-0 bg-transparent px-0 py-0 shadow-none hover:bg-transparent"
+                          >
+                            {localSelectedFile ? t('profile.actions.changeFile') : t('profile.actions.chooseFile')}
+                          </Button>
+                          <span className="truncate text-sm text-[var(--surface-text-muted)]">
+                            {localSelectedFile ? localSelectedFile.name : t('profile.empty.noFileSelected')}
+                          </span>
                         </div>
                         <Button
+                          type="button"
                           variant="outline"
                           onClick={() => void handleUploadFile()}
                           disabled={!canEditSubmission || !localSelectedFile || isUploading}
